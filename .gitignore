@@ -2,11 +2,13 @@
 #################################################
 # Unity related files
 #################################################
+Unity/Temp/*
 Unity/Library/*
 Unity/*.csproj
 Unity/*.sln
 Unity/*.suo
 Unity/.vs
+
 
 #################################################
 # OS generated files
