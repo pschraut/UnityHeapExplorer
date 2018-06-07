@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 558da4346a529cc4e93eec32b57aa2bf, type: 3}
+  m_Name: Wolf4_IL2Cpp_ManagedObjectDuplicate_TestConfig
+  m_EditorClassIdentifier: 
+  Equal:
+  - comment: System.String
+    addresses:
+    - 242D74AD480
+    - 242D74BAC60
+    - 242D74B8120
+  - comment: System.Collections.Generic.List<UnityEngine.Events.BaseInvokableCall>
+    addresses:
+    - 242E10AAD20
+    - 242E10AABD0
+    - 242E10AACC0
+  - comment: UnityEngine.Vector3[]
+    addresses:
+    - 242D55928A0
+    - 242D5592840
+    - 242E0DC1840
+  - comment: UnityEngine.UIVertex[]
+    addresses:
+    - 242E0DA2DC0
+    - 242D561F000
+    - 242D561F160
+  - comment: UIPlaySound.EventTask
+    addresses:
+    - 242D73D4C00
+    - 242D563C360
+    - 242D563C300
+  NotEqual:
+  - comment: System.String | Classic_E04_F10
+    addresses:
+    - 242E1035680
+    - 242E10355C0
+    - 242E1035700
+  - comment: System.String | 9fd74f7f4ba7a75438392e7fd9040afc
+    addresses:
+    - 242D5837C60
+    - 242D5837CC0
+    - 242D5837C00
+  - comment: System.Int32[]
+    addresses:
+    - 242CDC41000
+    - 242D5607A80
+    - 242D5607000
