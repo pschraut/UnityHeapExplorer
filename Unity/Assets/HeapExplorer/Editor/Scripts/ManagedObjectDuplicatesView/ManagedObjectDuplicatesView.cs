@@ -29,27 +29,6 @@ namespace HeapExplorer
             m_editorPrefsKey = "HeapExplorer.ManagedObjectDuplicatesView";
         }
         
-        void DrawLoading()
-        {
-            var oldColor = GUI.color;
-            var oldMatrix = GUI.matrix;
-            var iconSize = 128;
-
-            var pivotPoint = new Vector2(window.position.width / 2, window.position.height / 2);
-            GUIUtility.RotateAroundPivot(Time.realtimeSinceStartup * 45, pivotPoint);
-
-            var r = new Rect(pivotPoint - new Vector2(0.5f, 0.5f) * iconSize, Vector2.one * iconSize);
-            GUI.color = new Color(1, 1, 1, 1.0f);
-            GUI.DrawTexture(r, HeEditorStyles.loadingImageBig);
-
-            GUI.matrix = oldMatrix;
-            GUI.color = oldColor;
-
-            r = new Rect(new Vector2(0, pivotPoint.y - iconSize), new Vector2(window.position.width, iconSize * 0.5f));
-            GUI.Label(r, string.Format("Analyzing Managed Objects Memory, {0:F0}% done", m_objects.progress.value*100), HeEditorStyles.loadingLabel);
-        }
-
-
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -175,8 +154,7 @@ namespace HeapExplorer
 
             if (m_objects.progress.value < 1)
             {
-                DrawLoading();
-                Repaint();
+                window.SetBusy(string.Format("Analyzing Managed Objects Memory, {0:F0}% done", m_objects.progress.value * 100));
             }
         }
 
