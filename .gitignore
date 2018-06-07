@@ -1,14 +1,36 @@
 
 #################################################
-# Unity related files
+# User related files
+#################################################
+TimeTracking-crash.json
+
+#################################################
+# Project related files
+#################################################
+Unity/Assets/Resources/BuildInfo.json
+Unity/Assets/StreamingAssets/Commandline.txt
+
+
+#################################################
+# Unity generated files
 #################################################
 Unity/Temp/*
 Unity/Library/*
 Unity/*.csproj
 Unity/*.sln
-Unity/*.suo
 Unity/.vs
+Unity/Unity.userprefs
 
+UnityDLL/Temp/*
+UnityDLL/Library/*
+UnityDLL/*.csproj
+UnityDLL/*.sln
+UnityDLL/.vs
+UnityDLL/Unity.userprefs
+UnityDLL/Code/bin/*
+UnityDLL/Code/obj/*
+
+*.suo
 
 #################################################
 # OS generated files
