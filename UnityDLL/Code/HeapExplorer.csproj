@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7A990E84-7C9E-495A-A6CE-00AD90E66F32}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HeapExplorer</RootNamespace>
+    <AssemblyName>HeapExplorer</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin</OutputPath>
+    <BaseIntermediateOutputPath>obj\Debug</BaseIntermediateOutputPath>
+    <DefineConstants>TRACE;DEBUG;UNITY_2017_3_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_5_6_OR_NEWER;HEAPEXPLORER_WRITE_HEADER;HEAPEXPLORER_READ_HEADER</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin</OutputPath>
+    <BaseIntermediateOutputPath>obj\Debug</BaseIntermediateOutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="UnityEditor">
+      <HintPath>F:\ProgramFiles\Unity_2017_3\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>F:\ProgramFiles\Unity_2017_3\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\AbstractTreeView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\AbstractView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\CompareSnapshotsView\CompareSnapshotsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\CompareSnapshotsView\CompareSnapshotsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ConnectionsView\ConnectionsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ConnectionsView\ConnectionsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\DataVisualizer\DataVisualizer.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\Globals.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeapExplorerWindow.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeEditorGUI.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeEditorStyles.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HexViewControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedHeapSectionsView\ManagedHeapSectionsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedHeapSectionsView\ManagedHeapSectionsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedObjectDuplicatesView\ManagedObjectDuplicatesControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedObjectDuplicatesView\ManagedObjectDuplicatesView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedObjectsView\ManagedObjectsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedObjectsView\ManagedObjectsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\MemoryReader.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\MemoryWindow.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\OverviewView\OverviewView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedConnection.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedCoreTypes.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedGCHandle.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedManagedField.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedManagedObject.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedManagedObjectCrawler.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedManagedStaticField.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedManagedType.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedMemorySection.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedMemorySnapshot.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedMemorySnapshotEx.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedMemorySnapshotHeader.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedNativeType.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedNativeUnityEngineObject.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PackedTypes\PackedVirtualMachineInformation.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\ArrayElementPropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\ArrayPropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\BaseClassPropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\PrimitiveTypePropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\PropertyGridControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\PropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\PropertyGridView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\ReferenceTypePropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\PropertyGrid\ValueTypePropertyGridItem.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichGCHandle.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichManagedObject.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichManagedType.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichNativeObject.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichNativeType.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RichTypes\RichStaticField.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RootPathView\RootPathControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\RootPathView\RootPathView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\SearchTextParser.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\StaticFieldsView\StaticFieldsControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\StaticFieldsView\StaticFieldsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\WelcomeView\WelcomeView.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>@if exist "$(SolutionDir)..\deploy.cmd" ( @call  "$(SolutionDir)..\deploy.cmd"  $(TargetName) "$(TargetDir)"  "$(SolutionPath)" )
+@if exist "$(SolutionDir)deploy.cmd" ( @call  "$(SolutionDir)deploy.cmd"  $(TargetName) "$(TargetDir)"  "$(SolutionPath)" )</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
