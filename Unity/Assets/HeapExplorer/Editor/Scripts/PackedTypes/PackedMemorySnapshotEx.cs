@@ -892,7 +892,6 @@ namespace HeapExplorer
                 }
             }
 
-
             for (int n = 0, nend = nativeTypes.Length; n < nend; ++n)
             {
                 switch (nativeTypes[n].name)
@@ -905,6 +904,19 @@ namespace HeapExplorer
                     case "MonoScript": coreTypes.nativeMonoScript = n; break;
                     case "Component": coreTypes.nativeComponent = n; break;
                     case "AssetBundle": coreTypes.nativeAssetBundle = n; break;
+                    case "Texture2D": coreTypes.nativeTexture2D = n; break;
+                    case "Texture3D": coreTypes.nativeTexture3D = n; break;
+                    case "TextureArray": coreTypes.nativeTextureArray = n; break;
+                    case "AudioClip": coreTypes.nativeAudioClip = n; break;
+                    case "AnimationClip": coreTypes.nativeAnimationClip = n; break;
+                    case "Mesh": coreTypes.nativeMesh = n; break;
+                    case "Material": coreTypes.nativeMaterial = n; break;
+                    case "Sprite": coreTypes.nativeSprite = n; break;
+                    case "Shader": coreTypes.nativeShader = n; break;
+                    case "AnimatorController": coreTypes.nativeAnimatorController = n; break;
+                    case "Cubemap": coreTypes.nativeCubemap = n; break;
+                    case "CubemapArray": coreTypes.nativeCubemapArray = n; break;
+                    case "Font": coreTypes.nativeFont = n; break;
                 }
             }
         }

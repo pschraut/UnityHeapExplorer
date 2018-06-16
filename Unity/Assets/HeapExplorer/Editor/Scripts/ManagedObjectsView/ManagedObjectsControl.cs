@@ -14,7 +14,7 @@ namespace HeapExplorer
         /// <summary>
         /// Gets the number of all managed objects in the tree.
         /// </summary>
-        public int managedObjectsCount
+        public long managedObjectsCount
         {
             get
             {
@@ -25,7 +25,7 @@ namespace HeapExplorer
         /// <summary>
         /// Gets the size in bytes of all managed objects in the tree.
         /// </summary>
-        public int managedObjectsSize
+        public long managedObjectsSize
         {
             get
             {
@@ -35,8 +35,8 @@ namespace HeapExplorer
 
         protected PackedMemorySnapshot m_snapshot;
         protected int m_uniqueId = 1;
-        protected int m_managedObjectCount;
-        protected int m_managedObjectSize;
+        protected long m_managedObjectCount;
+        protected long m_managedObjectSize;
 
         enum Column
         {

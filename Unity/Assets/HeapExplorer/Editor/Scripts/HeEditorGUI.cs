@@ -217,7 +217,7 @@ namespace HeapExplorer
             EditorGUI.LabelField(position, stringAddress, EditorStyles.label);
 
             var e = Event.current;
-            if (e.button == 1 && position.Contains(e.mousePosition))
+            if (e.type == EventType.ContextClick && position.Contains(e.mousePosition))
             {
                 var menu = new GenericMenu();
                 menu.AddItem(new GUIContent("Copy address"), false, (GenericMenu.MenuFunction2)delegate(object userData)

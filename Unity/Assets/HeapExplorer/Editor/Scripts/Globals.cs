@@ -7,7 +7,7 @@ namespace HeapExplorer
     public static class Globals
     {
         public const string title = "Heap Explorer";
-        public const string version = "alpha 2.0";
+        public const string version = "alpha 2.1";
         public const string docuUrl = "http://www.console-dev.de/bin/HeapExplorer.pdf";
         public const string forumUrl = "https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/";
         public const string publisherUrl = "https://www.assetstore.unity3d.com/en/#!/search/page=1/sortby=popularity/query=publisher:3683";

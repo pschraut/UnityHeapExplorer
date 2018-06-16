@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using System.Reflection;
 
 namespace HeapExplorer
 {
@@ -11,6 +12,25 @@ namespace HeapExplorer
     {
         public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedNativeUnityEngineObject?> onSelectionChange;
+
+        public long nativeObjectsCount
+        {
+            get
+            {
+                return m_nativeObjectsCount;
+            }
+        }
+
+        public long nativeObjectsSize
+        {
+            get
+            {
+                return m_nativeObjectsSize;
+            }
+        }
+
+        protected long m_nativeObjectsCount;
+        protected long m_nativeObjectsSize;
 
         PackedMemorySnapshot m_snapshot;
         int m_uniqueId = 1;
@@ -106,6 +126,8 @@ namespace HeapExplorer
         {
             m_snapshot = snapshot;
             m_uniqueId = 1;
+            m_nativeObjectsCount = 0;
+            m_nativeObjectsSize = 0;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
             if (m_snapshot == null)
@@ -176,6 +198,9 @@ namespace HeapExplorer
                 };
                 item.Initialize(this, no);
 
+                m_nativeObjectsCount++;
+                m_nativeObjectsSize += item.size;
+
                 group.AddChild(item);
             }
 
@@ -196,6 +221,96 @@ namespace HeapExplorer
 
             SortItemsRecursive(root, OnSortItem);
             
+            return root;
+        }
+
+        public TreeViewItem BuildDuplicatesTree(PackedMemorySnapshot snapshot)
+        {
+            m_snapshot = snapshot;
+            m_uniqueId = 1;
+            m_nativeObjectsCount = 0;
+            m_nativeObjectsSize = 0;
+
+            var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
+            if (m_snapshot == null)
+            {
+                root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
+                return root;
+            }
+
+            var dupesLookup = new Dictionary<Hash128, List<int>>();
+
+            for (int n = 0, nend = m_snapshot.nativeObjects.Length; n < nend; ++n)
+            {
+                var no = m_snapshot.nativeObjects[n];
+                if (!no.isPersistent)
+                    continue;
+
+                if (no.nativeTypesArrayIndex == -1)
+                    continue;
+
+                var nativeType = m_snapshot.nativeTypes[no.nativeTypesArrayIndex];
+                if (nativeType.managedTypeArrayIndex == -1)
+                    continue;
+
+                if (m_snapshot.IsSubclassOf(m_snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_snapshot.coreTypes.unityEngineComponent))
+                    continue;
+
+                if (m_snapshot.IsSubclassOf(m_snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_snapshot.coreTypes.unityEngineGameObject))
+                    continue;
+
+                var hash = new Hash128((uint)no.nativeTypesArrayIndex, (uint)no.size, (uint)no.name.GetHashCode(), 0);
+
+                List<int> list;
+                if (!dupesLookup.TryGetValue(hash, out list))
+                    dupesLookup[hash] = list = new List<int>();
+
+                list.Add(n);
+            }
+
+            // int=typeIndex
+            var groupLookup = new Dictionary<Hash128, GroupItem>();
+
+            foreach(var dupePair in dupesLookup)
+            for (int n = 0, nend = dupePair.Value.Count; n < nend; ++n)
+            {
+                var list = dupePair.Value;
+                if (list.Count <= 1)
+                    continue;
+
+                var no = m_snapshot.nativeObjects[list[n]];
+
+                GroupItem group;
+                if (!groupLookup.TryGetValue(dupePair.Key, out group))
+                {
+                    group = new GroupItem
+                    {
+                        id = m_uniqueId++,
+                        depth = root.depth + 1,
+                        displayName = no.name
+                    };
+                    group.Initialize(m_snapshot, no.nativeTypesArrayIndex);
+
+                    groupLookup[dupePair.Key] = group;
+                    root.AddChild(group);
+                }
+                
+                var item = new NativeObjectItem
+                {
+                    id = m_uniqueId++,
+                    depth = group.depth + 1,
+                    displayName = ""
+                };
+                item.Initialize(this, no);
+
+                m_nativeObjectsCount++;
+                m_nativeObjectsSize += item.size;
+
+                group.AddChild(item);
+            }
+
+            SortItemsRecursive(root, OnSortItem);
+
             return root;
         }
 
@@ -420,7 +535,21 @@ namespace HeapExplorer
                         break;
 
                     case Column.Name:
-                        GUI.Label(position, name);
+                        {
+                            GUI.Label(position, name);
+
+                            var e = Event.current;
+                            if (e.type == EventType.ContextClick && position.Contains(e.mousePosition))
+                            {
+                                var menu = new GenericMenu();
+                                OnShowNameContextMenu(menu);
+                                if (menu.GetItemCount() > 0)
+                                {
+                                    e.Use();
+                                    menu.ShowAsContext();
+                                }
+                            }
+                        }
                         break;
 
                     case Column.Size:
@@ -452,6 +581,18 @@ namespace HeapExplorer
                         GUI.Label(position, m_referencedByCount.ToString());
                         break;
 #endif
+                }
+            }
+
+            void OnShowNameContextMenu(GenericMenu menu)
+            {
+                if (!string.IsNullOrEmpty(m_object.name))
+                {
+                    menu.AddItem(new GUIContent("Find in Project"), false, (GenericMenu.MenuFunction2)delegate (object userData)
+                    {
+                        var o = (RichNativeObject)userData;
+                        ProjectWindowUtility.Search(string.Format("t:{0} {1}", o.type.name, o.name));
+                    }, m_object);
                 }
             }
         }
@@ -524,8 +665,8 @@ namespace HeapExplorer
             {
                 get
                 {
-                    if (displayName != null && displayName.Length > 0)
-                        return displayName;
+                    //if (displayName != null && displayName.Length > 0)
+                    //    return displayName;
 
                     return m_type.name;
                 }
@@ -535,7 +676,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return "";
+                    return displayName ?? "";
                 }
             }
 
@@ -631,6 +772,10 @@ namespace HeapExplorer
                         HeEditorGUI.TypeName(position, typeName);
                         break;
 
+                    case Column.Name:
+                        HeEditorGUI.TypeName(position, name);
+                        break;
+
                     case Column.Size:
                         HeEditorGUI.Size(position, size);
                         break;
@@ -642,4 +787,30 @@ namespace HeapExplorer
             }
         }
     }
+
+    public static class ProjectWindowUtility
+    {
+        /// <summary>
+        /// Search the project window using the specified filter.
+        /// </summary>
+        public static void Search(string filter)
+        {
+            foreach (var type in typeof(EditorWindow).Assembly.GetTypes())
+            {
+                if (type.Name != "ProjectBrowser")
+                    continue;
+
+                var window = EditorWindow.GetWindow(type);
+                if (window != null)
+                {
+                    var method = type.GetMethod("SetSearch", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(string) }, null);
+                    if (method != null)
+                        method.Invoke(window, new System.Object[] { filter });
+                }
+
+                return;
+            }
+        }
+    }
+
 }

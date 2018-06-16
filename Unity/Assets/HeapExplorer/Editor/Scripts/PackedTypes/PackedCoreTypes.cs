@@ -49,5 +49,19 @@ namespace HeapExplorer
         public int nativeTransform = -1;
         public int nativeComponent = -1;
         public int nativeAssetBundle = -1;
+
+        public int nativeTexture2D = -1;
+        public int nativeTexture3D = -1;
+        public int nativeTextureArray = -1;
+        public int nativeAudioClip = -1;
+        public int nativeAnimationClip = -1;
+        public int nativeMesh = -1;
+        public int nativeMaterial = -1;
+        public int nativeSprite = -1;
+        public int nativeShader = -1;
+        public int nativeAnimatorController = -1;
+        public int nativeCubemap = -1;
+        public int nativeCubemapArray = -1;
+        public int nativeFont = -1;
     }
 }

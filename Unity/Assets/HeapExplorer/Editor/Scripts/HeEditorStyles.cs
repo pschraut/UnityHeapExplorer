@@ -271,6 +271,7 @@ namespace HeapExplorer
             hyperlinkColor1 = EditorStyles.label.focused.textColor;
             //var hyperlinkColor2 = new Color(122 / 255.0f, 204 / 255.0f, 0 / 255.0f, 1);
             hyperlink = new GUIStyle(EditorStyles.label);
+            hyperlink.alignment = TextAnchor.MiddleLeft;
             hyperlink.normal.textColor = hyperlinkColor1;
             hyperlink.onNormal.textColor = hyperlinkColor1;
             hyperlink.hover.textColor = hyperlinkColor1;
@@ -279,6 +280,7 @@ namespace HeapExplorer
             hyperlink.onActive.textColor = hyperlinkColor1;
 
             miniHyperlink = new GUIStyle(EditorStyles.miniLabel);
+            miniHyperlink.alignment = TextAnchor.MiddleLeft;
             miniHyperlink.normal.textColor = hyperlinkColor1;
             miniHyperlink.onNormal.textColor = hyperlinkColor1;
             miniHyperlink.hover.textColor = hyperlinkColor1;

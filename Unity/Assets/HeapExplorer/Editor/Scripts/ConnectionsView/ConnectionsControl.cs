@@ -18,6 +18,7 @@ namespace HeapExplorer
             StaticField,
             StaticClass,
             ManagedObjectDuplicate,
+            NativeObjectDuplicates
         }
 
         public EKind toKind;

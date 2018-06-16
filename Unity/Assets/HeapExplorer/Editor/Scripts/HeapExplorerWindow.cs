@@ -15,6 +15,7 @@ namespace HeapExplorer
         [NonSerialized] List<HeapExplorerView> m_views = new List<HeapExplorerView>();
         [NonSerialized] HeapExplorerView m_activeView;
         [NonSerialized] NativeObjectsView m_nativeObjectsView;
+        [NonSerialized] NativeObjectDuplicatesView m_nativeObjectDuplicatesView;
         [NonSerialized] ManagedObjectsView m_managedObjectsView;
         [NonSerialized] GCHandlesView m_gcHandlesView;
         [NonSerialized] OverviewView m_overviewView;
@@ -139,6 +140,7 @@ namespace HeapExplorer
             CreateView<ManagedHeapSectionsView>();
 
             m_nativeObjectsView = CreateView<NativeObjectsView>();
+            m_nativeObjectDuplicatesView = CreateView<NativeObjectDuplicatesView>();
             m_gcHandlesView = CreateView<GCHandlesView>();
 
             CreateView<CompareSnapshotsView>();
@@ -172,7 +174,8 @@ namespace HeapExplorer
 
             m_overviewView = null;
             m_nativeObjectsView = null;
-            m_nativeObjectsView = null;
+            m_nativeObjectDuplicatesView = null;
+            m_managedDelegatesView = null;
             m_managedObjectsView = null;
             m_gcHandlesView = null;
         }
@@ -203,6 +206,11 @@ namespace HeapExplorer
                     ActivateView(m_nativeObjectsView);
                     if (command.toNativeObject.isValid)
                         m_nativeObjectsView.Select(command.toNativeObject.packed);
+                    break;
+                case GotoCommand.EKind.NativeObjectDuplicates:
+                    ActivateView(m_nativeObjectDuplicatesView);
+                    if (command.toNativeObject.isValid)
+                        m_nativeObjectDuplicatesView.Select(command.toNativeObject.packed);
                     break;
 
                 case GotoCommand.EKind.ManagedObject:

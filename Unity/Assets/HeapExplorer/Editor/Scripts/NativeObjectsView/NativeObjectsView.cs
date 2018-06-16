@@ -6,17 +6,81 @@ using UnityEditor;
 
 namespace HeapExplorer
 {
-    public class NativeObjectsView : HeapExplorerView
+    public class NativeObjectDuplicatesView : AbstractNativeObjectsView
     {
-        NativeObjectsControl m_nativeObjectsControl;
-        NativeObjectControl m_nativeObjectControl;
-        HeSearchField m_SearchField;
-        ConnectionsView m_connectionsView;
-        PackedNativeUnityEngineObject? m_selected;
-        RootPathView m_rootPathView;
-        string m_editorPrefsKey;
-        float m_splitterHorz = 0.33333f;
-        float m_splitterVert = 0.32f;
+        // https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity2.html
+
+        Job m_job;
+
+        public override void Awake()
+        {
+            base.Awake();
+
+            title = new GUIContent("C++ Asset Duplicates (guessed)", "");
+            m_editorPrefsKey = "HeapExplorer.NativeObjectDuplicatesView";
+        }
+
+
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            m_job = new Job();
+            m_job.control = m_nativeObjectsControl;
+            m_job.snapshot = m_snapshot;
+            ScheduleJob(m_job);
+        }
+
+        protected override void OnDrawHeader()
+        {
+            base.OnDrawHeader();
+
+            using (new EditorGUILayout.VerticalScope())
+            {
+                EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+
+                var url = "https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity2.html";
+                if (HeEditorGUILayout.LinkButton(new GUIContent("See 'Identifying duplicated Textures' in Unity documentation.", url), HeEditorStyles.miniHyperlink))
+                    Application.OpenURL(url);
+            }
+
+            //var text = string.Format("{0} native UnityEngine object(s)", m_snapshot.nativeObjects.Length);
+            var text = string.Format("{0} native UnityEngine object guessed duplicate(s) wasting {1} memory", m_nativeObjectsControl.nativeObjectsCount, EditorUtility.FormatBytes(m_nativeObjectsControl.nativeObjectsSize));
+            window.SetStatusbarString(text);
+        }
+
+        public override void OnGUI()
+        {
+            base.OnGUI();
+
+            if (m_job != null && m_job.state != AbstractThreadJob.State.Completed)
+                window.SetBusy("Working...");
+            else if (m_job != null && m_job.state == AbstractThreadJob.State.Completed)
+                m_job = null;
+        }
+
+        class Job : AbstractThreadJob
+        {
+            public NativeObjectsControl control;
+            public PackedMemorySnapshot snapshot;
+
+            // Output
+            TreeViewItem tree;
+
+            public override void ThreadFunc()
+            {
+                tree = control.BuildDuplicatesTree(snapshot);
+            }
+
+            public override void IntegrateFunc()
+            {
+                control.SetTree(tree);
+            }
+        }
+    }
+
+    public class NativeObjectsView : AbstractNativeObjectsView
+    {
+        Job m_job;
 
         public override void Awake()
         {
@@ -25,6 +89,68 @@ namespace HeapExplorer
             title = new GUIContent("C++ Objects", "");
             m_editorPrefsKey = "HeapExplorer.NativeObjectsView";
         }
+
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            m_job = new Job();
+            m_job.control = m_nativeObjectsControl;
+            m_job.snapshot = m_snapshot;
+            ScheduleJob(m_job);
+        }
+
+        protected override void OnDrawHeader()
+        {
+            base.OnDrawHeader();
+
+            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+
+            var text = string.Format("{0} native UnityEngine object(s)", m_snapshot.nativeObjects.Length);
+            window.SetStatusbarString(text);
+        }
+
+        public override void OnGUI()
+        {
+            base.OnGUI();
+
+            if (m_job != null && m_job.state != AbstractThreadJob.State.Completed)
+                window.SetBusy("Working...");
+            else if (m_job != null && m_job.state == AbstractThreadJob.State.Completed)
+                m_job = null;
+        }
+
+        class Job : AbstractThreadJob
+        {
+            public NativeObjectsControl control;
+            public PackedMemorySnapshot snapshot;
+
+            // Output
+            TreeViewItem tree;
+
+            public override void ThreadFunc()
+            {
+                tree = control.BuildTree(snapshot);
+            }
+
+            public override void IntegrateFunc()
+            {
+                control.SetTree(tree);
+            }
+        }
+    }
+
+    public class AbstractNativeObjectsView : HeapExplorerView
+    {
+        protected string m_editorPrefsKey;
+
+        protected NativeObjectsControl m_nativeObjectsControl;
+        NativeObjectControl m_nativeObjectControl;
+        HeSearchField m_SearchField;
+        ConnectionsView m_connectionsView;
+        PackedNativeUnityEngineObject? m_selected;
+        RootPathView m_rootPathView;
+        float m_splitterHorz = 0.33333f;
+        float m_splitterVert = 0.32f;
 
         protected override void OnCreate()
         {
@@ -38,7 +164,7 @@ namespace HeapExplorer
 
             // The list at the left that contains all native objects
             m_nativeObjectsControl = new NativeObjectsControl(m_editorPrefsKey + ".m_nativeObjectsControl", new TreeViewState());
-            m_nativeObjectsControl.SetTree(m_nativeObjectsControl.BuildTree(m_snapshot));
+            //m_nativeObjectsControl.SetTree(m_nativeObjectsControl.BuildTree(m_snapshot));
             m_nativeObjectsControl.onSelectionChange += OnListViewSelectionChange;
             m_nativeObjectsControl.gotoCB += Goto;
 
@@ -88,11 +214,12 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            var text = string.Format("{0} native UnityEngine object(s)", m_snapshot.nativeObjects.Length);
-                            window.SetStatusbarString(text);
+                            OnDrawHeader();
+                            //var text = string.Format("{0} native UnityEngine object(s)", m_snapshot.nativeObjects.Length);
+                            //window.SetStatusbarString(text);
                             //EditorGUILayout.LabelField(string.Format("{0} native UnityEngine object(s)", m_snapshot.nativeObjects.Length), EditorStyles.boldLabel);
 
-                        EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                            
                             if (m_SearchField.OnToolbarGUI())
                                 m_nativeObjectsControl.Search(m_SearchField.text);
                         }
@@ -128,7 +255,11 @@ namespace HeapExplorer
                 }
             }
         }
-        
+
+        protected virtual void OnDrawHeader()
+        {
+        }
+
         void OnListViewSelectionChange(PackedNativeUnityEngineObject? nativeObject)
         {
             m_selected = nativeObject;
