@@ -76,15 +76,15 @@ namespace HeapExplorer
 
             if (!supported)
             {
-                if (EditorUtility.DisplayDialog(Globals.title, string.Format("{0} requires Unity 2017.3 or newer.", Globals.title), "Forum", "Close"))
-                    Application.OpenURL(Globals.forumUrl);
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.3 or newer.", HeGlobals.k_Title), "Forum", "Close"))
+                    Application.OpenURL(HeGlobals.k_ForumUrl);
                 return;
             }
 
             if (DateTime.Now.Year > 2018)
             {
-                if (EditorUtility.DisplayDialog(Globals.title, string.Format("The {0} {1} build expired.", Globals.title, Globals.version), "Forum", "Close"))
-                    Application.OpenURL(Globals.forumUrl);
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
+                    Application.OpenURL(HeGlobals.k_ForumUrl);
                 return;
             }
 
@@ -93,7 +93,7 @@ namespace HeapExplorer
 
         void OnEnable()
         {
-            titleContent = new GUIContent(Globals.title);
+            titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
             m_UseThread = EditorPrefs.GetBool("HeapExplorerWindow.m_UseThread", m_UseThread);
@@ -259,7 +259,7 @@ namespace HeapExplorer
                     return;
                 }
 
-                EditorUtility.DisplayDialog(Globals.title + " - ERROR", m_ErrorMsg, "OK");
+                EditorUtility.DisplayDialog(HeGlobals.k_Title + " - ERROR", m_ErrorMsg, "OK");
                 Close();
                 return;
             }
@@ -424,9 +424,9 @@ namespace HeapExplorer
                     var menu = new GenericMenu();
                     menu.AddItem(new GUIContent("Open..."), false, LoadFromFile);
 
-                    for (int n = 0; n < MruFiles.count; ++n)
+                    for (int n = 0; n < HeMruFiles.count; ++n)
                     {
-                        var path = MruFiles.GetPath(n);
+                        var path = HeMruFiles.GetPath(n);
 
                         if (string.IsNullOrEmpty(path))
                             continue;
@@ -444,7 +444,7 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent("Recent/Clear list"), false, delegate() 
                     {
                         if (EditorUtility.DisplayDialog("Clear list...", "Do you want to clear the most recently used files list?", "Clear", "Cancel"))
-                            MruFiles.RemoveAll();
+                            HeMruFiles.RemoveAll();
                     });
 
                     menu.AddSeparator("");
@@ -497,7 +497,7 @@ namespace HeapExplorer
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent(string.Format("Open Profiler")), false, delegate ()
                     {
-                        if (UnityVersion.IsEqualOrNewer(2018, 2))
+                        if (HeEditorUtility.IsVersionOrNewer(2018, 2))
                             EditorApplication.ExecuteMenuItem("Window/Debug/Profiler");
                         else
                             EditorApplication.ExecuteMenuItem("Window/Profiler");
@@ -566,7 +566,7 @@ namespace HeapExplorer
             var path = EditorUtility.SaveFilePanel("Save", "", "memory", "heap");
             if (string.IsNullOrEmpty(path))
                 return;
-            MruFiles.AddPath(path);
+            HeMruFiles.AddPath(path);
 
             m_heap.SaveToFile(path);
             snapshotPath = path;
@@ -616,7 +616,7 @@ namespace HeapExplorer
         {
             SaveView();
             FreeMem();
-            MruFiles.AddPath(path);
+            HeMruFiles.AddPath(path);
             Reset();
             m_heap = null;
 
@@ -767,7 +767,7 @@ namespace HeapExplorer
             EditorPrefs.SetString("HeapExplorerWindow.autoSavePath", path);
             m_autoSavePath = path;
 
-            EditorUtility.DisplayProgressBar(Globals.title, "Receiving memory...", 0.0f);
+            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Receiving memory...", 0.0f);
             try
             {
                 FreeMem();
@@ -787,12 +787,12 @@ namespace HeapExplorer
         {
             UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnHeapReceivedSaveOnly;
 
-            EditorUtility.DisplayProgressBar(Globals.title, "Saving memory...", 0.5f);
+            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Saving memory...", 0.5f);
             try
             {
                 var heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
                 heap.SaveToFile(m_autoSavePath);
-                MruFiles.AddPath(m_autoSavePath);
+                HeMruFiles.AddPath(m_autoSavePath);
                 ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", m_autoSavePath)));
             }
             finally
@@ -805,7 +805,7 @@ namespace HeapExplorer
 
         void CaptureAndAnalyzeHeap()
         {
-            EditorUtility.DisplayProgressBar(Globals.title, "Receiving memory...", 0.0f);
+            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Receiving memory...", 0.0f);
             try
             {
                 SaveView();
@@ -827,7 +827,7 @@ namespace HeapExplorer
         {
             UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnHeapReceived;
 
-            EditorUtility.DisplayProgressBar(Globals.title, "Reading memory...", 0.5f);
+            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Reading memory...", 0.5f);
             try
             {
                 //Reset();
@@ -844,7 +844,7 @@ namespace HeapExplorer
                 }
                 else
                 {
-                    EditorUtility.DisplayProgressBar(Globals.title, "Analyzing memory...", 0.75f);
+                    EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Analyzing memory...", 0.75f);
                     ReceiveHeapThreaded(snapshot);
                 }
             }

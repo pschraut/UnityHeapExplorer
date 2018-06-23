@@ -23,9 +23,9 @@ namespace HeapExplorer
 
     public class HexViewControl
     {
+        const int k_ColumnCount = 16;
         float m_ScrollPosition;
         long m_LineCount;
-        const int kColumnCount = 16;
         System.Text.StringBuilder m_StringBuilder = new System.Text.StringBuilder(16 * 2 * 128);
         System.UInt64 m_StartAddress;
         ArraySegment64<byte> m_Heap;
@@ -38,7 +38,7 @@ namespace HeapExplorer
             m_Owner = owner;
             m_Heap = heap;
             m_StartAddress = startAddress;
-            m_LineCount = (long)((heap.count + kColumnCount - 1) / kColumnCount);
+            m_LineCount = (long)((heap.count + k_ColumnCount - 1) / k_ColumnCount);
             m_ScrollPosition = 0;
             m_VisibleLines = 100;
             BuildText();
@@ -107,12 +107,12 @@ namespace HeapExplorer
                 if (line >= m_LineCount)
                     break;
 
-                var lineIndex = (uint)line * kColumnCount;
+                var lineIndex = (uint)line * k_ColumnCount;
                 var lineAddr = m_StartAddress + lineIndex;
 
                 m_StringBuilder.AppendFormat("{0:X16}  ", lineAddr);
 
-                for (var x = 0u; x < kColumnCount; ++x)
+                for (var x = 0u; x < k_ColumnCount; ++x)
                 {
                     if (lineIndex + x < m_Heap.count)
                     {
@@ -127,7 +127,7 @@ namespace HeapExplorer
 
                 m_StringBuilder.AppendFormat("  ");
 
-                for (var x = 0u; x < kColumnCount && lineIndex + x < m_Heap.count; ++x)
+                for (var x = 0u; x < k_ColumnCount && lineIndex + x < m_Heap.count; ++x)
                 {
                     if (lineIndex + x < m_Heap.count)
                     {

@@ -118,16 +118,16 @@ namespace HeapExplorer
                                             var path = EditorUtility.OpenFilePanel("Load", "", "heap");
                                             if (!string.IsNullOrEmpty(path))
                                             {
-                                                MruFiles.AddPath(path);
+                                                HeMruFiles.AddPath(path);
                                                 LoadSnapshotB(path);
                                             }
                                         });
 
                                         menu.AddSeparator("");
 
-                                        for (int n = 0; n < MruFiles.count; ++n)
+                                        for (int n = 0; n < HeMruFiles.count; ++n)
                                         {
-                                            var path = MruFiles.GetPath(n);
+                                            var path = HeMruFiles.GetPath(n);
 
                                             if (string.IsNullOrEmpty(path))
                                                 continue;
@@ -138,7 +138,7 @@ namespace HeapExplorer
                                             menu.AddItem(new GUIContent((n + 1) + "     " + path.Replace('/', '\\')), false, delegate (System.Object obj)
                                              {
                                                  var p = obj as string;
-                                                 MruFiles.AddPath(p);
+                                                 HeMruFiles.AddPath(p);
                                                  LoadSnapshotB(p);
                                              }, path);
                                         }

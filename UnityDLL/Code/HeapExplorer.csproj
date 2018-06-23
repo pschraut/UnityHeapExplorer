@@ -54,10 +54,18 @@
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\DataVisualizer\DataVisualizer.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesView.cs" />
-    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\Globals.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeapExplorerWindow.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeEditorGUI.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeEditorStyles.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeEditorUtility.cs">
+      <Link>HeEditorUtility.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeGlobals.cs">
+      <Link>HeGlobals.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HeMruFiles.cs">
+      <Link>HeMruFiles.cs</Link>
+    </Compile>
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\HexViewControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedHeapSectionsView\ManagedHeapSectionsControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedHeapSectionsView\ManagedHeapSectionsView.cs" />

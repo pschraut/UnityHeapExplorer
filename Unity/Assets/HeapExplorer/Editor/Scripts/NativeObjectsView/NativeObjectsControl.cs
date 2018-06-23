@@ -122,7 +122,32 @@ namespace HeapExplorer
             onSelectionChange.Invoke(item.packed);
         }
 
-        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
+        public struct BuildArgs
+        {
+            public bool addAssetObjects;
+            public bool addSceneObjects;
+            public bool addRuntimeObjects;
+            public bool addDestroyOnLoad;
+            public bool addDontDestroyOnLoad;
+
+            public bool CanAdd(PackedNativeUnityEngineObject no)
+            {
+                if (!addAssetObjects && no.isPersistent) return false;
+                if (!addSceneObjects && !no.isPersistent && no.instanceId >= 0) return false;
+                if (!addRuntimeObjects && !no.isPersistent && no.instanceId < 0) return false;
+
+                var dontDestroy = false;
+                if (no.isDontDestroyOnLoad || no.isManager || ((no.hideFlags & HideFlags.DontUnloadUnusedAsset) != 0))
+                    dontDestroy = true;
+
+                if (!addDestroyOnLoad && !dontDestroy) return false;
+                if (!addDontDestroyOnLoad && dontDestroy) return false;
+
+                return true;
+            }
+        }
+
+        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, BuildArgs buildArgs)
         {
             m_snapshot = snapshot;
             m_uniqueId = 1;
@@ -142,6 +167,8 @@ namespace HeapExplorer
             for (int n = 0, nend = m_snapshot.nativeObjects.Length; n < nend; ++n)
             {
                 var no = m_snapshot.nativeObjects[n];
+                if (!buildArgs.CanAdd(no))
+                    continue;
 
                 GroupItem group;
                 if (!groupLookup.TryGetValue(no.nativeTypesArrayIndex, out group))
@@ -220,11 +247,14 @@ namespace HeapExplorer
             }
 
             SortItemsRecursive(root, OnSortItem);
-            
+
+            if (!root.hasChildren)
+                root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
+
             return root;
         }
 
-        public TreeViewItem BuildDuplicatesTree(PackedMemorySnapshot snapshot)
+        public TreeViewItem BuildDuplicatesTree(PackedMemorySnapshot snapshot, BuildArgs buildArgs)
         {
             m_snapshot = snapshot;
             m_uniqueId = 1;
@@ -244,6 +274,9 @@ namespace HeapExplorer
             {
                 var no = m_snapshot.nativeObjects[n];
                 if (!no.isPersistent)
+                    continue;
+
+                if (!buildArgs.CanAdd(no))
                     continue;
 
                 if (no.nativeTypesArrayIndex == -1)
@@ -310,6 +343,9 @@ namespace HeapExplorer
             }
 
             SortItemsRecursive(root, OnSortItem);
+
+            if (!root.hasChildren)
+                root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
 
             return root;
         }
@@ -500,24 +536,7 @@ namespace HeapExplorer
             {
                 if (column == 0)
                 {
-                    var ir = HeEditorGUI.SpaceL(ref position, position.height);
-                    GUI.Box(ir, HeEditorStyles.cppImage, HeEditorStyles.iconStyle);
-
-                    if (m_object.isDontDestroyOnLoad || m_object.isManager || ((m_object.hideFlags & HideFlags.DontUnloadUnusedAsset) != 0))
-                    {
-                        var r = ir;
-                        r.x += 5;
-                        r.y += 4;
-                        GUI.Box(r, new GUIContent(HeEditorStyles.warnImage, "The object does not unload automatically during scene changes, because of 'isDontDestroyOnLoad' or 'isManager' or 'hideFlags'."), HeEditorStyles.iconStyle);
-                    }
-
-                    //if (m_object.gcHandle.isValid)
-                    //{
-                    //    if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
-                    //    {
-                    //        m_owner.gotoCB(new GotoCommand(m_object.gcHandle));
-                    //    }
-                    //}
+                    HeEditorGUI.NativeObjectIcon(HeEditorGUI.SpaceL(ref position, position.height), m_object.packed);
 
                     if (m_object.managedObject.isValid)
                     {
@@ -591,7 +610,7 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent("Find in Project"), false, (GenericMenu.MenuFunction2)delegate (object userData)
                     {
                         var o = (RichNativeObject)userData;
-                        ProjectWindowUtility.Search(string.Format("t:{0} {1}", o.type.name, o.name));
+                        HeEditorUtility.SearchProjectBrowser(string.Format("t:{0} {1}", o.type.name, o.name));
                     }, m_object);
                 }
             }
@@ -787,30 +806,4 @@ namespace HeapExplorer
             }
         }
     }
-
-    public static class ProjectWindowUtility
-    {
-        /// <summary>
-        /// Search the project window using the specified filter.
-        /// </summary>
-        public static void Search(string filter)
-        {
-            foreach (var type in typeof(EditorWindow).Assembly.GetTypes())
-            {
-                if (type.Name != "ProjectBrowser")
-                    continue;
-
-                var window = EditorWindow.GetWindow(type);
-                if (window != null)
-                {
-                    var method = type.GetMethod("SetSearch", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(string) }, null);
-                    if (method != null)
-                        method.Invoke(window, new System.Object[] { filter });
-                }
-
-                return;
-            }
-        }
-    }
-
 }

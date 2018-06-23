@@ -7,7 +7,7 @@ namespace HeapExplorer
 {
     public class WelcomeView : HeapExplorerView
     {
-        Vector2 m_mruScrollPosition;
+        Vector2 m_MruScrollPosition;
 
         public override void Awake()
         {
@@ -20,7 +20,7 @@ namespace HeapExplorer
         {
             base.OnShow();
 
-            MruFiles.Load();
+            HeMruFiles.Load();
         }
 
         public override void OnGUI()
@@ -28,7 +28,7 @@ namespace HeapExplorer
             base.OnGUI();
 
             GUILayout.Space(4);
-            GUILayout.Label(Globals.title, HeEditorStyles.heading1);
+            GUILayout.Label(HeGlobals.k_Title, HeEditorStyles.heading1);
             //GUILayout.Label("The Ultimate Memory Profiler, Debugger & Analyzer for Unity", EditorStyles.boldLabel);
             GUILayout.Space(16);
 
@@ -56,7 +56,7 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                GUILayout.Label(Globals.version, HeEditorStyles.heading2);
+                GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
                 GUILayout.Label("Please do not spread this plugin. This alpha build expires on Jan 2019.");
             }
         }
@@ -69,15 +69,15 @@ namespace HeapExplorer
                 GUILayout.Space(8);
 
                 GUILayout.Label("Documentation", EditorStyles.boldLabel);
-                if (HeEditorGUILayout.LinkButton(new GUIContent(Globals.docuUrl))) Application.OpenURL(Globals.docuUrl);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_DocuUrl))) Application.OpenURL(HeGlobals.k_DocuUrl);
                 GUILayout.Space(8);
 
                 GUILayout.Label("Feedback and bug-reports", EditorStyles.boldLabel);
-                if (HeEditorGUILayout.LinkButton(new GUIContent(Globals.forumUrl))) Application.OpenURL(Globals.forumUrl);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
 
                 GUILayout.Label("My Asset Store Publisher page", EditorStyles.boldLabel);
-                if (HeEditorGUILayout.LinkButton(new GUIContent(Globals.publisherUrl))) Application.OpenURL(Globals.publisherUrl);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_PublisherUrl))) Application.OpenURL(HeGlobals.k_PublisherUrl);
                 GUILayout.Space(8);
 
                 GUILayout.Label("Contact", EditorStyles.boldLabel);
@@ -106,28 +106,28 @@ You can switch the connected application in Unity's Profiler (Window > Profiler)
 
         void DrawMRU()
         {
-            if (MruFiles.count == 0)
+            if (HeMruFiles.count == 0)
                 return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 GUILayout.Label("Recent", HeEditorStyles.heading2);
 
-                using (var scrollView = new EditorGUILayout.ScrollViewScope(m_mruScrollPosition))
+                using (var scrollView = new EditorGUILayout.ScrollViewScope(m_MruScrollPosition))
                 {
-                    m_mruScrollPosition = scrollView.scrollPosition;
+                    m_MruScrollPosition = scrollView.scrollPosition;
 
-                    for (int n = 0, nend = MruFiles.count; n < nend; ++n)
+                    for (int n = 0, nend = HeMruFiles.count; n < nend; ++n)
                     {
                         using (new GUILayout.HorizontalScope())
                         {
-                            var path = MruFiles.GetPath(n);
+                            var path = HeMruFiles.GetPath(n);
 
                             GUILayout.Label(string.Format("{0,2:##}", n + 1), GUILayout.Width(20));
 
                             if (GUILayout.Button(new GUIContent("", "Remove entry from list"), HeEditorStyles.roundCloseButton, GUILayout.Width(16), GUILayout.Height(16)))
                             {
-                                MruFiles.RemovePath(path);
+                                HeMruFiles.RemovePath(path);
                                 break;
                             }
 
@@ -142,95 +142,6 @@ You can switch the connected application in Unity's Profiler (Window > Profiler)
                     }
                 }
             }
-        }
-    }
-
-    public static class MruFiles
-    {
-        [System.Serializable]
-        class MruJson
-        {
-            public List<string> Paths = new List<string>();
-        }
-
-        const int k_maxPathCount = 15;
-        const string k_editorPrefsKey = "HeapExplorer.MostRecentlyUsed";
-        static MruJson s_list = new MruJson();
-
-        public static int count
-        {
-            get
-            {
-                return s_list.Paths.Count;
-            }
-        }
-
-        public static void AddPath(string path)
-        {
-            if (s_list.Paths.Count > 0)
-            {
-                s_list.Paths.Remove(path);
-                s_list.Paths.Insert(0, path);
-            }
-            else
-            {
-                s_list.Paths.Add(path);
-            }
-
-            if (s_list.Paths.Count > k_maxPathCount)
-            {
-                s_list.Paths.RemoveAt(s_list.Paths.Count - 1);
-            }
-
-            Save();
-        }
-
-        public static string GetPath(int index)
-        {
-            return s_list.Paths[index];
-        }
-
-        public static void RemovePath(string path)
-        {
-            s_list.Paths.Remove(path);
-            Save();
-        }
-
-        public static void RemoveAll()
-        {
-            s_list.Paths.Clear();
-            Save();
-        }
-
-        public static void Load()
-        {
-            var json = EditorPrefs.GetString(k_editorPrefsKey, "");
-            try
-            {
-                s_list = JsonUtility.FromJson<MruJson>(json);
-            }
-            catch { }
-
-            if (s_list == null)
-                s_list = new MruJson();
-
-            // Remove entries where the corresponding file does not exist.
-            for (var n=s_list.Paths.Count-1; n>=0; --n)
-            {
-                var path = s_list.Paths[n];
-                if (!System.IO.File.Exists(path))
-                    s_list.Paths.RemoveAt(n);
-            }
-        }
-
-        static void Save()
-        {
-            try
-            {
-                var json = JsonUtility.ToJson(s_list);
-                EditorPrefs.SetString(k_editorPrefsKey, json);
-            }
-            catch { }
         }
     }
 }

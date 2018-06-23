@@ -169,6 +169,24 @@ namespace HeapExplorer
             private set;
         }
 
+        public static Texture2D assetImage
+        {
+            get;
+            private set;
+        }
+
+        public static Texture2D sceneImage
+        {
+            get;
+            private set;
+        }
+
+        public static Texture2D instanceImage
+        {
+            get;
+            private set;
+        }
+
         public static Texture2D chipImage
         {
             get;
@@ -204,6 +222,7 @@ namespace HeapExplorer
             monoSpaceLabel.font = monoSpaceFont;
 
             csImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("4189a6ed6210b5748887671a3778b379"));
+            //csImage = FindBuiltinTexture("cs Script Icon");
             csStaticImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("f2c7f0914a62e8a4a8c27dbe3db17fe8"));
             cppImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("4f4f04936efd4f241820adb1ec65725c"));
             gcHandleImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("36d1676fb78c3944a91ce0426cc01fdf"));
@@ -221,7 +240,10 @@ namespace HeapExplorer
             
             splitterImage = FindBuiltinTexture("MenuItemHover");
             warnImage = FindBuiltinTexture("console.warnicon");
+            assetImage = FindBuiltinTexture("ScriptableObject Icon");
+            sceneImage = FindBuiltinTexture("SceneAsset Icon");
             chipImage = FindBuiltinTexture("Profiler.Memory");
+            instanceImage = FindBuiltinTexture("Favorite Icon");
 
             paneOptions = (GUIStyle)"PaneOptions";
 

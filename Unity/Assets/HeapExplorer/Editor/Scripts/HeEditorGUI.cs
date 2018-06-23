@@ -8,9 +8,9 @@ namespace HeapExplorer
 {
     public static class HeEditorGUILayout
     {
-        static bool s_splitterActive;
-        static int s_splitterActiveId = -1;
-        static Vector2 s_splitterMousePosition;
+        static bool s_SplitterActive;
+        static int s_SplitterActiveId = -1;
+        static Vector2 s_SplitterMousePosition;
 
         public static bool LinkButton(GUIContent content, GUIStyle guiStyle = null)
         {
@@ -73,24 +73,24 @@ namespace HeapExplorer
                 case EventType.MouseDown:
                     if (position.Contains(Event.current.mousePosition))
                     {
-                        s_splitterActive = true;
-                        s_splitterActiveId = id;
-                        s_splitterMousePosition = Event.current.mousePosition;
+                        s_SplitterActive = true;
+                        s_SplitterActiveId = id;
+                        s_SplitterMousePosition = Event.current.mousePosition;
                     }
                     break;
 
                 case EventType.MouseUp:
                 case EventType.MouseLeaveWindow:
-                    s_splitterActive = false;
-                    s_splitterActiveId = -1;
+                    s_SplitterActive = false;
+                    s_SplitterActiveId = -1;
                     editorWindow.Repaint();
                     break;
 
                 case EventType.MouseDrag:
-                    if (s_splitterActive && s_splitterActiveId == id)
+                    if (s_SplitterActive && s_SplitterActiveId == id)
                     {
-                        var delta = Event.current.mousePosition - s_splitterMousePosition;
-                        s_splitterMousePosition = Event.current.mousePosition;
+                        var delta = Event.current.mousePosition - s_SplitterMousePosition;
+                        s_SplitterMousePosition = Event.current.mousePosition;
 
                         if (vertical)
                             value = Mathf.Clamp(value - delta.y / editorWindow.position.height, min, max);
@@ -313,6 +313,42 @@ namespace HeapExplorer
 
             return false;
         }
+
+        public static void NativeObjectIcon(Rect position, PackedNativeUnityEngineObject obj)
+        {
+            var warningMsg = "";
+            var showWarning = false;
+            if (obj.isDontDestroyOnLoad || obj.isManager || ((obj.hideFlags & HideFlags.DontUnloadUnusedAsset) != 0))
+            {
+                warningMsg = "\n\nThe object does not unload automatically during scene changes, because of 'isDontDestroyOnLoad' or 'isManager' or 'hideFlags'.";
+                showWarning = true;
+            }
+
+            if (obj.isPersistent)
+            {
+                GUI.Box(position, new GUIContent(HeEditorStyles.assetImage, "Object is an asset." + warningMsg), HeEditorStyles.iconStyle);
+            }
+            else if (obj.instanceId < 0)
+            {
+                var c = GUI.color;
+                GUI.color = new Color(1, 0.75f, 1, c.a);
+                GUI.Box(position, new GUIContent(HeEditorStyles.instanceImage, "Object created at runtime." + warningMsg), HeEditorStyles.iconStyle);
+                GUI.color = c;
+            }
+            else
+            {
+                GUI.Box(position, new GUIContent(HeEditorStyles.sceneImage, "Object is stored in scene." + warningMsg), HeEditorStyles.iconStyle);
+            }
+
+            if (showWarning)
+            {
+                var r = position;
+                r.x += 5;
+                r.y += 4;
+                GUI.Box(r, new GUIContent(HeEditorStyles.warnImage), HeEditorStyles.iconStyle);
+            }
+        }
+
 
         public static bool GCHandleButton(Rect position)
         {

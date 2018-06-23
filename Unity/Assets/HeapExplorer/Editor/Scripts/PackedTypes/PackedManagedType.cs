@@ -68,6 +68,14 @@ namespace HeapExplorer
         [NonSerialized]
         public System.Boolean isUnityEngineObject;
 
+        // gets whether the type contains any field of ReferenceType
+        [NonSerialized]
+        public System.Boolean containsFieldOfReferenceType;
+
+        // gets whether this or a base class contains any field of a ReferenceType
+        [NonSerialized]
+        public System.Boolean containsFieldOfReferenceTypeInInheritenceChain;
+
         // An array containing descriptions of all instance fields of this type.
         public PackedManagedField[] instanceFields
         {

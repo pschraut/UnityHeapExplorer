@@ -692,7 +692,52 @@ namespace HeapExplorer
             for (int n = 0, nend = managedTypes.Length; n < nend; ++n)
             {
                 managedTypes[n].isUnityEngineObject = IsSubclassOf(managedTypes[n], coreTypes.unityEngineObject);
+                managedTypes[n].containsFieldOfReferenceType = ContainsFieldOfReferenceType(managedTypes[n]);
+                managedTypes[n].containsFieldOfReferenceTypeInInheritenceChain = ContainsFieldOfReferenceTypeInInheritenceChain(managedTypes[n]);
             }
+        }
+
+        bool ContainsFieldOfReferenceTypeInInheritenceChain(PackedManagedType type)
+        {
+            var loopGuard = 0;
+            var typeIndex = type.managedTypesArrayIndex;
+            while (typeIndex >= 0 && typeIndex < managedTypes.Length)
+            {
+                if (++loopGuard > 64)
+                {
+                    break;
+                }
+
+                type = managedTypes[typeIndex];
+                if (ContainsFieldOfReferenceType(type))
+                    return true;
+
+                typeIndex = type.baseOrElementTypeIndex;
+            }
+
+            return false;
+        }
+
+        bool ContainsFieldOfReferenceType(PackedManagedType type)
+        {
+            var managedTypesLength = managedTypes.Length;
+            var instanceFields = type.instanceFields;
+
+            for (int n = 0, nend = instanceFields.Length; n < nend; ++n)
+            {
+                var fieldTypeIndex = instanceFields[n].managedTypesArrayIndex;
+                if (fieldTypeIndex < 0 || fieldTypeIndex >= managedTypesLength)
+                {
+                    Error("'{0}' field '{1}' is out of bounds '{2}', ignoring.", type.name, n, fieldTypeIndex);
+                    continue;
+                }
+
+                var fieldType = managedTypes[instanceFields[n].managedTypesArrayIndex];
+                if (!fieldType.isValueType)
+                    return true;
+            }
+
+            return false;
         }
 
         void InitializeCoreTypes()
