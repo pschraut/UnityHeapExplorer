@@ -211,6 +211,42 @@ namespace HeapExplorer
             private set;
         }
 
+        public static Texture2D previewSelectImage
+        {
+            get;
+            private set;
+        }
+
+        public static Texture previewAutoLoadImage
+        {
+            get;
+            private set;
+        }
+
+        static public GUIStyle previewBackground
+        {
+            get;
+            private set;
+        }
+
+        static public GUIStyle previewToolbar
+        {
+            get;
+            private set;
+        }
+
+        static public GUIStyle previewText
+        {
+            get;
+            private set;
+        }
+
+        static public GUIStyle previewButton
+        {
+            get;
+            private set;
+        }
+
         static HeEditorStyles()
         {
             var monoSpaceFont = AssetDatabase.LoadAssetAtPath<Font>(AssetDatabase.GUIDToAssetPath("f173975cb021a9a418c0814ed4075a24")); // courier new
@@ -243,6 +279,8 @@ namespace HeapExplorer
             assetImage = FindBuiltinTexture("ScriptableObject Icon");
             sceneImage = FindBuiltinTexture("SceneAsset Icon");
             chipImage = FindBuiltinTexture("Profiler.Memory");
+            previewSelectImage = FindBuiltinTexture("FolderEmpty Icon");// "Project");
+            previewAutoLoadImage = FindBuiltinTexture("RotateTool");
             instanceImage = FindBuiltinTexture("Favorite Icon");
 
             paneOptions = (GUIStyle)"PaneOptions";
@@ -287,6 +325,15 @@ namespace HeapExplorer
             roundCloseButton.fixedHeight = 0;
             roundCloseButton.stretchWidth = true;
             roundCloseButton.stretchHeight = true;
+
+            previewToolbar = new GUIStyle("preToolbar");
+            previewBackground = new GUIStyle("preBackground");
+
+            previewText = new GUIStyle("PreOverlayLabel");
+            previewText.alignment = TextAnchor.MiddleCenter;
+            previewText.wordWrap = true;
+
+            previewButton = new GUIStyle("preButton");
 
             //var hyperlinkColor = new Color(0 / 255.0f, 122 / 255.0f, 204 / 255.0f, 1);
             var hyperlinkColor1 = new Color(204 / 255.0f, 122 / 255.0f, 0 / 255.0f, 1);

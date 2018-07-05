@@ -95,6 +95,10 @@ namespace HeapExplorer
         {
         }
 
+        public virtual void OnToolbarGUI()
+        {
+        }
+
         protected virtual void OnCreate()
         {
         }

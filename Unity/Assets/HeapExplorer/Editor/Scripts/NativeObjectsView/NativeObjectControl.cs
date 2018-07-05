@@ -24,14 +24,6 @@ namespace HeapExplorer
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Value"), width = 200 }
                 })))
         {
-            //rowHeight = 20;
-            //showAlternatingRowBackgrounds = true;
-            //showBorder = false;
-            //extraSpaceBeforeIconAndLabel = 4;
-            //baseIndent = 4;
-            //columnIndexForTreeFoldouts = 0;
-            //extraSpaceBeforeIconAndLabel = 16;
-
             multiColumnHeader.canSort = false;
 
             Reload();

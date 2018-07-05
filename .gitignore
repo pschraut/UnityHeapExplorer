@@ -18,15 +18,16 @@ Unity/Temp/*
 Unity/Library/*
 Unity/*.csproj
 Unity/*.sln
-Unity/.vs
+#Unity/.vs
 Unity/Unity.userprefs
 
 UnityDLL/Temp/*
 UnityDLL/Library/*
 UnityDLL/*.csproj
 UnityDLL/*.sln
-UnityDLL/.vs
+#UnityDLL/.vs
 UnityDLL/Unity.userprefs
+.vs
 UnityDLL/Code/bin/*
 UnityDLL/Code/obj/*
 

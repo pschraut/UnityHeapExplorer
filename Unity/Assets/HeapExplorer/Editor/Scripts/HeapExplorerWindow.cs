@@ -280,7 +280,7 @@ namespace HeapExplorer
                 }
             }
 
-            using (new EditorGUILayout.VerticalScope())
+            using (new EditorGUILayout.VerticalScope(GUILayout.MaxWidth(position.width), GUILayout.MaxHeight(position.height)))
             {
                 using (new EditorGUI.DisabledGroupScope(m_isCapturing || (m_heap != null && !m_heap.isReady) || (m_busyDraws > 0)))
                 {
@@ -514,11 +514,15 @@ namespace HeapExplorer
                     if (GUILayout.Button(new GUIContent(m_activeView.title), EditorStyles.toolbarDropDown, GUILayout.Width(size.x+10)))
                     {
                         var menu = m_activeView.CreateMainMenu();
-                        menu.DropDown(m_customToolbarButtonRect);
+                        if (menu != null)
+                            menu.DropDown(m_customToolbarButtonRect);
                     }
                     if (Event.current.type == EventType.Repaint)
                         m_customToolbarButtonRect = GUILayoutUtility.GetLastRect();
                 }
+
+                if (m_activeView != null)
+                    m_activeView.OnToolbarGUI();
 
                 //if (GUILayout.Button(new GUIContent("Test"), EditorStyles.toolbarDropDown, GUILayout.Width(80)))
                 //{

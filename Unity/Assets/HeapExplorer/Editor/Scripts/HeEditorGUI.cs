@@ -12,11 +12,16 @@ namespace HeapExplorer
         static int s_SplitterActiveId = -1;
         static Vector2 s_SplitterMousePosition;
 
-        public static bool LinkButton(GUIContent content, GUIStyle guiStyle = null)
+        public static Rect GetLargeRect()
+        {
+            return GUILayoutUtility.GetRect(50, 100000, 50, 100000);
+        }
+
+        public static bool LinkButton(GUIContent content, GUIStyle guiStyle = null, params GUILayoutOption[] options)
         {
             var color = GUI.color;
             //GUI.color = new Color(1, 0, 0, 1);
-            var result = GUILayout.Button(content, guiStyle == null ? HeEditorStyles.hyperlink : guiStyle);
+            var result = GUILayout.Button(content, guiStyle == null ? HeEditorStyles.hyperlink : guiStyle, options);
             GUI.color = color;
 
             if (Event.current.type == EventType.Repaint)

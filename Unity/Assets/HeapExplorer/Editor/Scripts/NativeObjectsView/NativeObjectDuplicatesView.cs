@@ -6,16 +6,18 @@ using UnityEditor;
 
 namespace HeapExplorer
 {
-    public class NativeObjectsView : AbstractNativeObjectsView
+    public class NativeObjectDuplicatesView : AbstractNativeObjectsView
     {
+        // https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity2.html
+
         Job m_job;
 
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C++ Objects", "");
-            m_EditorPrefsKey = "HeapExplorer.NativeObjectsView";
+            title = new GUIContent("C++ Asset Duplicates (guessed)", "");
+            m_EditorPrefsKey = "HeapExplorer.NativeObjectDuplicatesView";
         }
 
         protected override void OnRebuild()
@@ -39,7 +41,7 @@ namespace HeapExplorer
 
             EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
 
-            var text = string.Format("{0} native UnityEngine object(s) using {1} memory", m_NativeObjectsControl.nativeObjectsCount, EditorUtility.FormatBytes(m_NativeObjectsControl.nativeObjectsSize));
+            var text = string.Format("{0} native UnityEngine object guessed duplicate(s) wasting {1} memory", m_NativeObjectsControl.nativeObjectsCount, EditorUtility.FormatBytes(m_NativeObjectsControl.nativeObjectsSize));
             window.SetStatusbarString(text);
         }
 
@@ -64,7 +66,7 @@ namespace HeapExplorer
 
             public override void ThreadFunc()
             {
-                tree = control.BuildTree(snapshot, buildArgs);
+                tree = control.BuildDuplicatesTree(snapshot, buildArgs);
             }
 
             public override void IntegrateFunc()
