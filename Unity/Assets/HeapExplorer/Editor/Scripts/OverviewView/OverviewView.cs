@@ -300,7 +300,7 @@ namespace HeapExplorer
                 if (HeEditorGUILayout.LinkButton(new GUIContent("Understanding the managed heap", "https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html"), HeEditorStyles.miniHyperlink))
                     EditorUtility.OpenWithDefaultApp("https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html");
 
-                GUILayout.Label(string.Format("Red represents the {0} address space, allocated from the operating system, used by the managed heap. Green repesents the {1} allocated managed heap sections within this address space.",
+                GUILayout.Label(string.Format("Red represents the {0} address space allocated from the operating system. Green repesents the {1} allocated managed heap sections within this address space.",
                     EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace),
                     m_snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
             }
