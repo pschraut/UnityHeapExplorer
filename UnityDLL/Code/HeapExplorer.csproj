@@ -75,7 +75,16 @@
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ManagedObjectsView\ManagedObjectsView.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\MemoryReader.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\MemoryWindow.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\AbstractNativeObjectsView.cs">
+      <Link>AbstractNativeObjectsView.cs</Link>
+    </Compile>
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectControl.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectDuplicatesView.cs">
+      <Link>NativeObjectDuplicatesView.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectPreviewView.cs">
+      <Link>NativeObjectPreviewView.cs</Link>
+    </Compile>
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectsControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\NativeObjectsView\NativeObjectsView.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\OverviewView\OverviewView.cs" />
