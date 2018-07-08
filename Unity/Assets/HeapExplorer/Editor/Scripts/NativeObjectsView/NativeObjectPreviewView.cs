@@ -127,7 +127,7 @@ namespace HeapExplorer
 
                 var rect = HeEditorGUILayout.GetLargeRect();
                 var text = "Loading preview...";
-                DrawBackground(rect, text);
+                DrawBackground(rect, text, true);
 
                 if (m_Guids.Count > 3)
                 {
@@ -145,7 +145,7 @@ namespace HeapExplorer
                 DrawPreviewButtons(false);
 
                 var text = "Select an asset to display its preview here.";
-                DrawBackground(HeEditorGUILayout.GetLargeRect(), text);
+                DrawBackground(HeEditorGUILayout.GetLargeRect(), text, true);
                 return;
             }
 
@@ -155,7 +155,7 @@ namespace HeapExplorer
                 DrawPreviewButtons(false);
                 
                 var rect = HeEditorGUILayout.GetLargeRect();
-                DrawBackground(rect, null);
+                DrawBackground(rect, null, true);
 
                 rect = new Rect(rect.center.x - 75, rect.center.y - 20, 150, 40);
                 if (GUI.Button(rect, "Try load preview"))
@@ -171,7 +171,7 @@ namespace HeapExplorer
                 DrawPreviewButtons(false);
 
                 var text = string.Format("Could not find any asset named '{1}' of type '{0}' in the project.", m_Object.type.name, m_Object.name);
-                DrawBackground(HeEditorGUILayout.GetLargeRect(), text);
+                DrawBackground(HeEditorGUILayout.GetLargeRect(), text, true);
                 return;
             }
 
@@ -181,7 +181,7 @@ namespace HeapExplorer
                 DrawPreviewButtons(false);
 
                 var text = "The selected asset does not have a preview.";
-                DrawBackground(HeEditorGUILayout.GetLargeRect(), text);
+                DrawBackground(HeEditorGUILayout.GetLargeRect(), text, true);
                 return;
             }
 
@@ -192,7 +192,7 @@ namespace HeapExplorer
             if (m_Editor != null)
             {
                 var rect = HeEditorGUILayout.GetLargeRect();
-                DrawBackground(rect, null);
+                DrawBackground(rect, null, false);
                 m_Editor.DrawPreview(rect);
             }
         }
@@ -222,10 +222,21 @@ namespace HeapExplorer
             }
         }
 
-        void DrawBackground(Rect rect, string text)
+        void DrawBackground(Rect rect, string text, bool bgImage)
         {
             if (Event.current.type == EventType.Repaint)
                 HeEditorStyles.previewBackground.Draw(rect, GUIContent.none, -1);
+
+            if (bgImage)
+            {
+                var r = rect;
+                r.width = Mathf.Min(rect.width - 4, HeEditorStyles.assetImage.width);
+                r.height = Mathf.Min(rect.height - 12, HeEditorStyles.assetImage.height);
+                r.x = rect.xMax - r.width - 4;
+                r.y = rect.yMax - r.height - 8;
+        
+                GUI.DrawTexture(r, HeEditorStyles.assetImage, ScaleMode.ScaleToFit, true);
+            }
 
             if (!string.IsNullOrEmpty(text))
                 GUI.Label(rect, text, HeEditorStyles.previewText);
