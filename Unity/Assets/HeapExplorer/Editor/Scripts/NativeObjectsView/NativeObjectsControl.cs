@@ -185,6 +185,7 @@ namespace HeapExplorer
                     root.AddChild(group);
                 }
 
+                var typeNameOverride = "";
                 // Derived MonoBehaviour types appear just as MonoBehaviour on the native side.
                 // This is not very informative. However, the actual name can be derived from the MonoScript of such MonoBehaviour instead.
                 // The following tries to find the corresponding MonoScript and uses the MonoScript name instead.
@@ -196,6 +197,7 @@ namespace HeapExplorer
                     var monoScriptIndex = m_snapshot.FindNativeMonoScriptType(no.nativeObjectsArrayIndex, out monoScriptName);
                     if (monoScriptIndex != -1 && monoScriptIndex < m_snapshot.nativeTypes.Length)
                     {
+                        typeNameOverride = monoScriptName;
                         long key = (monoScriptName.GetHashCode() << 32) | monoScriptIndex;
 
                         GroupItem group2;
@@ -205,7 +207,8 @@ namespace HeapExplorer
                             {
                                 id = m_uniqueId++,
                                 depth = group.depth + 1,
-                                displayName = monoScriptName,
+                                //displayName = monoScriptName,
+                                typeNameOverride = monoScriptName,
                             };
                             group2.Initialize(m_snapshot, no.nativeTypesArrayIndex);
 
@@ -221,7 +224,8 @@ namespace HeapExplorer
                 {
                     id = m_uniqueId++,
                     depth = group.depth + 1,
-                    displayName = ""
+                    displayName = "",
+                    typeNameOverride = typeNameOverride
                 };
                 item.Initialize(this, no);
 
@@ -399,6 +403,8 @@ namespace HeapExplorer
 
         abstract class AbstractItem : AbstractTreeViewItem
         {
+            public string typeNameOverride;
+
             public abstract string typeName { get; }
             public abstract string name { get; }
             public abstract int size { get; }
@@ -421,8 +427,10 @@ namespace HeapExplorer
         {
             NativeObjectsControl m_owner;
             RichNativeObject m_object;
+#if HEAPEXPLORER_DISPLAY_REFS
             int m_referencesCount;
             int m_referencedByCount;
+#endif
 
             public PackedNativeUnityEngineObject packed
             {
@@ -454,6 +462,9 @@ namespace HeapExplorer
             {
                 get
                 {
+                    if (typeNameOverride != null && typeNameOverride.Length > 0)
+                        return typeNameOverride;
+
                     return m_object.type.name;
                 }
             }
@@ -684,8 +695,8 @@ namespace HeapExplorer
             {
                 get
                 {
-                    //if (displayName != null && displayName.Length > 0)
-                    //    return displayName;
+                    if (typeNameOverride != null && typeNameOverride.Length > 0)
+                        return typeNameOverride;
 
                     return m_type.name;
                 }
