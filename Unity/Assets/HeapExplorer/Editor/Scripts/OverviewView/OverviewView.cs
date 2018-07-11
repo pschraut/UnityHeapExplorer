@@ -23,11 +23,17 @@ namespace HeapExplorer
         int m_staticMemoryTotal;
         Texture2D m_heapFragTexture;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<OverviewView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("Brief Overview", "");
+            titleContent = new GUIContent("Brief Overview", "");
         }
 
         public override void OnDestroy()
@@ -48,7 +54,7 @@ namespace HeapExplorer
             if (m_heapFragTexture != null) Texture2D.DestroyImmediate(m_heapFragTexture);
             m_heapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
             m_heapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
-            ScheduleJob(new HeapFragmentationJob() { snapshot = m_snapshot, texture = m_heapFragTexture });
+            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_heapFragTexture });
 
             m_nativeMemory = null;
             m_managedMemory = null;
@@ -64,10 +70,10 @@ namespace HeapExplorer
 
         void AnalyzeNative()
         {
-            m_nativeMemory = new Entry[m_snapshot.nativeTypes.Length];
-            for (int n = 0, nend = m_snapshot.nativeObjects.Length; n < nend; ++n)
+            m_nativeMemory = new Entry[snapshot.nativeTypes.Length];
+            for (int n = 0, nend = snapshot.nativeObjects.Length; n < nend; ++n)
             {
-                var obj = m_snapshot.nativeObjects[n];
+                var obj = snapshot.nativeObjects[n];
 
                 m_nativeMemoryTotal += obj.size;
                 m_nativeMemory[obj.nativeTypesArrayIndex].size += obj.size;
@@ -81,11 +87,11 @@ namespace HeapExplorer
 
         void AnalyzeManaged()
         {
-            m_managedMemory = new Entry[m_snapshot.managedTypes.Length];
-            for (int n = 0, nend = m_snapshot.managedObjects.Length; n < nend; ++n)
+            m_managedMemory = new Entry[snapshot.managedTypes.Length];
+            for (int n = 0, nend = snapshot.managedObjects.Length; n < nend; ++n)
             {
-                var obj = m_snapshot.managedObjects[n];
-                var type = m_snapshot.managedTypes[obj.managedTypesArrayIndex];
+                var obj = snapshot.managedObjects[n];
+                var type = snapshot.managedTypes[obj.managedTypesArrayIndex];
 
                 m_managedMemoryTotal += obj.size;
                 m_managedMemory[type.managedTypesArrayIndex].size += obj.size;
@@ -99,10 +105,10 @@ namespace HeapExplorer
 
         void AnalyzeStatic()
         {
-            m_staticMemory = new Entry[m_snapshot.managedTypes.Length];
-            for (int n = 0, nend = m_snapshot.managedTypes.Length; n < nend; ++n)
+            m_staticMemory = new Entry[snapshot.managedTypes.Length];
+            for (int n = 0, nend = snapshot.managedTypes.Length; n < nend; ++n)
             {
-                var type = m_snapshot.managedTypes[n];
+                var type = snapshot.managedTypes[n];
 
                 if (type.staticFieldBytes != null)
                 {
@@ -117,11 +123,6 @@ namespace HeapExplorer
             {
                 return y.size.CompareTo(x.size);
             });
-        }
-
-        public override GotoCommand GetRestoreCommand()
-        {
-            return new GotoCommand(GotoCommand.EKind.Overview);
         }
 
         const int k_ColumnPercentageWidth = 60;
@@ -157,7 +158,7 @@ namespace HeapExplorer
 
                     for (var n = 0; n < Mathf.Min(k_ListItemCount, m_nativeMemory.Length); ++n)
                     {
-                        var type = m_snapshot.nativeTypes[m_nativeMemory[n].typeIndex];
+                        var type = snapshot.nativeTypes[m_nativeMemory[n].typeIndex];
                         var size = m_nativeMemory[n].size;
 
                         using (new EditorGUILayout.HorizontalScope())
@@ -179,7 +180,7 @@ namespace HeapExplorer
                         GUILayout.Label("Total", GUILayout.Width(k_ColumnPercentageWidth));
                         GUILayout.Label(EditorUtility.FormatBytes(m_nativeMemoryTotal), EditorStyles.boldLabel, GUILayout.Width(k_ColumnSizeWidth));
                         if (GUILayout.Button("Investigate"))
-                            gotoCB.Invoke(new GotoCommand(GotoCommand.EKind.NativeObject));
+                            window.OnGoto(new GotoCommand(new RichNativeObject(snapshot, 0)));
                     }
                 }
 
@@ -191,7 +192,7 @@ namespace HeapExplorer
 
                     for (var n = 0; n < Mathf.Min(k_ListItemCount, m_managedMemory.Length); ++n)
                     {
-                        var type = m_snapshot.managedTypes[m_managedMemory[n].typeIndex];
+                        var type = snapshot.managedTypes[m_managedMemory[n].typeIndex];
                         var size = m_managedMemory[n].size;
 
                         using (new EditorGUILayout.HorizontalScope())
@@ -213,7 +214,7 @@ namespace HeapExplorer
                         GUILayout.Label("Total", GUILayout.Width(k_ColumnPercentageWidth));
                         GUILayout.Label(EditorUtility.FormatBytes(m_managedMemoryTotal), EditorStyles.boldLabel, GUILayout.Width(k_ColumnSizeWidth));
                         if (GUILayout.Button("Investigate"))
-                            gotoCB.Invoke(new GotoCommand(GotoCommand.EKind.ManagedObject));
+                            window.OnGoto(new GotoCommand(new RichManagedObject(snapshot, 0)));
                     }
                 }
 
@@ -225,7 +226,7 @@ namespace HeapExplorer
 
                     for (var n = 0; n < Mathf.Min(k_ListItemCount, m_staticMemory.Length); ++n)
                     {
-                        var type = m_snapshot.managedTypes[m_staticMemory[n].typeIndex];
+                        var type = snapshot.managedTypes[m_staticMemory[n].typeIndex];
                         var size = m_staticMemory[n].size;
 
                         using (new EditorGUILayout.HorizontalScope())
@@ -247,7 +248,7 @@ namespace HeapExplorer
                         GUILayout.Label("Total", GUILayout.Width(k_ColumnPercentageWidth));
                         GUILayout.Label(EditorUtility.FormatBytes(m_staticMemoryTotal), EditorStyles.boldLabel, GUILayout.Width(k_ColumnSizeWidth));
                         if (GUILayout.Button("Investigate"))
-                            gotoCB.Invoke(new GotoCommand(GotoCommand.EKind.StaticClass));
+                            window.OnGoto(new GotoCommand(new RichStaticField(snapshot, 0)));
                     }
                 }
             }
@@ -263,9 +264,9 @@ namespace HeapExplorer
                     using (new EditorGUILayout.HorizontalScope())
                     {
                         GUILayout.Label("Total", GUILayout.Width(k_ColumnPercentageWidth));
-                        GUILayout.Label(EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.pointerSize * m_snapshot.gcHandles.Length), EditorStyles.boldLabel, GUILayout.Width(k_ColumnSizeWidth));
+                        GUILayout.Label(EditorUtility.FormatBytes(snapshot.virtualMachineInformation.pointerSize * snapshot.gcHandles.Length), EditorStyles.boldLabel, GUILayout.Width(k_ColumnSizeWidth));
                         if (GUILayout.Button("Investigate"))
-                            gotoCB.Invoke(new GotoCommand(GotoCommand.EKind.GCHandle));
+                            window.OnGoto(new GotoCommand(new RichGCHandle(snapshot, 0)));
                     }
                 }
 
@@ -275,13 +276,13 @@ namespace HeapExplorer
                     GUILayout.Label("Virtual Machine Information", EditorStyles.boldLabel);
                     GUILayout.Space(8);
 
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.pointerSize), "Pointer Size");
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.objectHeaderSize), "Object Header Size");
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.arrayHeaderSize), "Array Header Size");
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.arrayBoundsOffsetInHeader), "Array Bounds Offset In Header");
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.arraySizeOffsetInHeader), "Array Size Offset In Header");
-                    DrawStats("", EditorUtility.FormatBytes(m_snapshot.virtualMachineInformation.allocationGranularity), "Allocation Granularity");
-                    DrawStats("", string.Format("{0}", m_snapshot.virtualMachineInformation.heapFormatVersion), "Heap Format Version");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.pointerSize), "Pointer Size");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.objectHeaderSize), "Object Header Size");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.arrayHeaderSize), "Array Header Size");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.arrayBoundsOffsetInHeader), "Array Bounds Offset In Header");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.arraySizeOffsetInHeader), "Array Size Offset In Header");
+                    DrawStats("", EditorUtility.FormatBytes(snapshot.virtualMachineInformation.allocationGranularity), "Allocation Granularity");
+                    DrawStats("", string.Format("{0}", snapshot.virtualMachineInformation.heapFormatVersion), "Heap Format Version");
                 }
             }
 
@@ -292,7 +293,7 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", m_snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)m_snapshot.managedHeapSize), EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace));
+                var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.managedHeapSize), EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace));
                 GUILayout.Label(text, EditorStyles.boldLabel);
 
                 GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.ExpandWidth(true)), m_heapFragTexture, ScaleMode.StretchToFill);
@@ -301,8 +302,8 @@ namespace HeapExplorer
                     EditorUtility.OpenWithDefaultApp("https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html");
 
                 GUILayout.Label(string.Format("Red represents the {0} address space allocated from the operating system. Green repesents the {1} allocated managed heap sections within this address space.",
-                    EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace),
-                    m_snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
+                    EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace),
+                    snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
             }
         }
 

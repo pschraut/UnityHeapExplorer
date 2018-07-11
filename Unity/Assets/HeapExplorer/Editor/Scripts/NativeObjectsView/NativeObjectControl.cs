@@ -16,8 +16,8 @@ namespace HeapExplorer
         PackedNativeUnityEngineObject m_object;
         int m_uniqueId = 1;
 
-        public NativeObjectControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public NativeObjectControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Name"), width = 200 },

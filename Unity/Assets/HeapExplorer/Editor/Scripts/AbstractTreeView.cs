@@ -23,11 +23,12 @@ namespace HeapExplorer
         int m_firstVisibleRow;
         IList<int> m_expanded = new List<int>(32);
         TreeViewItem m_tree;
+        public HeapExplorerWindow m_Window;
 
-
-        public AbstractTreeView(string editorPrefsKey, TreeViewState state)
+        public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(state)
         {
+            m_Window = window;
             m_editorPrefsKey = editorPrefsKey;
 
             rowHeight = 20;
@@ -38,9 +39,10 @@ namespace HeapExplorer
             LoadLayout();
         }
 
-        public AbstractTreeView(string editorPrefsKey, TreeViewState state, MultiColumnHeader multiColumnHeader)
+        public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state, MultiColumnHeader multiColumnHeader)
             : base(state, multiColumnHeader)
         {
+            m_Window = window;
             m_editorPrefsKey = editorPrefsKey;
 
             rowHeight = 20;

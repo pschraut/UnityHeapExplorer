@@ -94,16 +94,16 @@ namespace HeapExplorer
             m_RootPathView.editorPrefsKey = m_EditorPrefsKey + ".m_rootPathView";
 
             // The list at the left that contains all native objects
-            m_NativeObjectsControl = new NativeObjectsControl(m_EditorPrefsKey + ".m_nativeObjectsControl", new TreeViewState());
+            m_NativeObjectsControl = new NativeObjectsControl(window, m_EditorPrefsKey + ".m_nativeObjectsControl", new TreeViewState());
             m_NativeObjectsControl.onSelectionChange += OnListViewSelectionChange;
-            m_NativeObjectsControl.gotoCB += Goto;
+            //m_NativeObjectsControl.gotoCB += Goto;
 
             m_SearchField = new HeSearchField(window);
             m_SearchField.downOrUpArrowKeyPressed += m_NativeObjectsControl.SetFocusAndEnsureSelectedItem;
             m_NativeObjectsControl.findPressed += m_SearchField.SetFocus;
 
             // The list at the right that shows the selected native object
-            m_NativeObjectControl = new NativeObjectControl(m_EditorPrefsKey + ".m_nativeObjectControl", new TreeViewState());
+            m_NativeObjectControl = new NativeObjectControl(window, m_EditorPrefsKey + ".m_nativeObjectControl", new TreeViewState());
             m_PreviewView = CreateView<NativeObjectPreviewView>();
 
             m_SplitterHorz = EditorPrefs.GetFloat(m_EditorPrefsKey + ".m_splitterHorz", m_SplitterHorz);
@@ -157,15 +157,23 @@ namespace HeapExplorer
             GUI.color = oldColor;
         }
 
-        public override GotoCommand GetRestoreCommand()
+        public override void RestoreCommand(GotoCommand command)
         {
-            var command = m_Selected.HasValue ? new GotoCommand(new RichNativeObject(m_snapshot, m_Selected.Value.nativeObjectsArrayIndex)) : null;
-            return command;
+            if (command.toNativeObject.isValid)
+            {
+                m_NativeObjectsControl.Select(command.toNativeObject.packed);
+                return;
+            }
+
+            base.RestoreCommand(command);
         }
 
-        public void Select(PackedNativeUnityEngineObject packed)
+        public override GotoCommand GetRestoreCommand()
         {
-            m_NativeObjectsControl.Select(packed);
+            if (m_Selected.HasValue)
+                return new GotoCommand(new RichNativeObject(snapshot, m_Selected.Value.nativeObjectsArrayIndex));
+
+            return base.GetRestoreCommand();
         }
 
         public override void OnToolbarGUI()
@@ -263,7 +271,7 @@ namespace HeapExplorer
 
             m_RootPathView.Inspect(m_Selected.Value);
             m_ConnectionsView.Inspect(m_Selected.Value);
-            m_NativeObjectControl.Inspect(m_snapshot, m_Selected.Value);
+            m_NativeObjectControl.Inspect(snapshot, m_Selected.Value);
             m_PreviewView.Inspect(m_Selected.Value);
         }
 

@@ -29,8 +29,8 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_rootPathControl = new RootPathControl(editorPrefsKey + ".m_rootPathControl", new TreeViewState());
-            m_rootPathControl.gotoCB += Goto;
+            m_rootPathControl = new RootPathControl(window, editorPrefsKey + ".m_rootPathControl", new TreeViewState());
+            //m_rootPathControl.gotoCB += Goto;
             m_rootPathControl.onSelectionChange += OnSelectionChange;
         }
 
@@ -66,25 +66,25 @@ namespace HeapExplorer
         public void Inspect(PackedNativeUnityEngineObject item)
         {
             m_selected = null;
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedObject item)
         {
             m_selected = null;
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedStaticField item)
         {
             m_selected = null;
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedGCHandle item)
         {
             m_selected = null;
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Clear()
@@ -98,7 +98,7 @@ namespace HeapExplorer
         {
             var job = new RootPathJob
             {
-                snapshot = m_snapshot,
+                snapshot = snapshot,
                 objectProxy = objectProxy,
                 control = m_rootPathControl,
                 paths = m_rootPaths = new RootPathUtility()

@@ -374,7 +374,7 @@ namespace HeapExplorer
 
     public class RootPathControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<RootPath> onSelectionChange;
 
         PackedMemorySnapshot m_snapshot;
@@ -388,8 +388,8 @@ namespace HeapExplorer
             Address,
         }
 
-        public RootPathControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public RootPathControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 200, autoResize = true },
@@ -608,14 +608,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_gcHandle));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle));
                     }
 
                     if (m_gcHandle.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
                         }
                     }
 
@@ -623,7 +623,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
                         }
                     }
                 }
@@ -654,14 +654,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_managedObject));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject));
                     }
 
                     if (m_managedObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_managedObject.gcHandle));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.gcHandle));
                         }
                     }
 
@@ -669,7 +669,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_managedObject.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.nativeObject));
                         }
                     }
                 }
@@ -706,7 +706,7 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsStaticButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
+                        m_owner.m_Window.OnGoto(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
                     }
                 }
 
@@ -751,14 +751,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CppButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_nativeObject));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject));
                     }
 
                     if (m_nativeObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_nativeObject.gcHandle));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.gcHandle));
                         }
                     }
 
@@ -766,7 +766,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_nativeObject.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.managedObject));
                         }
                     }
                 }

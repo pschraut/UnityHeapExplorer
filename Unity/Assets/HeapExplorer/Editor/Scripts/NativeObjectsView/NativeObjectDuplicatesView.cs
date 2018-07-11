@@ -12,11 +12,17 @@ namespace HeapExplorer
 
         Job m_job;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<NativeObjectDuplicatesView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C++ Asset Duplicates (guessed)", "");
+            titleContent = new GUIContent("C++ Asset Duplicates (guessed)", "");
             m_EditorPrefsKey = "HeapExplorer.NativeObjectDuplicatesView";
         }
 
@@ -26,7 +32,7 @@ namespace HeapExplorer
 
             m_job = new Job();
             m_job.control = m_NativeObjectsControl;
-            m_job.snapshot = m_snapshot;
+            m_job.snapshot = snapshot;
             m_job.buildArgs.addAssetObjects = this.showAssets;
             m_job.buildArgs.addSceneObjects = this.showSceneObjects;
             m_job.buildArgs.addRuntimeObjects = this.showRuntimeObjects;
@@ -39,7 +45,7 @@ namespace HeapExplorer
         {
             base.OnDrawHeader();
 
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
 
             var text = string.Format("{0} native UnityEngine object guessed duplicate(s) wasting {1} memory", m_NativeObjectsControl.nativeObjectsCount, EditorUtility.FormatBytes(m_NativeObjectsControl.nativeObjectsSize));
             window.SetStatusbarString(text);

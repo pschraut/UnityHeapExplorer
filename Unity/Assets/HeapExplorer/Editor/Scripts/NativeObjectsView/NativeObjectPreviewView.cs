@@ -37,7 +37,7 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            title = new GUIContent("Asset Preview", "");
+            titleContent = new GUIContent("Asset Preview", "");
             editorPrefsKey = "HeapExplorer.NativeObjectPreviewView";
             m_Object = RichNativeObject.invalid;
         }
@@ -78,7 +78,7 @@ namespace HeapExplorer
             Clear();
 
             m_PreviewTime = Time.realtimeSinceStartup;
-            m_Object = new RichNativeObject(m_snapshot, obj.nativeObjectsArrayIndex);
+            m_Object = new RichNativeObject(snapshot, obj.nativeObjectsArrayIndex);
 
             if (autoLoad && m_Object.isValid && m_Object.isPersistent)
                 LoadAssetPreviews();

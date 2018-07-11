@@ -8,7 +8,7 @@ namespace HeapExplorer
 {
 	public class CompareSnapshotsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
 
         enum EColumn
         {
@@ -21,8 +21,8 @@ namespace HeapExplorer
             CountDiff
         }
 
-        public CompareSnapshotsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public CompareSnapshotsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 300, autoResize = true },

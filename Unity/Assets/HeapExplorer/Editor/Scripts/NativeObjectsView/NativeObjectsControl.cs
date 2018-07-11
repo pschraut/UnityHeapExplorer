@@ -10,7 +10,7 @@ namespace HeapExplorer
 {
     public class NativeObjectsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedNativeUnityEngineObject?> onSelectionChange;
 
         public long nativeObjectsCount
@@ -52,8 +52,8 @@ namespace HeapExplorer
 #endif
         }
 
-        public NativeObjectsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public NativeObjectsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 250, autoResize = true },
@@ -553,7 +553,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_object.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_object.managedObject));
                         }
                     }
                 }

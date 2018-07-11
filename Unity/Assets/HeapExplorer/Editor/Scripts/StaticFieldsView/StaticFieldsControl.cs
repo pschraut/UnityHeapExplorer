@@ -8,7 +8,7 @@ namespace HeapExplorer
 {
     public class StaticFieldsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedManagedType?> onTypeSelected;
 
         public int count
@@ -33,8 +33,8 @@ namespace HeapExplorer
             Assembly,
         }
 
-        public StaticFieldsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public StaticFieldsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 250, autoResize = true },

@@ -8,20 +8,22 @@ namespace HeapExplorer
 {
     public class GotoCommand
     {
-        public enum EKind
-        {
-            None,
-            GCHandle,
-            NativeObject,
-            ManagedObject,
-            Overview,
-            StaticField,
-            StaticClass,
-            ManagedObjectDuplicate,
-            NativeObjectDuplicates
-        }
+        //public enum EKind
+        //{
+        //    None,
+        //    GCHandle,
+        //    NativeObject,
+        //    ManagedObject,
+        //    Overview,
+        //    StaticField,
+        //    StaticClass,
+        //    ManagedObjectDuplicate,
+        //    NativeObjectDuplicates
+        //}
 
-        public EKind toKind;
+        public HeapExplorerView fromView;
+        public HeapExplorerView toView;
+        //public EKind toKind;
         public RichGCHandle toGCHandle;
         public RichManagedObject toManagedObject;
         public RichNativeObject toNativeObject;
@@ -32,44 +34,38 @@ namespace HeapExplorer
         {
         }
 
-        public GotoCommand(EKind kind)
-        : this()
-        {
-            toKind = kind;
-        }
-
         public GotoCommand(RichGCHandle value)
             : this()
         {
-            toKind = EKind.GCHandle;
+            //toKind = EKind.GCHandle;
             toGCHandle = value;
         }
 
         public GotoCommand(RichManagedObject value)
             : this()
         {
-            toKind = EKind.ManagedObject;
+            //toKind = EKind.ManagedObject;
             toManagedObject = value;
         }
 
         public GotoCommand(RichNativeObject value)
             : this()
         {
-            toKind = EKind.NativeObject;
+            //toKind = EKind.NativeObject;
             toNativeObject = value;
         }
 
         public GotoCommand(RichStaticField value)
             : this()
         {
-            toKind = EKind.StaticField;
+            //toKind = EKind.StaticField;
             toStaticField = value;
         }
 
         public GotoCommand(RichManagedType value)
             : this()
         {
-            toKind = EKind.StaticClass;
+            //toKind = EKind.StaticClass;
             toManagedType = value;
         }
     }
@@ -140,7 +136,7 @@ namespace HeapExplorer
 
     public class ConnectionsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
 
         public int count
         {
@@ -165,8 +161,8 @@ namespace HeapExplorer
             Address,
         }
 
-        public ConnectionsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public ConnectionsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 200, autoResize = true },
@@ -376,14 +372,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_gcHandle));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle));
                     }
 
                     if (m_gcHandle.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
                         }
                     }
 
@@ -391,7 +387,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
                         }
                     }
                 }
@@ -427,20 +423,20 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_managedObject.gcHandle));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.gcHandle));
                         }
                     }
 
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_managedObject));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject));
                     }
 
                     if (m_managedObject.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_managedObject.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.nativeObject));
                         }
                     }
                 }
@@ -473,7 +469,7 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsStaticButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
+                        m_owner.m_Window.OnGoto(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
                     }
                 }
 
@@ -517,14 +513,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CppButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.gotoCB(new GotoCommand(m_nativeObject));
+                        m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject));
                     }
 
                     if (m_nativeObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_nativeObject.gcHandle));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.gcHandle));
                         }
                     }
 
@@ -532,7 +528,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_nativeObject.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.managedObject));
                         }
                     }
                 }

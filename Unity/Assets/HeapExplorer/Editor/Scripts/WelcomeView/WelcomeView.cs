@@ -9,11 +9,17 @@ namespace HeapExplorer
     {
         Vector2 m_MruScrollPosition;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<WelcomeView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("Start Page", "");
+            titleContent = new GUIContent("Start Page", "");
         }
 
         protected override void OnShow()
@@ -29,7 +35,6 @@ namespace HeapExplorer
 
             GUILayout.Space(4);
             GUILayout.Label(HeGlobals.k_Title, HeEditorStyles.heading1);
-            //GUILayout.Label("The Ultimate Memory Profiler, Debugger & Analyzer for Unity", EditorStyles.boldLabel);
             GUILayout.Space(16);
 
             using (new EditorGUILayout.HorizontalScope())

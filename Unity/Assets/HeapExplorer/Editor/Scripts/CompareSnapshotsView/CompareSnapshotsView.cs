@@ -15,11 +15,17 @@ namespace HeapExplorer
         PackedMemorySnapshot m_snapshotB;
         Job m_job;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<CompareSnapshotsView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("Compare Snapshot", "");
+            titleContent = new GUIContent("Compare Snapshot", "");
             m_editorPrefsKey = "HeapExplorer.CompareSnapshotsView";
         }
 
@@ -34,16 +40,16 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_objects = new CompareSnapshotsControl(m_editorPrefsKey + ".m_objects", new TreeViewState());
-            m_objects.gotoCB += Goto;
+            m_objects = new CompareSnapshotsControl(window, m_editorPrefsKey + ".m_objects", new TreeViewState());
+            //m_objects.gotoCB += Goto;
 
             m_objectsSearch = new HeSearchField(window);
             m_objectsSearch.downOrUpArrowKeyPressed += m_objects.SetFocusAndEnsureSelectedItem;
             m_objects.findPressed += m_objectsSearch.SetFocus;
 
-            if (m_snapshot != null && m_snapshotB != null)
+            if (snapshot != null && m_snapshotB != null)
             {
-                var tree = m_objects.BuildTree(m_snapshot, m_snapshotB);
+                var tree = m_objects.BuildTree(snapshot, m_snapshotB);
                 m_objects.SetTree(tree);
             }
         }
@@ -184,7 +190,7 @@ namespace HeapExplorer
 
             m_job = new Job
             {
-                snapshotA = m_snapshot,
+                snapshotA = snapshot,
                 control = m_objects,
                 pathB = path,
                 view = this

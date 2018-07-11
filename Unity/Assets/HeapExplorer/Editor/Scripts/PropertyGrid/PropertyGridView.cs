@@ -26,7 +26,7 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            title = new GUIContent("C# Objects", "");
+            titleContent = new GUIContent("C# Objects", "");
         }
 
         protected override void OnCreate()
@@ -37,7 +37,7 @@ namespace HeapExplorer
             m_showAsHex = EditorPrefs.GetBool(editorPrefsKey + "m_showAsHex", false);
 
             m_propertyGrid = new PropertyGridControl(window, editorPrefsKey + "m_propertyGrid", new TreeViewState());
-            m_propertyGrid.gotoCB += Goto;
+            //m_propertyGrid.gotoCB += Goto;
         }
 
         protected override void OnHide()
@@ -68,7 +68,7 @@ namespace HeapExplorer
                 if (m_showAsHex != m_hexView.isVisible)
                 {
                     if (m_showAsHex)
-                        m_hexView.Show(m_snapshot);
+                        m_hexView.Show(snapshot);
                     else
                         m_hexView.Hide();
                 }
@@ -82,26 +82,26 @@ namespace HeapExplorer
 
         public void Inspect(PackedManagedObject managedObject)
         {
-            m_managedObject = new RichManagedObject(m_snapshot, managedObject.managedObjectsArrayIndex);
+            m_managedObject = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
             m_managedType = m_managedObject.type;
-            m_propertyGrid.Inspect(m_snapshot, m_managedObject.packed);
+            m_propertyGrid.Inspect(snapshot, m_managedObject.packed);
 
             m_dataVisualizer = null;
             if (AbstractDataVisualizer.HasVisualizer(m_managedObject.type.name))
             {
                 m_dataVisualizer = AbstractDataVisualizer.CreateVisualizer(m_managedObject.type.name);
-                m_dataVisualizer.Initialize(m_snapshot, new MemoryReader(m_snapshot), m_managedObject.address, m_managedObject.type.packed);
+                m_dataVisualizer.Initialize(snapshot, new MemoryReader(snapshot), m_managedObject.address, m_managedObject.type.packed);
             }
 
-            m_hexView.Inspect(m_snapshot, managedObject.address, (ulong)managedObject.size);
+            m_hexView.Inspect(snapshot, managedObject.address, (ulong)managedObject.size);
         }
 
         public void Inspect(RichManagedType managedType)
         {
             m_managedObject = RichManagedObject.invalid;
             m_managedType = managedType;
-            m_propertyGrid.InspectStaticType(m_snapshot, m_managedType.packed);
-            m_hexView.Inspect(m_snapshot, 0, new ArraySegment64<byte>(managedType.packed.staticFieldBytes, 0, (ulong)managedType.packed.staticFieldBytes.LongLength));
+            m_propertyGrid.InspectStaticType(snapshot, m_managedType.packed);
+            m_hexView.Inspect(snapshot, 0, new ArraySegment64<byte>(managedType.packed.staticFieldBytes, 0, (ulong)managedType.packed.staticFieldBytes.LongLength));
 
             m_dataVisualizer = null;
         }

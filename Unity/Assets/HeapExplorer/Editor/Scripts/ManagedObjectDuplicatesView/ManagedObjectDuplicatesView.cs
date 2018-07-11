@@ -21,11 +21,17 @@ namespace HeapExplorer
         float m_splitterVertConnections = 0.3333f;
         float m_splitterVertRootPath = 0.3333f;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<ManagedObjectDuplicatesView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C# Object Duplicates", "");
+            titleContent = new GUIContent("C# Object Duplicates", "");
             m_editorPrefsKey = "HeapExplorer.ManagedObjectDuplicatesView";
         }
         
@@ -42,9 +48,9 @@ namespace HeapExplorer
             m_propertyGridView = CreateView<PropertyGridView>();
             m_propertyGridView.editorPrefsKey = m_editorPrefsKey + ".m_propertyGridView";
 
-            m_objects = new ManagedObjectDuplicatesControl(m_editorPrefsKey + ".m_objects", new TreeViewState());
+            m_objects = new ManagedObjectDuplicatesControl(window, m_editorPrefsKey + ".m_objects", new TreeViewState());
             m_objects.onSelectionChange += OnListViewSelectionChange;
-            m_objects.gotoCB += Goto;
+            //m_objects.gotoCB += Goto;
 
             m_objectsSearch = new HeSearchField(window);
             m_objectsSearch.downOrUpArrowKeyPressed += m_objects.SetFocusAndEnsureSelectedItem;
@@ -55,7 +61,7 @@ namespace HeapExplorer
             m_splitterVertRootPath = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterVertRootPath", m_splitterVertRootPath);
 
             var job = new Job();
-            job.snapshot = m_snapshot;
+            job.snapshot = snapshot;
             job.control = m_objects;
             ScheduleJob(job);
         }
@@ -73,13 +79,10 @@ namespace HeapExplorer
 
         public override GotoCommand GetRestoreCommand()
         {
-            var command = m_selected.isValid ? new GotoCommand(m_selected) { toKind = GotoCommand.EKind.ManagedObjectDuplicate } : null;
-            return command;
-        }
+            if (m_selected.isValid)
+                return new GotoCommand(m_selected);
 
-        public void Select(PackedManagedObject packed)
-        {
-            m_objects.Select(packed);
+            return base.GetRestoreCommand();
         }
 
         void OnListViewSelectionChange(PackedManagedObject? item)
@@ -93,7 +96,7 @@ namespace HeapExplorer
                 return;
             }
 
-            m_selected = new RichManagedObject(m_snapshot, item.Value.managedObjectsArrayIndex);
+            m_selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
             m_propertyGridView.Inspect(m_selected.packed);
             m_connectionsView.Inspect(m_selected.packed);
             m_rootPathView.Inspect(m_selected.packed);
@@ -114,9 +117,8 @@ namespace HeapExplorer
                         {
                             var text = string.Format("{0} managed object duplicate(s) wasting {1} memory", m_objects.managedObjectsCount, EditorUtility.FormatBytes(m_objects.managedObjectsSize));
                             window.SetStatusbarString(text);
-                            //EditorGUILayout.LabelField(string.Format("{0} managed object duplicate(s) wasting {1} memory", m_objects.managedObjectsCount, EditorUtility.FormatBytes(m_objects.managedObjectsSize)), EditorStyles.boldLabel);
 
-                            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
                             if (m_objectsSearch.OnToolbarGUI())
                                 m_objects.Search(m_objectsSearch.text);
                         }

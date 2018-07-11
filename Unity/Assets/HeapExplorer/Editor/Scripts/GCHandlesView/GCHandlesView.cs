@@ -17,11 +17,17 @@ namespace HeapExplorer
         float m_splitterHorz = 0.33333f;
         float m_splitterVert = 0.32f;
 
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<GCHandlesView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("GC Handles", "");
+            titleContent = new GUIContent("GC Handles", "");
             m_editorPrefsKey = "HeapExplorer.GCHandlesView";
         }
 
@@ -35,9 +41,9 @@ namespace HeapExplorer
             m_rootPathView = CreateView<RootPathView>();
             m_rootPathView.editorPrefsKey = m_editorPrefsKey + ".RootPathView";
 
-            m_gcHandlesControl = new GCHandlesControl(m_editorPrefsKey + ".GCHandlesControl", new TreeViewState());
-            m_gcHandlesControl.SetTree(m_gcHandlesControl.BuildTree(m_snapshot));
-            m_gcHandlesControl.gotoCB += Goto;
+            m_gcHandlesControl = new GCHandlesControl(window, m_editorPrefsKey + ".GCHandlesControl", new TreeViewState());
+            m_gcHandlesControl.SetTree(m_gcHandlesControl.BuildTree(snapshot));
+            //m_gcHandlesControl.gotoCB += Goto;
             m_gcHandlesControl.onSelectionChange += OnListViewSelectionChange;
 
             m_objectsSearch = new HeSearchField(window);
@@ -58,15 +64,25 @@ namespace HeapExplorer
             EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVert", m_splitterVert);
         }
 
-        public override GotoCommand GetRestoreCommand()
+        public override void RestoreCommand(GotoCommand command)
         {
-            var command = m_selected.HasValue ? new GotoCommand(new RichGCHandle(m_snapshot, m_selected.Value.gcHandlesArrayIndex)) : null;
-            return command;
+            m_gcHandlesControl.Select(command.toGCHandle.packed);
         }
 
-        public void Select(PackedGCHandle packed)
+        public override int CanProcessCommand(GotoCommand command)
         {
-            m_gcHandlesControl.Select(packed);
+            if (command.toGCHandle.isValid)
+                return 10;
+
+            return base.CanProcessCommand(command);
+        }
+
+        public override GotoCommand GetRestoreCommand()
+        {
+            if (m_selected.HasValue)
+                return new GotoCommand(new RichGCHandle(snapshot, m_selected.Value.gcHandlesArrayIndex));
+
+            return base.GetRestoreCommand();
         }
 
         // Called if the selection changed in the list that contains the managed objects overview.
@@ -97,7 +113,7 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            EditorGUILayout.LabelField(string.Format("{0} GCHandle(s)", m_snapshot.gcHandles.Length), EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(string.Format("{0} GCHandle(s)", snapshot.gcHandles.Length), EditorStyles.boldLabel);
 
                             if (m_objectsSearch.OnToolbarGUI())
                                 m_gcHandlesControl.Search(m_objectsSearch.text);

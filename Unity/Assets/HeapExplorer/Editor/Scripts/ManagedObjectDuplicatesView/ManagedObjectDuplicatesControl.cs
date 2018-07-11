@@ -15,8 +15,8 @@ namespace HeapExplorer
     {
         public Progress progress = new Progress();
 
-        public ManagedObjectDuplicatesControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state)
+        public ManagedObjectDuplicatesControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state)
         {
         }
 

@@ -8,25 +8,30 @@ namespace HeapExplorer
 {
     public class ManagedDelegateTargetsView : AbstractManagedObjectsView
     {
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<ManagedDelegateTargetsView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C# Delegate Targets", "");
+            titleContent = new GUIContent("C# Delegate Targets", "");
             m_editorPrefsKey = "HeapExplorer.ManagedDelegateTargetsView";
         }
 
         protected override AbstractManagedObjectsControl CreateObjectsTreeView(string editorPrefsKey, TreeViewState state)
         {
-            return new ManagedDelegateTargetsControl(editorPrefsKey, state);
+            return new ManagedDelegateTargetsControl(window, editorPrefsKey, state);
         }
 
         protected override void OnDrawHeader()
         {
             var text = string.Format("{0} managed object(s), {1} memory", m_objectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_objectsControl.managedObjectsSize));
             window.SetStatusbarString(text);
-            //EditorGUILayout.LabelField(text, EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
     }
 
@@ -34,8 +39,8 @@ namespace HeapExplorer
     {
         Dictionary<int, byte> m_delegateObjectTable = new Dictionary<int, byte>(64);
 
-        public ManagedDelegateTargetsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state)
+        public ManagedDelegateTargetsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state)
         {
         }
 
@@ -89,32 +94,37 @@ namespace HeapExplorer
 
     public class ManagedDelegatesView : AbstractManagedObjectsView
     {
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<ManagedDelegatesView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C# Delegates", "");
+            titleContent = new GUIContent("C# Delegates", "");
             m_editorPrefsKey = "HeapExplorer.ManagedDelegatesView";
         }
 
         protected override AbstractManagedObjectsControl CreateObjectsTreeView(string editorPrefsKey, TreeViewState state)
         {
-            return new ManagedDelegatesControl(editorPrefsKey, state);
+            return new ManagedDelegatesControl(window, editorPrefsKey, state);
         }
 
         protected override void OnDrawHeader()
         {
             var text = string.Format("{0} delegate(s), {1} memory", m_objectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_objectsControl.managedObjectsSize));
             window.SetStatusbarString(text);
-            //EditorGUILayout.LabelField(string.Format("{0} delegate(s), {1} memory", m_objectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_objectsControl.managedObjectsSize)), EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
     }
 
     public class ManagedDelegatesControl : AbstractManagedObjectsControl
     {
-        public ManagedDelegatesControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state)
+        public ManagedDelegatesControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state)
         {
         }
 
@@ -130,32 +140,45 @@ namespace HeapExplorer
 
     public class ManagedObjectsView : AbstractManagedObjectsView
     {
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<ManagedObjectsView>();
+        }
+
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C# Objects", "");
+            titleContent = new GUIContent("C# Objects", "");
             m_editorPrefsKey = "HeapExplorer.ManagedObjectsView";
+        }
+
+        public override int CanProcessCommand(GotoCommand command)
+        {
+            if (command.toManagedObject.isValid)
+                return 10;
+
+            return base.CanProcessCommand(command);
         }
 
         protected override AbstractManagedObjectsControl CreateObjectsTreeView(string editorPrefsKey, TreeViewState state)
         {
-            return new ManagedObjectsControl(editorPrefsKey, state);
+            return new ManagedObjectsControl(window, editorPrefsKey, state);
         }
 
         protected override void OnDrawHeader()
         {
             var text = string.Format("{0} managed object(s), {1} memory", m_objectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_objectsControl.managedObjectsSize));
             window.SetStatusbarString(text);
-            //EditorGUILayout.LabelField(string.Format("{0} managed object(s), {1} memory", m_objectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_objectsControl.managedObjectsSize)), EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
     }
 
     public class ManagedObjectsControl : AbstractManagedObjectsControl
     {
-        public ManagedObjectsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state)
+        public ManagedObjectsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state)
         {
         }
 
@@ -183,7 +206,7 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            title = new GUIContent("C# Objects", "");
+            titleContent = new GUIContent("C# Objects", "");
             m_editorPrefsKey = "HeapExplorer.AbstractManagedObjectsView";
         }
 
@@ -206,8 +229,8 @@ namespace HeapExplorer
 
             m_objectsControl = CreateObjectsTreeView(m_editorPrefsKey + ".m_objects", new TreeViewState());// new ManagedObjectsControl(m_editorPrefsKey + ".m_objects", new TreeViewState());
             m_objectsControl.onSelectionChange += OnListViewSelectionChange;
-            m_objectsControl.gotoCB += Goto;
-            m_objectsControl.SetTree(m_objectsControl.BuildTree(m_snapshot));
+            //m_objectsControl.gotoCB += Goto;
+            m_objectsControl.SetTree(m_objectsControl.BuildTree(snapshot));
 
             m_objectsSearch = new HeSearchField(window);
             m_objectsSearch.downOrUpArrowKeyPressed += m_objectsControl.SetFocusAndEnsureSelectedItem;
@@ -229,15 +252,20 @@ namespace HeapExplorer
             EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVertRootPath", m_splitterVertRootPath);
         }
 
-        public override GotoCommand GetRestoreCommand()
+        public override void RestoreCommand(GotoCommand command)
         {
-            var command = m_selected.isValid ? new GotoCommand(m_selected) : null;
-            return command;
+            if (command.toManagedObject.isValid)
+                m_objectsControl.Select(command.toManagedObject.packed);
+
+            base.RestoreCommand(command);
         }
 
-        public void Select(PackedManagedObject packed)
+        public override GotoCommand GetRestoreCommand()
         {
-            m_objectsControl.Select(packed);
+            if (m_selected.isValid)
+                return new GotoCommand(m_selected);
+
+            return base.GetRestoreCommand();
         }
         
         void OnListViewSelectionChange(PackedManagedObject? item)
@@ -251,7 +279,7 @@ namespace HeapExplorer
                 return;
             }
 
-            m_selected = new RichManagedObject(m_snapshot, item.Value.managedObjectsArrayIndex);
+            m_selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
             m_connectionsView.Inspect(m_selected.packed);
             m_rootPathView.Inspect(m_selected.packed);
             m_propertyGridView.Inspect(m_selected.packed);

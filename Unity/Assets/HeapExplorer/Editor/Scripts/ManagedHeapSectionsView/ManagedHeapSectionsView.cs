@@ -15,14 +15,20 @@ namespace HeapExplorer
         float m_splitterHorz = 0.5f;
         Texture2D m_heapFragTexture;
         Texture2D m_memorySectionFragTexture;
+        Rect m_ToolbarButtonRect;
+
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<ManagedHeapSectionsView>();
+        }
 
         public override void Awake()
         {
             base.Awake();
 
             m_editorPrefsKey = "HeapExplorer.ManagedHeapSectionsView";
-            title = new GUIContent("C# Memory Sections", "Managed heap memory sections.");
-            hasMainMenu = true;
+            titleContent = new GUIContent("C# Memory Sections", "Managed heap memory sections.");
         }
 
         public override void OnDestroy()
@@ -32,11 +38,19 @@ namespace HeapExplorer
             base.OnDestroy();
         }
 
-        public override GenericMenu CreateMainMenu()
+        public override void OnToolbarGUI()
         {
-            var menu = new GenericMenu();
-            menu.AddItem(new GUIContent("Save all as file..."), false, OnSaveAsFile);
-            return menu;
+            base.OnToolbarGUI();
+
+            if (GUILayout.Button(new GUIContent("Tools"), EditorStyles.toolbarDropDown, GUILayout.Width(70)))
+            {
+                var menu = new GenericMenu();
+                menu.AddItem(new GUIContent("Save all as file..."), false, OnSaveAsFile);
+                menu.DropDown(m_ToolbarButtonRect);
+            }
+
+            if (Event.current.type == EventType.Repaint)
+                m_ToolbarButtonRect = GUILayoutUtility.GetLastRect();
         }
 
         void OnSaveAsFile()
@@ -51,19 +65,19 @@ namespace HeapExplorer
 
                 using (var fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.OpenOrCreate))
                 {
-                    for (int n = 0; n < m_snapshot.managedHeapSections.Length; ++n)
+                    for (int n = 0; n < snapshot.managedHeapSections.Length; ++n)
                     {
                         if (progressUpdate < Time.realtimeSinceStartup)
                         {
                             progressUpdate = Time.realtimeSinceStartup + 0.1f;
                             if (EditorUtility.DisplayCancelableProgressBar(
                                 "Saving...", 
-                                string.Format("Memory Section {0} / {1}", n+1, m_snapshot.managedHeapSections.Length),
-                                (n + 1.0f) / m_snapshot.managedHeapSections.Length))
+                                string.Format("Memory Section {0} / {1}", n+1, snapshot.managedHeapSections.Length),
+                                (n + 1.0f) / snapshot.managedHeapSections.Length))
                                 break;
                         }
 
-                        var section = m_snapshot.managedHeapSections[n];
+                        var section = snapshot.managedHeapSections[n];
                         if (section.bytes == null || section.bytes.Length == 0)
                             continue;
 
@@ -88,14 +102,14 @@ namespace HeapExplorer
 
             m_heapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
             m_heapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
-            ScheduleJob(new HeapFragmentationJob() { snapshot = m_snapshot, texture = m_heapFragTexture });
+            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_heapFragTexture });
 
             m_connectionsView = CreateView<ConnectionsView>();
             m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".m_connectionsView";
             m_connectionsView.showReferencedBy = false;
 
-            m_heapSectionsControl = new ManagedHeapSectionsControl(m_editorPrefsKey + ".m_heapSectionsControl", new TreeViewState());
-            m_heapSectionsControl.SetTree(m_heapSectionsControl.BuildTree(m_snapshot));
+            m_heapSectionsControl = new ManagedHeapSectionsControl(window, m_editorPrefsKey + ".m_heapSectionsControl", new TreeViewState());
+            m_heapSectionsControl.SetTree(m_heapSectionsControl.BuildTree(snapshot));
             m_heapSectionsControl.onSelectionChange += OnListViewSelectionChange;
 
             m_heapSectionsSearch = new HeSearchField(window);
@@ -140,10 +154,7 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            //var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", m_snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)m_snapshot.managedHeapSize), EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace));
-                            //window.SetStatusbarString(text);
-
-                            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
                             if (m_heapSectionsSearch.OnToolbarGUI())
                                 m_heapSectionsControl.Search(m_heapSectionsSearch.text);
                         }
@@ -155,8 +166,7 @@ namespace HeapExplorer
                     // Managed heap fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        //var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", m_snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)m_snapshot.managedHeapSize), EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace));
-                        var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", m_snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)m_snapshot.managedHeapSize), EditorUtility.FormatBytes((long)m_snapshot.managedHeapAddressSpace));
+                        var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.managedHeapSize), EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace));
                         GUILayout.Label(text, EditorStyles.boldLabel);
                         GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_heapFragTexture, ScaleMode.StretchToFill);
                     }
@@ -187,7 +197,7 @@ namespace HeapExplorer
 
             var job = new MemorySectionFragmentationJob();
             job.texture = m_memorySectionFragTexture;
-            job.snapshot = m_snapshot;
+            job.snapshot = snapshot;
             job.memorySection = mo.Value;
             ScheduleJob(job);
 

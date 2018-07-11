@@ -8,7 +8,7 @@ namespace HeapExplorer
 {
     public class GCHandlesControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedGCHandle?> onSelectionChange;
 
         PackedMemorySnapshot m_snapshot;
@@ -22,8 +22,8 @@ namespace HeapExplorer
             Address,
         }
 
-        public GCHandlesControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public GCHandlesControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("GCHandle"), width = 150, autoResize = true },
@@ -281,7 +281,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
                         }
                     }
 
@@ -289,7 +289,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_gcHandle.managedObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
                         }
                     }
                 }

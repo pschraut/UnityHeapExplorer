@@ -16,26 +16,40 @@ namespace HeapExplorer
         string m_editorPrefsKey;
         float m_splitterHorz = 0.33333f;
         float m_splitterVert = 0.32f;
+        Rect m_ToolbarButtonRect;
+
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            HeapExplorerWindow.Register<StaticFieldsView>();
+        }
 
         public override void Awake()
         {
             base.Awake();
 
-            title = new GUIContent("C# Static Fields");
-            hasMainMenu = true;
+            titleContent = new GUIContent("C# Static Fields");
             m_editorPrefsKey = "HeapExplorer.StaticFieldsView";
         }
 
-        public override GenericMenu CreateMainMenu()
+        public override void OnToolbarGUI()
         {
-            var menu = new GenericMenu();
+            base.OnToolbarGUI();
 
-            if (!m_selected.isValid)
-                menu.AddDisabledItem(new GUIContent("Save selected field as file..."));
-            else
-                menu.AddItem(new GUIContent("Save selected field as file..."), false, OnSaveAsFile);
+            if (GUILayout.Button(new GUIContent("Tools"), EditorStyles.toolbarDropDown, GUILayout.Width(70)))
+            {
+                var menu = new GenericMenu();
 
-            return menu;
+                if (!m_selected.isValid)
+                    menu.AddDisabledItem(new GUIContent("Save selected field as file..."));
+                else
+                    menu.AddItem(new GUIContent("Save selected field as file..."), false, OnSaveAsFile);
+
+                menu.DropDown(m_ToolbarButtonRect);
+            }
+
+            if (Event.current.type == EventType.Repaint)
+                m_ToolbarButtonRect = GUILayoutUtility.GetLastRect();
         }
 
         void OnSaveAsFile()
@@ -56,14 +70,14 @@ namespace HeapExplorer
             base.OnCreate();
 
             m_connectionsView = CreateView<ConnectionsView>();
-            m_connectionsView.gotoCB += Goto;
+            //m_connectionsView.gotoCB += Goto;
             m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".m_connectionsView";
             m_connectionsView.showReferencedBy = false;
 
             // The list at the left that contains all native objects
-            m_staticFieldsControl = new StaticFieldsControl(m_editorPrefsKey + ".m_staticFieldsControl", new TreeViewState());
-            m_staticFieldsControl.SetTree(m_staticFieldsControl.BuildTree(m_snapshot));
-            m_staticFieldsControl.gotoCB += Goto;
+            m_staticFieldsControl = new StaticFieldsControl(window, m_editorPrefsKey + ".m_staticFieldsControl", new TreeViewState());
+            m_staticFieldsControl.SetTree(m_staticFieldsControl.BuildTree(snapshot));
+            //m_staticFieldsControl.gotoCB += Goto;
             m_staticFieldsControl.onTypeSelected += OnListViewTypeSelected;
 
             m_SearchField = new HeSearchField(window);
@@ -89,9 +103,9 @@ namespace HeapExplorer
         public override GotoCommand GetRestoreCommand()
         {
             if (m_selected.isValid)
-                return new GotoCommand(m_selected) { toKind = GotoCommand.EKind.StaticClass };
+                return new GotoCommand(m_selected);
 
-            return null;
+            return base.GetRestoreCommand();
         }
 
         public override void OnGUI()
@@ -106,10 +120,9 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            var text = string.Format("{0} static fields in {1} types", m_snapshot.managedStaticFields.Length, m_snapshot.managedStaticTypes.Length);
+                            var text = string.Format("{0} static fields in {1} types", snapshot.managedStaticFields.Length, snapshot.managedStaticTypes.Length);
                             window.SetStatusbarString(text);
-                            //EditorGUILayout.LabelField(string.Format("{0} static fields in {1} types", m_snapshot.managedStaticFields.Length, m_snapshot.managedStaticTypes.Length), EditorStyles.boldLabel);
-                            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
                             if (m_SearchField.OnToolbarGUI())
                                 m_staticFieldsControl.Search(m_SearchField.text);
                         }
@@ -135,18 +148,26 @@ namespace HeapExplorer
             }
         }
 
-        public void Select(PackedManagedType packed)
+        public override int CanProcessCommand(GotoCommand command)
         {
-            m_staticFieldsControl.Select(packed);
+            if (command.toStaticField.isValid || command.toManagedType.isValid)
+                return 10;
+
+            return base.CanProcessCommand(command);
         }
 
-        public void Select(PackedManagedStaticField packed)
+        public override void RestoreCommand(GotoCommand command)
         {
-            if (packed.managedTypesArrayIndex == -1)
+            if (command.toStaticField.isValid)
+            {
+                m_staticFieldsControl.Select(command.toStaticField.classType.packed);
                 return;
+            }
 
-            var type = m_snapshot.managedTypes[packed.managedTypesArrayIndex];
-            m_staticFieldsControl.Select(type);
+            if (command.toManagedType.isValid)
+            {
+                m_staticFieldsControl.Select(command.toManagedType.packed);
+            }
         }
         
         void OnListViewTypeSelected(PackedManagedType? type)
@@ -159,12 +180,12 @@ namespace HeapExplorer
                 return;
             }
 
-            m_selected = new RichManagedType(m_snapshot, type.Value.managedTypesArrayIndex);
+            m_selected = new RichManagedType(snapshot, type.Value.managedTypesArrayIndex);
             var staticClass = m_selected.packed;
             var staticFields = new List<PackedManagedStaticField>();
 
             // Find all static fields of selected type
-            foreach (var sf in m_snapshot.managedStaticFields)
+            foreach (var sf in snapshot.managedStaticFields)
             {
                 if (sf.managedTypesArrayIndex == staticClass.managedTypesArrayIndex)
                     staticFields.Add(sf);

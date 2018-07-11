@@ -30,6 +30,17 @@ namespace HeapExplorer
         }
 
         /// <summary>
+        /// Opens the Unity Profiler window.
+        /// </summary>
+        public static void OpenProfiler()
+        {
+            if (IsVersionOrNewer(2018, 2))
+                EditorApplication.ExecuteMenuItem("Window/Debug/Profiler");
+            else
+                EditorApplication.ExecuteMenuItem("Window/Profiler");
+        }
+
+        /// <summary>
         /// Search the project window using the specified filter.
         /// </summary>
         public static void SearchProjectBrowser(string filter)

@@ -8,7 +8,7 @@ namespace HeapExplorer
 {
     public class AbstractManagedObjectsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedManagedObject?> onSelectionChange;
 
         /// <summary>
@@ -48,8 +48,8 @@ namespace HeapExplorer
             Assembly
         }
 
-        public AbstractManagedObjectsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public AbstractManagedObjectsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("C# Type"), width = 250, autoResize = true },
@@ -363,7 +363,7 @@ namespace HeapExplorer
                     //{
                     //    if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                     //    {
-                    //        m_owner.gotoCB(new GotoCommand(new RichGCHandle(m_snapshot, m_snapshot.gcHandles[m_managedObject.gcHandlesArrayIndex])));
+                    //        m_owner.m_Window.OnGoto(new GotoCommand(new RichGCHandle(m_snapshot, m_snapshot.gcHandles[m_managedObject.gcHandlesArrayIndex])));
                     //    }
                     //}
 
@@ -371,7 +371,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.gotoCB(new GotoCommand(m_object.nativeObject));
+                            m_owner.m_Window.OnGoto(new GotoCommand(m_object.nativeObject));
                         }
                     }
                 }

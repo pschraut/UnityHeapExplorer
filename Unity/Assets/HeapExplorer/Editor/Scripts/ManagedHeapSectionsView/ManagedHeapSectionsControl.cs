@@ -6,7 +6,7 @@ namespace HeapExplorer
 {
     public class ManagedHeapSectionsControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedMemorySection?> onSelectionChange;
 
         public int count
@@ -32,8 +32,8 @@ namespace HeapExplorer
 #endif
         }
 
-        public ManagedHeapSectionsControl(string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+        public ManagedHeapSectionsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
+            : base(window, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Address"), width = 300, autoResize = true },

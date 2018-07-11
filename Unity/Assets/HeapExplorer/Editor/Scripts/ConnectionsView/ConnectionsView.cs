@@ -45,7 +45,7 @@ namespace HeapExplorer
         {
             var job = new Job
             {
-                snapshot = m_snapshot,
+                snapshot = snapshot,
                 referencedByControl = m_referencedByControl,
                 referencesControl = m_referencesControl
             };
@@ -57,7 +57,7 @@ namespace HeapExplorer
         {
             var job = new Job
             {
-                snapshot = m_snapshot,
+                snapshot = snapshot,
                 memorySection = item,
                 referencedByControl = m_referencedByControl,
                 referencesControl = m_referencesControl
@@ -68,22 +68,22 @@ namespace HeapExplorer
 
         public void Inspect(PackedNativeUnityEngineObject item)
         {
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedStaticField item)
         {
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedGCHandle item)
         {
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedObject item)
         {
-            ScheduleJob(new ObjectProxy(m_snapshot, item));
+            ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedStaticField[] items)
@@ -93,7 +93,7 @@ namespace HeapExplorer
 
             var job = new Job
             {
-                snapshot = m_snapshot,
+                snapshot = snapshot,
                 staticFields = items,
                 referencedByControl = m_referencedByControl,
                 referencesControl = m_referencesControl
@@ -106,7 +106,7 @@ namespace HeapExplorer
         {
             var job = new Job
             {
-                snapshot = m_snapshot,
+                snapshot = snapshot,
                 objectProxy = objectProxy,
                 referencedByControl = m_referencedByControl,
                 referencesControl = m_referencesControl
@@ -119,16 +119,16 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_referencesControl = new ConnectionsControl(editorPrefsKey + ".ReferencesControl", new TreeViewState());
-            m_referencesControl.gotoCB += Goto;
+            m_referencesControl = new ConnectionsControl(window, editorPrefsKey + ".ReferencesControl", new TreeViewState());
+            //m_referencesControl.gotoCB += Goto;
             m_referencesControl.Reload();
 
             m_referencesSearch = new HeSearchField(window);
             m_referencesSearch.downOrUpArrowKeyPressed += m_referencesControl.SetFocusAndEnsureSelectedItem;
             m_referencesControl.findPressed += m_referencesSearch.SetFocus;
 
-            m_referencedByControl = new ConnectionsControl(editorPrefsKey + ".ReferencedByControl", new TreeViewState());
-            m_referencedByControl.gotoCB += Goto;
+            m_referencedByControl = new ConnectionsControl(window, editorPrefsKey + ".ReferencedByControl", new TreeViewState());
+            //m_referencedByControl.gotoCB += Goto;
             m_referencedByControl.Reload();
 
             m_referencedBySearch = new HeSearchField(window);

@@ -14,14 +14,6 @@ namespace HeapExplorer
         [NonSerialized] PackedMemorySnapshot m_heap;
         [NonSerialized] List<HeapExplorerView> m_views = new List<HeapExplorerView>();
         [NonSerialized] HeapExplorerView m_activeView;
-        [NonSerialized] NativeObjectsView m_nativeObjectsView;
-        [NonSerialized] NativeObjectDuplicatesView m_nativeObjectDuplicatesView;
-        [NonSerialized] ManagedObjectsView m_managedObjectsView;
-        [NonSerialized] GCHandlesView m_gcHandlesView;
-        [NonSerialized] OverviewView m_overviewView;
-        [NonSerialized] WelcomeView m_welcomeView;
-        [NonSerialized] StaticFieldsView m_staticFieldsView;
-        [NonSerialized] ManagedObjectDuplicatesView m_duplicatesView;
         [NonSerialized] System.Threading.Thread m_thread;
         [NonSerialized] Rect m_fileToolbarButtonRect;
         [NonSerialized] Rect m_viewToolbarButtonRect;
@@ -56,6 +48,17 @@ namespace HeapExplorer
             {
                 m_heap = value;
             }
+        }
+
+        static List<System.Type> s_ViewTypes = new List<Type>();
+
+        public static void Register<T>() where T : HeapExplorerView
+        {
+            var type = typeof(T);
+            if (s_ViewTypes.Contains(type))
+                return;
+
+            s_ViewTypes.Add(type);
         }
 
         [MenuItem("Window/Heap Explorer")]
@@ -129,23 +132,32 @@ namespace HeapExplorer
 
         void CreateViews()
         {
-            m_welcomeView = CreateView<WelcomeView>();
-            m_overviewView = CreateView<OverviewView>();
+            foreach(var type in s_ViewTypes)
+            {
+                CreateView(type);
+            }
 
-            m_managedObjectsView = CreateView<ManagedObjectsView>();
-            m_staticFieldsView = CreateView<StaticFieldsView>();
-            m_duplicatesView = CreateView<ManagedObjectDuplicatesView>();
-            m_managedDelegatesView = CreateView<ManagedDelegatesView>();
-            CreateView<ManagedDelegateTargetsView>();
-            CreateView<ManagedHeapSectionsView>();
+            ActivateView(welcomeView);
+        }
 
-            m_nativeObjectsView = CreateView<NativeObjectsView>();
-            m_nativeObjectDuplicatesView = CreateView<NativeObjectDuplicatesView>();
-            m_gcHandlesView = CreateView<GCHandlesView>();
+        HeapExplorerView welcomeView
+        {
+            get
+            {
+                return FindView<WelcomeView>();
+            }
+        }
 
-            CreateView<CompareSnapshotsView>();
+        public T FindView<T>() where T : HeapExplorerView
+        {
+            foreach(var view in m_views)
+            {
+                var v = view as T;
+                if (v != null)
+                    return v;
+            }
 
-            ActivateView(m_welcomeView);
+            return null;
         }
 
         void ResetViews()
@@ -171,84 +183,57 @@ namespace HeapExplorer
             for (var n = 0; n < m_views.Count; ++n)
                 m_views[n].OnDestroy();
             m_views.Clear();
-
-            m_overviewView = null;
-            m_nativeObjectsView = null;
-            m_nativeObjectDuplicatesView = null;
-            m_managedDelegatesView = null;
-            m_managedObjectsView = null;
-            m_gcHandlesView = null;
         }
 
-        T CreateView<T>() where T : HeapExplorerView, new()
+        HeapExplorerView CreateView(System.Type type)
         {
-            var view = new T();
+            var view = (HeapExplorerView)System.Activator.CreateInstance(type);
             view.window = this;
-            view.gotoCB += OnGoto;
+            //view.gotoCB += OnGoto;
+            view.Awake();
             m_views.Add(view);
             return view;
         }
 
-        void OnGoto(GotoCommand command)
+        public void OnGoto(GotoCommand command)
         {
-            var activeState = m_activeView.GetRestoreCommand();
-            if (activeState != null)
-                m_gotoHistory.Add(activeState, command);
+            command.fromView = m_activeView;
+            m_gotoHistory.Add(command, command);
 
-            GotoInternal(command);
-        }
-
-        void GotoInternal(GotoCommand command)
-        {
-            switch (command.toKind)
-            {
-                case GotoCommand.EKind.NativeObject:
-                    ActivateView(m_nativeObjectsView);
-                    if (command.toNativeObject.isValid)
-                        m_nativeObjectsView.Select(command.toNativeObject.packed);
-                    break;
-                case GotoCommand.EKind.NativeObjectDuplicates:
-                    ActivateView(m_nativeObjectDuplicatesView);
-                    if (command.toNativeObject.isValid)
-                        m_nativeObjectDuplicatesView.Select(command.toNativeObject.packed);
-                    break;
-
-                case GotoCommand.EKind.ManagedObject:
-                    ActivateView(m_managedObjectsView);
-                    if (command.toManagedObject.isValid)
-                        m_managedObjectsView.Select(command.toManagedObject.packed);
-                    break;
-
-                case GotoCommand.EKind.GCHandle:
-                    ActivateView(m_gcHandlesView);
-                    if (command.toGCHandle.isValid)
-                        m_gcHandlesView.Select(command.toGCHandle.packed);
-                    break;
-
-                case GotoCommand.EKind.Overview:
-                    ActivateView(m_overviewView);
-                    break;
-
-                case GotoCommand.EKind.StaticField:
-                    ActivateView(m_staticFieldsView);
-                    if (command.toStaticField.isValid)
-                        m_staticFieldsView.Select(command.toStaticField.packed);
-                    break;
-
-                case GotoCommand.EKind.StaticClass:
-                    ActivateView(m_staticFieldsView);
-                    if (command.toManagedType.isValid)
-                        m_staticFieldsView.Select(command.toManagedType.packed);
-                    break;
-
-                case GotoCommand.EKind.ManagedObjectDuplicate:
-                    ActivateView(m_duplicatesView);
-                    if (command.toManagedType.isValid)
-                        m_duplicatesView.Select(command.toManagedObject.packed);
-                    break;
-            }
+            GotoInternal(command, false);
         }
         
+        void GotoInternal(GotoCommand command, bool restoreFromView)
+        {
+            if (restoreFromView)
+            {
+                if (command.fromView != null)
+                {
+                    ActivateView(command.fromView);
+                    command.fromView.RestoreCommand(command);
+                }
+                return;
+            }
+
+            if (command.toView != null)
+            {
+                ActivateView(command.toView);
+                command.toView.RestoreCommand(command);
+                return;
+            }
+
+            var sortedViews = new List<HeapExplorerView>(m_views);
+            sortedViews.Sort(delegate (HeapExplorerView x, HeapExplorerView y)
+            {
+                var xx = x.CanProcessCommand(command);
+                var yy = y.CanProcessCommand(command);
+                return yy.CompareTo(xx);
+            });
+
+            ActivateView(sortedViews[0]);
+            sortedViews[0].RestoreCommand(command);
+        }
+
         void OnGUI()
         {
             if (!string.IsNullOrEmpty(m_ErrorMsg))
@@ -386,14 +371,6 @@ namespace HeapExplorer
             r.x += 4;
             r.y += 2;
             GUI.Label(r, m_statusBarString, EditorStyles.boldLabel);
-
-            //using (new GUILayout.HorizontalScope(GUILayout.ExpandWidth(true), GUILayout.Height(24)))
-            //{
-            //    using (new GUILayout.VerticalScope())
-            //    {
-            //        GUILayout.Label(m_statusBarString, EditorStyles.boldLabel);
-            //    }
-            //}
         }
 
         void DrawToolbar()
@@ -405,7 +382,7 @@ namespace HeapExplorer
                 {
                     var cmd = m_gotoHistory.Back();
                     if (cmd != null)
-                        GotoInternal(cmd);
+                        GotoInternal(cmd, true);
                 }
                 EditorGUI.EndDisabledGroup();
 
@@ -414,7 +391,7 @@ namespace HeapExplorer
                 {
                     var cmd = m_gotoHistory.Forward();
                     if (cmd != null)
-                        GotoInternal(cmd);
+                        GotoInternal(cmd, false);
                 }
                 EditorGUI.EndDisabledGroup();
 
@@ -479,7 +456,19 @@ namespace HeapExplorer
                 {
                     var menu = new GenericMenu();
                     foreach (var view in m_views)
-                        menu.AddItem(new GUIContent(view.title), m_activeView == view, ActivateView, view);
+                    {
+                        menu.AddItem(new GUIContent(view.titleContent), m_activeView == view, (GenericMenu.MenuFunction2)delegate(System.Object o)
+                        {
+                            if (o == m_activeView)
+                                return;
+
+                            var v = o as HeapExplorerView;
+                            var c0 = m_activeView.GetRestoreCommand(); c0.fromView = m_activeView;
+                            var c1 = v.GetRestoreCommand(); c1.toView = v;
+                            m_gotoHistory.Add(c0, c1);
+                            ActivateView(v);
+                        }, view);
+                    }
 
                     menu.DropDown(m_viewToolbarButtonRect);
                 }
@@ -495,75 +484,16 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent(string.Format("Capture and Save '{0}'...", connectedProfiler)), false, CaptureAndSaveHeap);
                     menu.AddItem(new GUIContent(string.Format("Capture and Analyze '{0}'", connectedProfiler)), false, CaptureAndAnalyzeHeap);
                     menu.AddSeparator("");
-                    menu.AddItem(new GUIContent(string.Format("Open Profiler")), false, delegate ()
-                    {
-                        if (HeEditorUtility.IsVersionOrNewer(2018, 2))
-                            EditorApplication.ExecuteMenuItem("Window/Debug/Profiler");
-                        else
-                            EditorApplication.ExecuteMenuItem("Window/Profiler");
-                    });
-
+                    menu.AddItem(new GUIContent(string.Format("Open Profiler")), false, delegate () { HeEditorUtility.OpenProfiler(); });
                     menu.DropDown(m_captureToolbarButtonRect);
                 }
                 if (Event.current.type == EventType.Repaint)
                     m_captureToolbarButtonRect = GUILayoutUtility.GetLastRect();
 
-                if (m_activeView != null && m_activeView.hasMainMenu)
-                {
-                    var size = EditorStyles.toolbarDropDown.CalcSize(new GUIContent(m_activeView.title));
-                    if (GUILayout.Button(new GUIContent(m_activeView.title), EditorStyles.toolbarDropDown, GUILayout.Width(size.x+10)))
-                    {
-                        var menu = m_activeView.CreateMainMenu();
-                        if (menu != null)
-                            menu.DropDown(m_customToolbarButtonRect);
-                    }
-                    if (Event.current.type == EventType.Repaint)
-                        m_customToolbarButtonRect = GUILayoutUtility.GetLastRect();
-                }
-
                 if (m_activeView != null)
                     m_activeView.OnToolbarGUI();
-
-                //if (GUILayout.Button(new GUIContent("Test"), EditorStyles.toolbarDropDown, GUILayout.Width(80)))
-                //{
-                //    DoTestStuff();
-                //}
             }
         }
-
-        //void DoTestStuff()
-        //{
-        //    var objectType = "System.Delegate";
-        //    var variablePath = "m_target";
-        //    var variableValue = "null";
-        //    var variableComparison = "Is Not";
-
-        //    var reader = new MemoryReader(m_heap);
-
-        //    foreach(var o in m_heap.managedObjects)
-        //    {
-        //        var obj = new RichManagedObject(m_heap, o.managedObjectsArrayIndex);
-        //        if (!obj.isValid)
-        //            continue;
-
-        //        if (obj.type.name != objectType)
-        //            continue;
-
-        //        PackedManagedField field;
-        //        if (!obj.type.FindField(variablePath, out field))
-        //            continue;
-
-        //        var fieldType = m_heap.managedTypes[field.managedTypesArrayIndex];
-        //        var addr = obj.address + (uint)field.offset;
-
-
-        //        var value = reader.ReadFieldValueAsString(addr, fieldType);
-        //        if (value == variableValue)
-        //            continue;
-
-
-        //    }
-        //}
 
         void SaveToFile()
         {
@@ -581,7 +511,7 @@ namespace HeapExplorer
             snapshotPath = "";
             m_heap = null;
             Reset(true);
-            ActivateView(m_welcomeView);
+            ActivateView(welcomeView);
             FreeMem();
         }
 
@@ -714,7 +644,7 @@ namespace HeapExplorer
         void SaveView()
         {
             EditorPrefs.SetString("HeapExplorerWindow.restoreView", "");
-            if (m_activeView != null && m_activeView != m_welcomeView)
+            if (m_activeView != null && m_activeView != welcomeView)
             {
                 EditorPrefs.SetString("HeapExplorerWindow.restoreView", m_activeView.GetType().Name);
                 //Debug.Log("Saving" + m_activeView.GetType().Name);
@@ -736,7 +666,7 @@ namespace HeapExplorer
             }
 
             if (view == null)
-                view = m_overviewView;// m_managedObjectsView;
+                view = FindView<OverviewView>();// m_overviewView;
 
             //Debug.Log("Restoring" + view.GetType().Name);
             ActivateView(view);

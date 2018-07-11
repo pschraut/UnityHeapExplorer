@@ -8,14 +8,14 @@ namespace HeapExplorer
 {
     public class PropertyGridControl : AbstractTreeView
     {
-        public System.Action<GotoCommand> gotoCB;
+        //public System.Action<GotoCommand> gotoCB;
         
         PackedMemorySnapshot m_snapshot;
         EditorWindow m_window;
         string m_splitterName;
 
         public PropertyGridControl(EditorWindow window, string editorPrefsKey, TreeViewState state)
-            : base(editorPrefsKey, state, new MultiColumnHeader(
+            : base(window as HeapExplorerWindow, editorPrefsKey, state, new MultiColumnHeader(
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Name"), width = 200, autoResize = true },
@@ -346,7 +346,7 @@ namespace HeapExplorer
     {
         PropertyGridControl m_propertyGrid;
         PackedMemorySnapshot m_snapshot;
-        ulong m_address;
+        //ulong m_address;
         string m_errorString = "";
         PackedManagedObject m_managedObject;
 
@@ -376,7 +376,7 @@ namespace HeapExplorer
             var type = m_snapshot.managedTypes[managedObject.managedTypesArrayIndex];
 
             titleContent = new GUIContent(string.Format("C# Object Inspector | {0} | {1:X}", type.name, managedObject.address));
-            m_propertyGrid = new PropertyGridControl(this, "ManagedObjectInspectorWindow.m_propertyGrid", new TreeViewState());
+            m_propertyGrid = new PropertyGridControl(null, "ManagedObjectInspectorWindow.m_propertyGrid", new TreeViewState());
             m_propertyGrid.Inspect(m_snapshot, managedObject);
             m_errorString = "";
         }

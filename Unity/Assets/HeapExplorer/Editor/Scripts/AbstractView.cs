@@ -8,67 +8,85 @@ namespace HeapExplorer
 {
     abstract public class HeapExplorerView
     {
-        public GUIContent title;
-        public HeapExplorerWindow window;
-        public Action<GotoCommand> gotoCB;
-        public bool hasMainMenu;
+        /// <summary>
+        /// The titleContent is shown in Heap Explorer's toolbar View menu.
+        /// </summary>
+        public GUIContent titleContent
+        {
+            get;
+            set;
+        }
 
+        /// <summary>
+        /// The window in which the view is rendered to.
+        /// </summary>
+        public HeapExplorerWindow window
+        {
+            get;
+            internal set;
+        }
+
+        //public Action<GotoCommand> gotoCB;
+
+        /// <summary>
+        /// Gets whether the view is currently active.
+        /// </summary>
         public bool isVisible
         {
             get;
             private set;
         }
 
-        protected PackedMemorySnapshot m_snapshot;
-        protected List<HeapExplorerView> m_views = new List<HeapExplorerView>();
+        /// <summary>
+        /// Gets the active memory snapshot.
+        /// </summary>
+        protected PackedMemorySnapshot snapshot
+        {
+            get;
+            private set;
+        }
+
+        List<HeapExplorerView> m_Views = new List<HeapExplorerView>();
 
         public HeapExplorerView()
         {
-            Awake();
-        }
-
-        public virtual GenericMenu CreateMainMenu()
-        {
-            return null;
         }
 
         public virtual void Awake()
         {
-            title = new GUIContent(GetType().Name);
+            titleContent = new GUIContent(ObjectNames.NicifyVariableName(GetType().Name));
         }
 
         public virtual void OnDestroy()
         {
-            foreach (var v in m_views)
+            foreach (var v in m_Views)
                 v.OnDestroy();
 
-            m_views = null;
-            gotoCB = null;
-            m_snapshot = null;
+            m_Views = null;
+            //gotoCB = null;
+            snapshot = null;
         }
 
-        public void ThrowOutHeap()
+        internal void ThrowOutHeap()
         {
-            m_snapshot = null;
-            //gotoCB = null;
+            snapshot = null;
         }
 
         public void Show(PackedMemorySnapshot heap)
         {
-            if (m_snapshot != heap)
+            if (snapshot != heap)
             {
-                if (m_snapshot != null && isVisible)
+                if (snapshot != null && isVisible)
                     Hide(); // Hide normally implements to save the layout of various UI elements
 
-                m_snapshot = heap;
-                //gotoCB = null;
+                snapshot = heap;
                 OnCreate();
             }
 
             OnShow();
 
             // Show any views that might have been added during OnShow()
-            foreach (var v in m_views)
+            foreach (var v in m_Views)
                 v.Show(heap);
 
             isVisible = true;
@@ -79,22 +97,37 @@ namespace HeapExplorer
         {
             OnHide();
 
-            foreach (var v in m_views)
+            foreach (var v in m_Views)
                 v.Hide();
 
             isVisible = false;
             Repaint();
         }
 
-        public virtual GotoCommand GetRestoreCommand()
+        public virtual int CanProcessCommand(GotoCommand command)
         {
-            return null;
+            return 0;
         }
 
+        public virtual void RestoreCommand(GotoCommand command)
+        {
+        }
+
+        public virtual GotoCommand GetRestoreCommand()
+        {
+            return new GotoCommand();
+        }
+
+        /// <summary>
+        /// Implement your own editor GUI here.
+        /// </summary>
         public virtual void OnGUI()
         {
         }
 
+        /// <summary>
+        /// Implement the OnToolbarGUI method to draw your own GUI in Heap Explorer's toolbar menu.
+        /// </summary>
         public virtual void OnToolbarGUI()
         {
         }
@@ -113,8 +146,9 @@ namespace HeapExplorer
        
         protected void Goto(GotoCommand command)
         {
-            if (gotoCB != null)
-                gotoCB(command);
+            window.OnGoto(command);
+            //if (gotoCB != null)
+            //    gotoCB(command);
         }
 
         protected void Repaint()
@@ -131,8 +165,9 @@ namespace HeapExplorer
         {
             var view = new T();
             view.window = window;
-            view.gotoCB += Goto;
-            m_views.Add(view);
+            //view.gotoCB += Goto;
+            view.Awake();
+            m_Views.Add(view);
             return view;
         }
     }
