@@ -8,37 +8,23 @@ namespace HeapExplorer
 {
     public class RootPathView : HeapExplorerView
     {
-        RootPath m_selected;
-        RootPathControl m_rootPathControl;
-        RootPathUtility m_rootPaths = new RootPathUtility();
-
-        public string editorPrefsKey
-        {
-            get;
-            set;
-        }
-
-        public override void Awake()
-        {
-            base.Awake();
-
-            editorPrefsKey = "HeapExplorer.RootPathView";
-        }
+        RootPath m_Selected;
+        RootPathControl m_RootPathControl;
+        RootPathUtility m_RootPaths = new RootPathUtility();
 
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            m_rootPathControl = new RootPathControl(window, editorPrefsKey + ".m_rootPathControl", new TreeViewState());
-            //m_rootPathControl.gotoCB += Goto;
-            m_rootPathControl.onSelectionChange += OnSelectionChange;
+            m_RootPathControl = new RootPathControl(window, GetPrefsKey(() => m_RootPathControl), new TreeViewState());
+            m_RootPathControl.onSelectionChange += OnSelectionChange;
         }
 
         protected override void OnHide()
         {
             base.OnHide();
 
-            m_rootPathControl.SaveLayout();
+            m_RootPathControl.SaveLayout();
         }
 
         public override void OnGUI()
@@ -49,49 +35,49 @@ namespace HeapExplorer
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    EditorGUILayout.LabelField(string.Format("{0} Path(s) to Root", m_rootPaths.count), EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(string.Format("{0} Path(s) to Root", m_RootPaths.count), EditorStyles.boldLabel);
                 }
 
                 GUILayout.Space(2);
-                m_rootPathControl.OnGUI();
+                m_RootPathControl.OnGUI();
 
                 GUILayout.Space(2);
                 var reason = "No root object selected.";
-                if (m_selected != null)
-                    reason = m_selected.reasonString;
+                if (m_Selected != null)
+                    reason = m_Selected.reasonString;
                 EditorGUI.HelpBox(GUILayoutUtility.GetRect(10, 48, GUILayout.ExpandWidth(true)), reason, MessageType.Info);
             }
         }
 
         public void Inspect(PackedNativeUnityEngineObject item)
         {
-            m_selected = null;
+            m_Selected = null;
             ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedObject item)
         {
-            m_selected = null;
+            m_Selected = null;
             ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedManagedStaticField item)
         {
-            m_selected = null;
+            m_Selected = null;
             ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Inspect(PackedGCHandle item)
         {
-            m_selected = null;
+            m_Selected = null;
             ScheduleJob(new ObjectProxy(snapshot, item));
         }
 
         public void Clear()
         {
-            m_selected = null;
-            m_rootPaths = new RootPathUtility();
-            ScheduleJob(new RootPathJob() { control = m_rootPathControl });
+            m_Selected = null;
+            m_RootPaths = new RootPathUtility();
+            ScheduleJob(new RootPathJob() { control = m_RootPathControl });
         }
 
         void ScheduleJob(ObjectProxy objectProxy)
@@ -100,15 +86,15 @@ namespace HeapExplorer
             {
                 snapshot = snapshot,
                 objectProxy = objectProxy,
-                control = m_rootPathControl,
-                paths = m_rootPaths = new RootPathUtility()
+                control = m_RootPathControl,
+                paths = m_RootPaths = new RootPathUtility()
             };
             ScheduleJob(job);
         }
 
         void OnSelectionChange(RootPath path)
         {
-            m_selected = path;
+            m_Selected = path;
         }
 
         class RootPathJob : AbstractThreadJob

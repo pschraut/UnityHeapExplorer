@@ -8,12 +8,6 @@ namespace HeapExplorer
 {
     public class NativeObjectPreviewView : HeapExplorerView
     {
-        public string editorPrefsKey
-        {
-            get;
-            set;
-        }
-
         Editor m_Editor;
         RichNativeObject m_Object;
         bool m_HasPreviewAssets;
@@ -25,11 +19,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(editorPrefsKey + ".autoLoad", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => autoLoad), true);
             }
             set
             {
-                EditorPrefs.SetBool(editorPrefsKey + ".autoLoad", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => autoLoad), value);
             }
         }
 
@@ -38,7 +32,6 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("Asset Preview", "");
-            editorPrefsKey = "HeapExplorer.NativeObjectPreviewView";
             m_Object = RichNativeObject.invalid;
         }
 

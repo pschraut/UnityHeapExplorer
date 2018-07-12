@@ -8,11 +8,11 @@ namespace HeapExplorer
 {
     public class ConnectionsView : HeapExplorerView
     {
-        ConnectionsControl m_referencesControl;
-        ConnectionsControl m_referencedByControl;
-        HeSearchField m_referencesSearch;
-        HeSearchField m_referencedBySearch;
-        float m_splitterValue = 0.32f;
+        ConnectionsControl m_ReferencesControl;
+        ConnectionsControl m_ReferencedByControl;
+        HeSearchField m_ReferencesSearchField;
+        HeSearchField m_ReferencedBySearchField;
+        float m_SplitterValue = 0.32f;
 
         public bool showReferences
         {
@@ -26,19 +26,12 @@ namespace HeapExplorer
             set;
         }
 
-        public string editorPrefsKey
-        {
-            get;
-            set;
-        }
-
         public override void Awake()
         {
             base.Awake();
 
             showReferences = true;
             showReferencedBy = true;
-            editorPrefsKey = "HeapExplorer.ConnectionsView";
         }
 
         public void Clear()
@@ -46,8 +39,8 @@ namespace HeapExplorer
             var job = new Job
             {
                 snapshot = snapshot,
-                referencedByControl = m_referencedByControl,
-                referencesControl = m_referencesControl
+                referencedByControl = m_ReferencedByControl,
+                referencesControl = m_ReferencesControl
             };
 
             ScheduleJob(job);
@@ -59,8 +52,8 @@ namespace HeapExplorer
             {
                 snapshot = snapshot,
                 memorySection = item,
-                referencedByControl = m_referencedByControl,
-                referencesControl = m_referencesControl
+                referencedByControl = m_ReferencedByControl,
+                referencesControl = m_ReferencesControl
             };
 
             ScheduleJob(job);
@@ -95,21 +88,8 @@ namespace HeapExplorer
             {
                 snapshot = snapshot,
                 staticFields = items,
-                referencedByControl = m_referencedByControl,
-                referencesControl = m_referencesControl
-            };
-
-            ScheduleJob(job);
-        }
-
-        void ScheduleJob(ObjectProxy objectProxy)
-        {
-            var job = new Job
-            {
-                snapshot = snapshot,
-                objectProxy = objectProxy,
-                referencedByControl = m_referencedByControl,
-                referencesControl = m_referencesControl
+                referencedByControl = m_ReferencedByControl,
+                referencesControl = m_ReferencesControl
             };
 
             ScheduleJob(job);
@@ -119,32 +99,30 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_referencesControl = new ConnectionsControl(window, editorPrefsKey + ".ReferencesControl", new TreeViewState());
-            //m_referencesControl.gotoCB += Goto;
-            m_referencesControl.Reload();
+            m_ReferencesControl = new ConnectionsControl(window, GetPrefsKey(() => m_ReferencedByControl), new TreeViewState());
+            m_ReferencesControl.Reload();
 
-            m_referencesSearch = new HeSearchField(window);
-            m_referencesSearch.downOrUpArrowKeyPressed += m_referencesControl.SetFocusAndEnsureSelectedItem;
-            m_referencesControl.findPressed += m_referencesSearch.SetFocus;
+            m_ReferencesSearchField = new HeSearchField(window);
+            m_ReferencesSearchField.downOrUpArrowKeyPressed += m_ReferencesControl.SetFocusAndEnsureSelectedItem;
+            m_ReferencesControl.findPressed += m_ReferencesSearchField.SetFocus;
 
-            m_referencedByControl = new ConnectionsControl(window, editorPrefsKey + ".ReferencedByControl", new TreeViewState());
-            //m_referencedByControl.gotoCB += Goto;
-            m_referencedByControl.Reload();
+            m_ReferencedByControl = new ConnectionsControl(window, GetPrefsKey(() => m_ReferencedByControl), new TreeViewState());
+            m_ReferencedByControl.Reload();
 
-            m_referencedBySearch = new HeSearchField(window);
-            m_referencedBySearch.downOrUpArrowKeyPressed += m_referencesControl.SetFocusAndEnsureSelectedItem;
-            m_referencedByControl.findPressed += m_referencedBySearch.SetFocus;
+            m_ReferencedBySearchField = new HeSearchField(window);
+            m_ReferencedBySearchField.downOrUpArrowKeyPressed += m_ReferencesControl.SetFocusAndEnsureSelectedItem;
+            m_ReferencedByControl.findPressed += m_ReferencedBySearchField.SetFocus;
 
-            m_splitterValue = EditorPrefs.GetFloat(editorPrefsKey + ".m_splitterValue", m_splitterValue);
+            m_SplitterValue = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterValue), m_SplitterValue);
         }
 
         protected override void OnHide()
         {
             base.OnHide();
 
-            m_referencesControl.SaveLayout();
-            m_referencedByControl.SaveLayout();
-            EditorPrefs.SetFloat(editorPrefsKey + ".m_splitterValue", m_splitterValue);
+            m_ReferencesControl.SaveLayout();
+            m_ReferencedByControl.SaveLayout();
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterValue), m_SplitterValue);
         }
 
         public override void OnGUI()
@@ -157,21 +135,21 @@ namespace HeapExplorer
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        EditorGUILayout.LabelField(string.Format("References to {0} object(s)", m_referencesControl.count), EditorStyles.boldLabel);
-                        if (m_referencesSearch.OnToolbarGUI())
-                            m_referencesControl.Search(m_referencesSearch.text);
+                        EditorGUILayout.LabelField(string.Format("References to {0} object(s)", m_ReferencesControl.count), EditorStyles.boldLabel);
+                        if (m_ReferencesSearchField.OnToolbarGUI())
+                            m_ReferencesControl.Search(m_ReferencesSearchField.text);
                     }
 
                     GUILayout.Space(2);
-                    m_referencesControl.OnGUI();
+                    m_ReferencesControl.OnGUI();
                 }
             }
 
             GUILayoutOption[] options = null;
             if (showReferences && showReferencedBy)
             {
-                HeEditorGUILayout.HorizontalSplitter("m_splitterValue".GetHashCode(), ref m_splitterValue, 0.1f, 0.6f, window);
-                options = new[] { GUILayout.Width(window.position.width * m_splitterValue) };
+                HeEditorGUILayout.HorizontalSplitter("m_splitterValue".GetHashCode(), ref m_SplitterValue, 0.1f, 0.6f, window);
+                options = new[] { GUILayout.Width(window.position.width * m_SplitterValue) };
             }
 
             if (showReferencedBy)
@@ -180,14 +158,27 @@ namespace HeapExplorer
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        EditorGUILayout.LabelField(string.Format("Referenced by {0} object(s)", m_referencedByControl.count), EditorStyles.boldLabel);
-                        if (m_referencedBySearch.OnToolbarGUI())
-                            m_referencedByControl.Search(m_referencedBySearch.text);
+                        EditorGUILayout.LabelField(string.Format("Referenced by {0} object(s)", m_ReferencedByControl.count), EditorStyles.boldLabel);
+                        if (m_ReferencedBySearchField.OnToolbarGUI())
+                            m_ReferencedByControl.Search(m_ReferencedBySearchField.text);
                     }
                     GUILayout.Space(2);
-                    m_referencedByControl.OnGUI();
+                    m_ReferencedByControl.OnGUI();
                 }
             }
+        }
+
+        void ScheduleJob(ObjectProxy objectProxy)
+        {
+            var job = new Job
+            {
+                snapshot = snapshot,
+                objectProxy = objectProxy,
+                referencedByControl = m_ReferencedByControl,
+                referencesControl = m_ReferencesControl
+            };
+
+            ScheduleJob(job);
         }
 
         class Job : AbstractThreadJob

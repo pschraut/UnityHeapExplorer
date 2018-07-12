@@ -8,14 +8,13 @@ namespace HeapExplorer
 {
     public class StaticFieldsView : HeapExplorerView
     {
-        RichManagedType m_selected;
-        StaticFieldsControl m_staticFieldsControl;
+        RichManagedType m_Selected;
+        StaticFieldsControl m_StaticFieldsControl;
         HeSearchField m_SearchField;
-        PropertyGridView m_propertyGridView;
-        ConnectionsView m_connectionsView;
-        string m_editorPrefsKey;
-        float m_splitterHorz = 0.33333f;
-        float m_splitterVert = 0.32f;
+        PropertyGridView m_PropertyGridView;
+        ConnectionsView m_ConnectionsView;
+        float m_SplitterHorz = 0.33333f;
+        float m_SplitterVert = 0.32f;
         Rect m_ToolbarButtonRect;
 
         [InitializeOnLoadMethod]
@@ -29,7 +28,6 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Static Fields");
-            m_editorPrefsKey = "HeapExplorer.StaticFieldsView";
         }
 
         public override void OnToolbarGUI()
@@ -40,7 +38,7 @@ namespace HeapExplorer
             {
                 var menu = new GenericMenu();
 
-                if (!m_selected.isValid)
+                if (!m_Selected.isValid)
                     menu.AddDisabledItem(new GUIContent("Save selected field as file..."));
                 else
                     menu.AddItem(new GUIContent("Save selected field as file..."), false, OnSaveAsFile);
@@ -54,13 +52,13 @@ namespace HeapExplorer
 
         void OnSaveAsFile()
         {
-            var filePath = EditorUtility.SaveFilePanel("Save", "", m_selected.name.Replace('.', '_'), "mem");
+            var filePath = EditorUtility.SaveFilePanel("Save", "", m_Selected.name.Replace('.', '_'), "mem");
             if (string.IsNullOrEmpty(filePath))
                 return;
 
             using (var fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.OpenOrCreate))
             {
-                var bytes = m_selected.packed.staticFieldBytes;
+                var bytes = m_Selected.packed.staticFieldBytes;
                 fileStream.Write(bytes, 0, bytes.Length);
             }
         }
@@ -69,41 +67,39 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_connectionsView = CreateView<ConnectionsView>();
-            //m_connectionsView.gotoCB += Goto;
-            m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".m_connectionsView";
-            m_connectionsView.showReferencedBy = false;
+            m_ConnectionsView = CreateView<ConnectionsView>();
+            m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
+            m_ConnectionsView.showReferencedBy = false;
 
             // The list at the left that contains all native objects
-            m_staticFieldsControl = new StaticFieldsControl(window, m_editorPrefsKey + ".m_staticFieldsControl", new TreeViewState());
-            m_staticFieldsControl.SetTree(m_staticFieldsControl.BuildTree(snapshot));
-            //m_staticFieldsControl.gotoCB += Goto;
-            m_staticFieldsControl.onTypeSelected += OnListViewTypeSelected;
+            m_StaticFieldsControl = new StaticFieldsControl(window, GetPrefsKey(() => m_StaticFieldsControl), new TreeViewState());
+            m_StaticFieldsControl.SetTree(m_StaticFieldsControl.BuildTree(snapshot));
+            m_StaticFieldsControl.onTypeSelected += OnListViewTypeSelected;
 
             m_SearchField = new HeSearchField(window);
-            m_SearchField.downOrUpArrowKeyPressed += m_staticFieldsControl.SetFocusAndEnsureSelectedItem;
+            m_SearchField.downOrUpArrowKeyPressed += m_StaticFieldsControl.SetFocusAndEnsureSelectedItem;
 
-            m_propertyGridView = CreateView<PropertyGridView>();
-            m_propertyGridView.editorPrefsKey = m_editorPrefsKey + ".m_propertyGridView";
+            m_PropertyGridView = CreateView<PropertyGridView>();
+            m_PropertyGridView.editorPrefsKey = GetPrefsKey(() => m_PropertyGridView);
 
-            m_splitterHorz = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
-            m_splitterVert = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterVert", m_splitterVert);
+            m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            m_SplitterVert = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
         }
 
         protected override void OnHide()
         {
             base.OnHide();
 
-            m_staticFieldsControl.SaveLayout();
+            m_StaticFieldsControl.SaveLayout();
 
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVert", m_splitterVert);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
         }
 
         public override GotoCommand GetRestoreCommand()
         {
-            if (m_selected.isValid)
-                return new GotoCommand(m_selected);
+            if (m_Selected.isValid)
+                return new GotoCommand(m_Selected);
 
             return base.GetRestoreCommand();
         }
@@ -124,26 +120,26 @@ namespace HeapExplorer
                             window.SetStatusbarString(text);
                             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
                             if (m_SearchField.OnToolbarGUI())
-                                m_staticFieldsControl.Search(m_SearchField.text);
+                                m_StaticFieldsControl.Search(m_SearchField.text);
                         }
                         GUILayout.Space(2);
 
-                        m_staticFieldsControl.OnGUI();
+                        m_StaticFieldsControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), ref m_splitterVert, 0.1f, 0.8f, window);
+                    HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), ref m_SplitterVert, 0.1f, 0.8f, window);
 
-                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_splitterVert)))
+                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_SplitterVert)))
                     {
-                        m_connectionsView.OnGUI();
+                        m_ConnectionsView.OnGUI();
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_splitterHorz, 0.1f, 0.8f, window);
+                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_SplitterHorz, 0.1f, 0.8f, window);
 
-                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_splitterHorz)))
+                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_SplitterHorz)))
                 {
-                    m_propertyGridView.OnGUI();
+                    m_PropertyGridView.OnGUI();
                 }
             }
         }
@@ -160,13 +156,13 @@ namespace HeapExplorer
         {
             if (command.toStaticField.isValid)
             {
-                m_staticFieldsControl.Select(command.toStaticField.classType.packed);
+                m_StaticFieldsControl.Select(command.toStaticField.classType.packed);
                 return;
             }
 
             if (command.toManagedType.isValid)
             {
-                m_staticFieldsControl.Select(command.toManagedType.packed);
+                m_StaticFieldsControl.Select(command.toManagedType.packed);
             }
         }
         
@@ -174,14 +170,14 @@ namespace HeapExplorer
         {
             if (!type.HasValue)
             {
-                m_selected = RichManagedType.invalid;
-                m_connectionsView.Clear();
-                m_propertyGridView.Clear();
+                m_Selected = RichManagedType.invalid;
+                m_ConnectionsView.Clear();
+                m_PropertyGridView.Clear();
                 return;
             }
 
-            m_selected = new RichManagedType(snapshot, type.Value.managedTypesArrayIndex);
-            var staticClass = m_selected.packed;
+            m_Selected = new RichManagedType(snapshot, type.Value.managedTypesArrayIndex);
+            var staticClass = m_Selected.packed;
             var staticFields = new List<PackedManagedStaticField>();
 
             // Find all static fields of selected type
@@ -190,9 +186,9 @@ namespace HeapExplorer
                 if (sf.managedTypesArrayIndex == staticClass.managedTypesArrayIndex)
                     staticFields.Add(sf);
             }
-            m_connectionsView.Inspect(staticFields.ToArray());
+            m_ConnectionsView.Inspect(staticFields.ToArray());
 
-            m_propertyGridView.Inspect(m_selected);
+            m_PropertyGridView.Inspect(m_Selected);
         }
     }
 }

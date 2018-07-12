@@ -10,16 +10,15 @@ namespace HeapExplorer
     // A large number of objects with the same value is inefficient from the point of memory usage.
     public class ManagedObjectDuplicatesView : HeapExplorerView
     {
-        string m_editorPrefsKey;
-        ManagedObjectDuplicatesControl m_objects;
-        HeSearchField m_objectsSearch;
-        ConnectionsView m_connectionsView;
-        RichManagedObject m_selected;
-        RootPathView m_rootPathView;
-        PropertyGridView m_propertyGridView;
-        float m_splitterHorzPropertyGrid = 0.32f;
-        float m_splitterVertConnections = 0.3333f;
-        float m_splitterVertRootPath = 0.3333f;
+        ManagedObjectDuplicatesControl m_ObjectsControl;
+        HeSearchField m_ObjectsSearchField;
+        ConnectionsView m_ConnectionsView;
+        RichManagedObject m_Selected;
+        RootPathView m_RootPathView;
+        PropertyGridView m_PropertyGridView;
+        float m_SplitterHorzPropertyGrid = 0.32f;
+        float m_SplitterVertConnections = 0.3333f;
+        float m_SplitterVertRootPath = 0.3333f;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -32,37 +31,36 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Object Duplicates", "");
-            m_editorPrefsKey = "HeapExplorer.ManagedObjectDuplicatesView";
+            //m_editorPrefsKey = "HeapExplorer.ManagedObjectDuplicatesView";
         }
         
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            m_connectionsView = CreateView<ConnectionsView>();
-            m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".m_connectionsView";
+            m_ConnectionsView = CreateView<ConnectionsView>();
+            m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
 
-            m_rootPathView = CreateView<RootPathView>();
-            m_rootPathView.editorPrefsKey = m_editorPrefsKey + ".m_rootPathView";
+            m_RootPathView = CreateView<RootPathView>();
+            m_RootPathView.editorPrefsKey = GetPrefsKey(() => m_RootPathView);
 
-            m_propertyGridView = CreateView<PropertyGridView>();
-            m_propertyGridView.editorPrefsKey = m_editorPrefsKey + ".m_propertyGridView";
+            m_PropertyGridView = CreateView<PropertyGridView>();
+            m_PropertyGridView.editorPrefsKey = GetPrefsKey(() => m_PropertyGridView);
 
-            m_objects = new ManagedObjectDuplicatesControl(window, m_editorPrefsKey + ".m_objects", new TreeViewState());
-            m_objects.onSelectionChange += OnListViewSelectionChange;
-            //m_objects.gotoCB += Goto;
+            m_ObjectsControl = new ManagedObjectDuplicatesControl(window, GetPrefsKey(() => m_ObjectsControl), new TreeViewState());
+            m_ObjectsControl.onSelectionChange += OnListViewSelectionChange;
 
-            m_objectsSearch = new HeSearchField(window);
-            m_objectsSearch.downOrUpArrowKeyPressed += m_objects.SetFocusAndEnsureSelectedItem;
-            m_objects.findPressed += m_objectsSearch.SetFocus;
+            m_ObjectsSearchField = new HeSearchField(window);
+            m_ObjectsSearchField.downOrUpArrowKeyPressed += m_ObjectsControl.SetFocusAndEnsureSelectedItem;
+            m_ObjectsControl.findPressed += m_ObjectsSearchField.SetFocus;
 
-            m_splitterHorzPropertyGrid = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterHorzPropertyGrid", m_splitterHorzPropertyGrid);
-            m_splitterVertConnections = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterVertConnections", m_splitterVertConnections);
-            m_splitterVertRootPath = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterVertRootPath", m_splitterVertRootPath);
+            m_SplitterHorzPropertyGrid = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorzPropertyGrid), m_SplitterHorzPropertyGrid);
+            m_SplitterVertConnections = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterVertConnections), m_SplitterVertConnections);
+            m_SplitterVertRootPath = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterVertRootPath), m_SplitterVertRootPath);
 
             var job = new Job();
             job.snapshot = snapshot;
-            job.control = m_objects;
+            job.control = m_ObjectsControl;
             ScheduleJob(job);
         }
         
@@ -70,43 +68,43 @@ namespace HeapExplorer
         {
             base.OnHide();
 
-            m_objects.SaveLayout();
+            m_ObjectsControl.SaveLayout();
 
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterHorzPropertyGrid", m_splitterHorzPropertyGrid);
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVertConnections", m_splitterVertConnections);
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVertRootPath", m_splitterVertRootPath);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorzPropertyGrid), m_SplitterHorzPropertyGrid);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterVertConnections), m_SplitterVertConnections);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterVertRootPath), m_SplitterVertRootPath);
         }
 
         public override GotoCommand GetRestoreCommand()
         {
-            if (m_selected.isValid)
-                return new GotoCommand(m_selected);
+            if (m_Selected.isValid)
+                return new GotoCommand(m_Selected);
 
             return base.GetRestoreCommand();
         }
 
         void OnListViewSelectionChange(PackedManagedObject? item)
         {
-            m_selected = RichManagedObject.invalid;
+            m_Selected = RichManagedObject.invalid;
             if (!item.HasValue)
             {
-                m_rootPathView.Clear();
-                m_connectionsView.Clear();
-                m_propertyGridView.Clear();
+                m_RootPathView.Clear();
+                m_ConnectionsView.Clear();
+                m_PropertyGridView.Clear();
                 return;
             }
 
-            m_selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
-            m_propertyGridView.Inspect(m_selected.packed);
-            m_connectionsView.Inspect(m_selected.packed);
-            m_rootPathView.Inspect(m_selected.packed);
+            m_Selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
+            m_PropertyGridView.Inspect(m_Selected.packed);
+            m_ConnectionsView.Inspect(m_Selected.packed);
+            m_RootPathView.Inspect(m_Selected.packed);
         }
 
         public override void OnGUI()
         {
             base.OnGUI();
 
-            EditorGUI.BeginDisabledGroup(m_objects.progress.value < 1);
+            EditorGUI.BeginDisabledGroup(m_ObjectsControl.progress.value < 1);
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUILayout.VerticalScope())
@@ -115,48 +113,48 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            var text = string.Format("{0} managed object duplicate(s) wasting {1} memory", m_objects.managedObjectsCount, EditorUtility.FormatBytes(m_objects.managedObjectsSize));
+                            var text = string.Format("{0} managed object duplicate(s) wasting {1} memory", m_ObjectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize));
                             window.SetStatusbarString(text);
 
                             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
-                            if (m_objectsSearch.OnToolbarGUI())
-                                m_objects.Search(m_objectsSearch.text);
+                            if (m_ObjectsSearchField.OnToolbarGUI())
+                                m_ObjectsControl.Search(m_ObjectsSearchField.text);
                         }
                         GUILayout.Space(2);
 
-                        m_objects.OnGUI();
+                        m_ObjectsControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVertConnections".GetHashCode(), ref m_splitterVertConnections, 0.1f, 0.8f, window);
+                    HeEditorGUILayout.VerticalSplitter("m_splitterVertConnections".GetHashCode(), ref m_SplitterVertConnections, 0.1f, 0.8f, window);
 
-                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_splitterVertConnections)))
+                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_SplitterVertConnections)))
                     {
-                        m_connectionsView.OnGUI();
+                        m_ConnectionsView.OnGUI();
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorzPropertyGrid".GetHashCode(), ref m_splitterHorzPropertyGrid, 0.1f, 0.6f, window);
+                HeEditorGUILayout.HorizontalSplitter("m_splitterHorzPropertyGrid".GetHashCode(), ref m_SplitterHorzPropertyGrid, 0.1f, 0.6f, window);
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_splitterHorzPropertyGrid)))
+                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_SplitterHorzPropertyGrid)))
                     {
-                        m_propertyGridView.OnGUI();
+                        m_PropertyGridView.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVertRootPath".GetHashCode(), ref m_splitterVertRootPath, 0.1f, 0.8f, window);
+                    HeEditorGUILayout.VerticalSplitter("m_splitterVertRootPath".GetHashCode(), ref m_SplitterVertRootPath, 0.1f, 0.8f, window);
 
-                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_splitterHorzPropertyGrid), GUILayout.Height(window.position.height * m_splitterVertRootPath)))
+                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_SplitterHorzPropertyGrid), GUILayout.Height(window.position.height * m_SplitterVertRootPath)))
                     {
-                        m_rootPathView.OnGUI();
+                        m_RootPathView.OnGUI();
                     }
                 }
             }
             EditorGUI.EndDisabledGroup();
 
-            if (m_objects.progress.value < 1)
+            if (m_ObjectsControl.progress.value < 1)
             {
-                window.SetBusy(string.Format("Analyzing Managed Objects Memory, {0:F0}% done", m_objects.progress.value * 100));
+                window.SetBusy(string.Format("Analyzing Managed Objects Memory, {0:F0}% done", m_ObjectsControl.progress.value * 100));
             }
         }
 

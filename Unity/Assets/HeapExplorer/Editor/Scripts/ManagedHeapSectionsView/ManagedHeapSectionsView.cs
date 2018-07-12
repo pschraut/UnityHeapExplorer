@@ -8,13 +8,12 @@ namespace HeapExplorer
 {
     public class ManagedHeapSectionsView : HeapExplorerView
     {
-        ManagedHeapSectionsControl m_heapSectionsControl;
-        HeSearchField m_heapSectionsSearch;
-        ConnectionsView m_connectionsView;
-        string m_editorPrefsKey = "";
-        float m_splitterHorz = 0.5f;
-        Texture2D m_heapFragTexture;
-        Texture2D m_memorySectionFragTexture;
+        ManagedHeapSectionsControl m_SectionsControl;
+        HeSearchField m_SectionsSearchField;
+        ConnectionsView m_ConnectionsView;
+        float m_SplitterHorz = 0.5f;
+        Texture2D m_HeapFragTexture;
+        Texture2D m_SectionFragTexture;
         Rect m_ToolbarButtonRect;
 
         [InitializeOnLoadMethod]
@@ -27,7 +26,6 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            m_editorPrefsKey = "HeapExplorer.ManagedHeapSectionsView";
             titleContent = new GUIContent("C# Memory Sections", "Managed heap memory sections.");
         }
 
@@ -97,40 +95,40 @@ namespace HeapExplorer
 
             ReleaseTextures();
 
-            m_memorySectionFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
-            m_memorySectionFragTexture.name = "HeapExplorer-MemorySectionFragmentation-Texture";
+            m_SectionFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
+            m_SectionFragTexture.name = "HeapExplorer-MemorySectionFragmentation-Texture";
 
-            m_heapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
-            m_heapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
-            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_heapFragTexture });
+            m_HeapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
+            m_HeapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
+            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture });
 
-            m_connectionsView = CreateView<ConnectionsView>();
-            m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".m_connectionsView";
-            m_connectionsView.showReferencedBy = false;
+            m_ConnectionsView = CreateView<ConnectionsView>();
+            m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
+            m_ConnectionsView.showReferencedBy = false;
 
-            m_heapSectionsControl = new ManagedHeapSectionsControl(window, m_editorPrefsKey + ".m_heapSectionsControl", new TreeViewState());
-            m_heapSectionsControl.SetTree(m_heapSectionsControl.BuildTree(snapshot));
-            m_heapSectionsControl.onSelectionChange += OnListViewSelectionChange;
+            m_SectionsControl = new ManagedHeapSectionsControl(window, GetPrefsKey(() => m_SectionsControl), new TreeViewState());
+            m_SectionsControl.SetTree(m_SectionsControl.BuildTree(snapshot));
+            m_SectionsControl.onSelectionChange += OnListViewSelectionChange;
 
-            m_heapSectionsSearch = new HeSearchField(window);
-            m_heapSectionsSearch.downOrUpArrowKeyPressed += m_heapSectionsControl.SetFocusAndEnsureSelectedItem;
-            m_heapSectionsControl.findPressed += m_heapSectionsSearch.SetFocus;
+            m_SectionsSearchField = new HeSearchField(window);
+            m_SectionsSearchField.downOrUpArrowKeyPressed += m_SectionsControl.SetFocusAndEnsureSelectedItem;
+            m_SectionsControl.findPressed += m_SectionsSearchField.SetFocus;
 
-            m_splitterHorz = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
+            m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
         }
 
         void ReleaseTextures()
         {
-            if (m_memorySectionFragTexture != null)
+            if (m_SectionFragTexture != null)
             {
-                Texture2D.DestroyImmediate(m_memorySectionFragTexture);
-                m_memorySectionFragTexture = null;
+                Texture2D.DestroyImmediate(m_SectionFragTexture);
+                m_SectionFragTexture = null;
             }
 
-            if (m_heapFragTexture != null)
+            if (m_HeapFragTexture != null)
             {
-                Texture2D.DestroyImmediate(m_heapFragTexture);
-                m_heapFragTexture = null;
+                Texture2D.DestroyImmediate(m_HeapFragTexture);
+                m_HeapFragTexture = null;
             }
         }
 
@@ -138,8 +136,8 @@ namespace HeapExplorer
         {
             base.OnHide();
 
-            m_heapSectionsControl.SaveLayout();
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
+            m_SectionsControl.SaveLayout();
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
         }
 
         public override void OnGUI()
@@ -155,12 +153,12 @@ namespace HeapExplorer
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
-                            if (m_heapSectionsSearch.OnToolbarGUI())
-                                m_heapSectionsControl.Search(m_heapSectionsSearch.text);
+                            if (m_SectionsSearchField.OnToolbarGUI())
+                                m_SectionsControl.Search(m_SectionsSearchField.text);
                         }
                         GUILayout.Space(2);
 
-                        m_heapSectionsControl.OnGUI();
+                        m_SectionsControl.OnGUI();
                     }
 
                     // Managed heap fragmentation view
@@ -168,20 +166,20 @@ namespace HeapExplorer
                     {
                         var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.managedHeapSize), EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace));
                         GUILayout.Label(text, EditorStyles.boldLabel);
-                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_heapFragTexture, ScaleMode.StretchToFill);
+                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_splitterHorz, 0.1f, 0.8f, window);
-                using (new EditorGUILayout.VerticalScope(GUILayout.Width(window.position.width * m_splitterHorz)))
+                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_SplitterHorz, 0.1f, 0.8f, window);
+                using (new EditorGUILayout.VerticalScope(GUILayout.Width(window.position.width * m_SplitterHorz)))
                 {
-                    m_connectionsView.OnGUI();
+                    m_ConnectionsView.OnGUI();
 
                     // Managed heap section fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
                         GUILayout.Label("Memory section usage (Issue: static field memory and gchandle memory is missing due to limited MemoryProfiling API)", EditorStyles.boldLabel);
-                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_memorySectionFragTexture, ScaleMode.StretchToFill);
+                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_SectionFragTexture, ScaleMode.StretchToFill);
                     }
                 }
             }
@@ -191,17 +189,17 @@ namespace HeapExplorer
         {
             if (!mo.HasValue)
             {
-                m_connectionsView.Clear();
+                m_ConnectionsView.Clear();
                 return;
             }
 
             var job = new MemorySectionFragmentationJob();
-            job.texture = m_memorySectionFragTexture;
+            job.texture = m_SectionFragTexture;
             job.snapshot = snapshot;
             job.memorySection = mo.Value;
             ScheduleJob(job);
 
-            m_connectionsView.Inspect(mo.Value);
+            m_ConnectionsView.Inspect(mo.Value);
         }
 
         class HeapFragmentationJob : AbstractThreadJob

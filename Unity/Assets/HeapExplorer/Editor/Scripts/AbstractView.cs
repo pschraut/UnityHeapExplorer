@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Linq.Expressions;
 
 namespace HeapExplorer
 {
@@ -26,8 +27,6 @@ namespace HeapExplorer
             internal set;
         }
 
-        //public Action<GotoCommand> gotoCB;
-
         /// <summary>
         /// Gets whether the view is currently active.
         /// </summary>
@@ -40,16 +39,39 @@ namespace HeapExplorer
         /// <summary>
         /// Gets the active memory snapshot.
         /// </summary>
-        protected PackedMemorySnapshot snapshot
+        public PackedMemorySnapshot snapshot
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// The key-prefix to load and save EditorPrefs.
+        /// </summary>
+        public string editorPrefsKey
+        {
+            get;
+            set;
+        }
+
         List<HeapExplorerView> m_Views = new List<HeapExplorerView>();
+
+        // This allows to pass a member variable whose name is converted to a string.
+        protected string GetPrefsKey(Expression<Func<object>> exp)
+        {
+            var body = exp.Body as MemberExpression;
+            if (body == null)
+            {
+                var ubody = (UnaryExpression)exp.Body;
+                body = ubody.Operand as MemberExpression;
+            }
+
+            return string.Format("HeapExplorer.{0}.{1}", editorPrefsKey, body.Member.Name);
+        }
 
         public HeapExplorerView()
         {
+            editorPrefsKey = GetType().Name;
         }
 
         public virtual void Awake()
@@ -63,11 +85,10 @@ namespace HeapExplorer
                 v.OnDestroy();
 
             m_Views = null;
-            //gotoCB = null;
             snapshot = null;
         }
 
-        internal void ThrowOutHeap()
+        internal void EvictHeap()
         {
             snapshot = null;
         }
@@ -147,8 +168,6 @@ namespace HeapExplorer
         protected void Goto(GotoCommand command)
         {
             window.OnGoto(command);
-            //if (gotoCB != null)
-            //    gotoCB(command);
         }
 
         protected void Repaint()
@@ -165,7 +184,6 @@ namespace HeapExplorer
         {
             var view = new T();
             view.window = window;
-            //view.gotoCB += Goto;
             view.Awake();
             m_Views.Add(view);
             return view;

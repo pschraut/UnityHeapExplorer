@@ -23,7 +23,6 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C++ Asset Duplicates (guessed)", "");
-            m_EditorPrefsKey = "HeapExplorer.NativeObjectDuplicatesView";
         }
 
         protected override void OnRebuild()

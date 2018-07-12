@@ -8,7 +8,7 @@ namespace HeapExplorer
 {
     public class NativeObjectsView : AbstractNativeObjectsView
     {
-        Job m_job;
+        Job m_Job;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -21,7 +21,6 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C++ Objects", "");
-            m_EditorPrefsKey = "HeapExplorer.NativeObjectsView";
         }
 
         public override int CanProcessCommand(GotoCommand command)
@@ -36,15 +35,15 @@ namespace HeapExplorer
         {
             base.OnRebuild();
 
-            m_job = new Job();
-            m_job.control = m_NativeObjectsControl;
-            m_job.snapshot = snapshot;
-            m_job.buildArgs.addAssetObjects = this.showAssets;
-            m_job.buildArgs.addSceneObjects = this.showSceneObjects;
-            m_job.buildArgs.addRuntimeObjects = this.showRuntimeObjects;
-            m_job.buildArgs.addDestroyOnLoad = this.showDestroyOnLoadObjects;
-            m_job.buildArgs.addDontDestroyOnLoad = this.showDontDestroyOnLoadObjects;
-            ScheduleJob(m_job);
+            m_Job = new Job();
+            m_Job.control = m_NativeObjectsControl;
+            m_Job.snapshot = snapshot;
+            m_Job.buildArgs.addAssetObjects = this.showAssets;
+            m_Job.buildArgs.addSceneObjects = this.showSceneObjects;
+            m_Job.buildArgs.addRuntimeObjects = this.showRuntimeObjects;
+            m_Job.buildArgs.addDestroyOnLoad = this.showDestroyOnLoadObjects;
+            m_Job.buildArgs.addDontDestroyOnLoad = this.showDontDestroyOnLoadObjects;
+            ScheduleJob(m_Job);
         }
 
         protected override void OnDrawHeader()
@@ -61,10 +60,10 @@ namespace HeapExplorer
         {
             base.OnGUI();
 
-            if (m_job != null && m_job.state != AbstractThreadJob.State.Completed)
+            if (m_Job != null && m_Job.state != AbstractThreadJob.State.Completed)
                 window.SetBusy("Working...");
-            else if (m_job != null && m_job.state == AbstractThreadJob.State.Completed)
-                m_job = null;
+            else if (m_Job != null && m_Job.state == AbstractThreadJob.State.Completed)
+                m_Job = null;
         }
 
         class Job : AbstractThreadJob

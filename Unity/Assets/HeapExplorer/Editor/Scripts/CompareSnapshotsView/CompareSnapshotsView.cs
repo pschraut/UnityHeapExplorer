@@ -8,12 +8,11 @@ namespace HeapExplorer
 {
     public class CompareSnapshotsView : HeapExplorerView
     {
-        string m_editorPrefsKey;
-        CompareSnapshotsControl m_objects;
-        HeSearchField m_objectsSearch;
-        string m_snapshotBPath = "";
-        PackedMemorySnapshot m_snapshotB;
-        Job m_job;
+        CompareSnapshotsControl m_CompareControl;
+        HeSearchField m_CompareSearchField;
+        string m_SnapshotBPath = "";
+        PackedMemorySnapshot m_SnapshotB;
+        Job m_Job;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -26,12 +25,11 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("Compare Snapshot", "");
-            m_editorPrefsKey = "HeapExplorer.CompareSnapshotsView";
         }
 
         public override void OnDestroy()
         {
-            m_job = null;
+            m_Job = null;
 
             base.OnDestroy();
         }
@@ -40,17 +38,16 @@ namespace HeapExplorer
         {
             base.OnCreate();
 
-            m_objects = new CompareSnapshotsControl(window, m_editorPrefsKey + ".m_objects", new TreeViewState());
-            //m_objects.gotoCB += Goto;
+            m_CompareControl = new CompareSnapshotsControl(window, GetPrefsKey(()=> m_CompareControl), new TreeViewState());
 
-            m_objectsSearch = new HeSearchField(window);
-            m_objectsSearch.downOrUpArrowKeyPressed += m_objects.SetFocusAndEnsureSelectedItem;
-            m_objects.findPressed += m_objectsSearch.SetFocus;
+            m_CompareSearchField = new HeSearchField(window);
+            m_CompareSearchField.downOrUpArrowKeyPressed += m_CompareControl.SetFocusAndEnsureSelectedItem;
+            m_CompareControl.findPressed += m_CompareSearchField.SetFocus;
 
-            if (snapshot != null && m_snapshotB != null)
+            if (snapshot != null && m_SnapshotB != null)
             {
-                var tree = m_objects.BuildTree(snapshot, m_snapshotB);
-                m_objects.SetTree(tree);
+                var tree = m_CompareControl.BuildTree(snapshot, m_SnapshotB);
+                m_CompareControl.SetTree(tree);
             }
         }
 
@@ -58,7 +55,7 @@ namespace HeapExplorer
         {
             base.OnHide();
 
-            m_objects.SaveLayout();
+            m_CompareControl.SaveLayout();
         }
 
         public override void OnGUI()
@@ -75,8 +72,8 @@ namespace HeapExplorer
                         {
                             EditorGUILayout.LabelField("Compare Snapshot (A) with (B)", EditorStyles.boldLabel);
 
-                            if (m_objectsSearch.OnToolbarGUI())
-                                m_objects.Search(m_objectsSearch.text);
+                            if (m_CompareSearchField.OnToolbarGUI())
+                                m_CompareControl.Search(m_CompareSearchField.text);
                         }
 
                         GUILayout.Space(2);
@@ -108,12 +105,12 @@ namespace HeapExplorer
                                 using (new EditorGUILayout.HorizontalScope())
                                 {
                                     GUILayout.Label("(B)", GUILayout.Width(24));
-                                    if (!string.IsNullOrEmpty(m_snapshotBPath))
+                                    if (!string.IsNullOrEmpty(m_SnapshotBPath))
                                     {
-                                        if(m_snapshotBPath.EndsWith(".heap", System.StringComparison.OrdinalIgnoreCase))
-                                            GUILayout.Label(System.IO.Path.GetFileName(m_snapshotBPath));
+                                        if(m_SnapshotBPath.EndsWith(".heap", System.StringComparison.OrdinalIgnoreCase))
+                                            GUILayout.Label(System.IO.Path.GetFileName(m_SnapshotBPath));
                                         else
-                                            GUILayout.Label(m_snapshotBPath);
+                                            GUILayout.Label(m_SnapshotBPath);
                                     }
 
                                     if (GUILayout.Button(new GUIContent("Load...", "Load snapshot (B)"), GUILayout.Width(64)))
@@ -161,14 +158,14 @@ namespace HeapExplorer
 
                         GUILayout.Space(2);
 
-                        m_objects.OnGUI();
+                        m_CompareControl.OnGUI();
                     }
                 }
             }
 
-            if (m_job != null)
+            if (m_Job != null)
             {
-                window.SetBusy(m_job.stateString);
+                window.SetBusy(m_Job.stateString);
                 Repaint();
             }
         }
@@ -177,25 +174,25 @@ namespace HeapExplorer
         {
             var a = window.snapshot;
             var apath = window.snapshotPath;
-            window.snapshot = m_snapshotB;
-            window.snapshotPath = m_snapshotBPath;
-            m_snapshotB = a;
-            m_snapshotBPath = apath;
-            m_objects.SwapAB();
+            window.snapshot = m_SnapshotB;
+            window.snapshotPath = m_SnapshotBPath;
+            m_SnapshotB = a;
+            m_SnapshotBPath = apath;
+            m_CompareControl.SwapAB();
         }
 
         void LoadSnapshotB(string path)
         {
-            m_snapshotBPath = path;
+            m_SnapshotBPath = path;
 
-            m_job = new Job
+            m_Job = new Job
             {
                 snapshotA = snapshot,
-                control = m_objects,
+                control = m_CompareControl,
                 pathB = path,
                 view = this
             };
-            ScheduleJob(m_job);
+            ScheduleJob(m_Job);
         }
 
         class Job : AbstractThreadJob
@@ -231,9 +228,9 @@ namespace HeapExplorer
             {
                 control.SetTree(tree);
 
-                view.m_snapshotBPath = pathB;
-                view.m_snapshotB = snapshotB;
-                view.m_job = null;
+                view.m_SnapshotBPath = pathB;
+                view.m_SnapshotB = snapshotB;
+                view.m_Job = null;
             }
         }
     }

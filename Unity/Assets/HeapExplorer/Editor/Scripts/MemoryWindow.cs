@@ -8,37 +8,24 @@ namespace HeapExplorer
 {
     public class HexView : HeapExplorerView
     {
-        HexViewControl m_hexView;
-        ArraySegment64<byte> m_segment;
-
-        public string editorPrefsKey
-        {
-            get;
-            set;
-        }
-
-        public override void Awake()
-        {
-            base.Awake();
-
-            editorPrefsKey = "HeapExplorer.HexView";
-        }
+        HexViewControl m_HexControl;
+        ArraySegment64<byte> m_Segment;
 
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            m_hexView = new HexViewControl();
+            m_HexControl = new HexViewControl();
         }
 
         public void Clear()
         {
-            m_segment = new ArraySegment64<byte>();
+            m_Segment = new ArraySegment64<byte>();
         }
 
         public void Inspect(PackedMemorySnapshot memory, System.UInt64 address, System.UInt64 size)
         {
-            m_segment = new ArraySegment64<byte>();
+            m_Segment = new ArraySegment64<byte>();
             if (address == 0)
                 return;
 
@@ -53,17 +40,15 @@ namespace HeapExplorer
 
         public void Inspect(PackedMemorySnapshot memory, System.UInt64 address, ArraySegment64<byte> segment)
         {
-            m_segment = segment;
-            m_hexView.Create(window, address, m_segment);
+            m_Segment = segment;
+            m_HexControl.Create(window, address, m_Segment);
         }
 
         public override void OnGUI()
         {
             base.OnGUI();
 
-            //DrawTopBar();
-
-            if (m_segment.count == 0)
+            if (m_Segment.count == 0)
             {
                 EditorGUILayout.HelpBox("Can't inspect memory.", MessageType.Info);
                 GUILayoutUtility.GetRect(50, 100000, 50, 100000);
@@ -71,7 +56,7 @@ namespace HeapExplorer
             }
             else
             {
-                m_hexView.OnGUI();
+                m_HexControl.OnGUI();
             }
 
             DrawBottomBar();
@@ -81,7 +66,7 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                EditorGUI.BeginDisabledGroup(m_segment.array == null);
+                EditorGUI.BeginDisabledGroup(m_Segment.array == null);
                 if (GUILayout.Button("Save...", EditorStyles.toolbarButton, GUILayout.Width(80)))
                 {
                     var filePath = EditorUtility.SaveFilePanel("Save as...", "", "", "mem");
@@ -89,7 +74,7 @@ namespace HeapExplorer
                     {
                         using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.OpenOrCreate))
                         {
-                            stream.Write(m_segment.array, (int)m_segment.offset, (int)m_segment.count);
+                            stream.Write(m_Segment.array, (int)m_Segment.offset, (int)m_Segment.count);
                         }
                     }
                 }

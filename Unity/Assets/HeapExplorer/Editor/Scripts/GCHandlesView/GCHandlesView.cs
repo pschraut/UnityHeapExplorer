@@ -8,14 +8,13 @@ namespace HeapExplorer
 {
     public class GCHandlesView : HeapExplorerView
     {
-        GCHandlesControl m_gcHandlesControl;
-        HeSearchField m_objectsSearch;
-        ConnectionsView m_connectionsView;
-        PackedGCHandle? m_selected;
-        RootPathView m_rootPathView;
-        string m_editorPrefsKey = "";
-        float m_splitterHorz = 0.33333f;
-        float m_splitterVert = 0.32f;
+        GCHandlesControl m_HandlesControl;
+        HeSearchField m_HandlesSearchField;
+        ConnectionsView m_ConnectionsView;
+        PackedGCHandle? m_Selected;
+        RootPathView m_RootPathView;
+        float m_SplitterHorz = 0.33333f;
+        float m_SplitterVert = 0.32f;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -28,45 +27,43 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("GC Handles", "");
-            m_editorPrefsKey = "HeapExplorer.GCHandlesView";
         }
 
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            m_connectionsView = CreateView<ConnectionsView>();
-            m_connectionsView.editorPrefsKey = m_editorPrefsKey + ".ConnectionsView";
+            m_ConnectionsView = CreateView<ConnectionsView>();
+            m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
 
-            m_rootPathView = CreateView<RootPathView>();
-            m_rootPathView.editorPrefsKey = m_editorPrefsKey + ".RootPathView";
+            m_RootPathView = CreateView<RootPathView>();
+            m_RootPathView.editorPrefsKey = GetPrefsKey(() => m_RootPathView);
 
-            m_gcHandlesControl = new GCHandlesControl(window, m_editorPrefsKey + ".GCHandlesControl", new TreeViewState());
-            m_gcHandlesControl.SetTree(m_gcHandlesControl.BuildTree(snapshot));
-            //m_gcHandlesControl.gotoCB += Goto;
-            m_gcHandlesControl.onSelectionChange += OnListViewSelectionChange;
+            m_HandlesControl = new GCHandlesControl(window, GetPrefsKey(() => m_HandlesControl), new TreeViewState());
+            m_HandlesControl.SetTree(m_HandlesControl.BuildTree(snapshot));
+            m_HandlesControl.onSelectionChange += OnListViewSelectionChange;
 
-            m_objectsSearch = new HeSearchField(window);
-            m_objectsSearch.downOrUpArrowKeyPressed += m_gcHandlesControl.SetFocusAndEnsureSelectedItem;
-            m_gcHandlesControl.findPressed += m_objectsSearch.SetFocus;
+            m_HandlesSearchField = new HeSearchField(window);
+            m_HandlesSearchField.downOrUpArrowKeyPressed += m_HandlesControl.SetFocusAndEnsureSelectedItem;
+            m_HandlesControl.findPressed += m_HandlesSearchField.SetFocus;
 
-            m_splitterHorz = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
-            m_splitterVert = EditorPrefs.GetFloat(m_editorPrefsKey + ".m_splitterVert", m_splitterVert);
+            m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            m_SplitterVert = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
         }
 
         protected override void OnHide()
         {
             base.OnHide();
 
-            m_gcHandlesControl.SaveLayout();
+            m_HandlesControl.SaveLayout();
 
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterHorz", m_splitterHorz);
-            EditorPrefs.SetFloat(m_editorPrefsKey + ".m_splitterVert", m_splitterVert);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
         }
 
         public override void RestoreCommand(GotoCommand command)
         {
-            m_gcHandlesControl.Select(command.toGCHandle.packed);
+            m_HandlesControl.Select(command.toGCHandle.packed);
         }
 
         public override int CanProcessCommand(GotoCommand command)
@@ -79,8 +76,8 @@ namespace HeapExplorer
 
         public override GotoCommand GetRestoreCommand()
         {
-            if (m_selected.HasValue)
-                return new GotoCommand(new RichGCHandle(snapshot, m_selected.Value.gcHandlesArrayIndex));
+            if (m_Selected.HasValue)
+                return new GotoCommand(new RichGCHandle(snapshot, m_Selected.Value.gcHandlesArrayIndex));
 
             return base.GetRestoreCommand();
         }
@@ -88,17 +85,17 @@ namespace HeapExplorer
         // Called if the selection changed in the list that contains the managed objects overview.
         void OnListViewSelectionChange(PackedGCHandle? packedGCHandle)
         {
-            m_selected = packedGCHandle;
+            m_Selected = packedGCHandle;
 
             if (!packedGCHandle.HasValue)
             {
-                m_rootPathView.Clear();
-                m_connectionsView.Clear();
+                m_RootPathView.Clear();
+                m_ConnectionsView.Clear();
                 return;
             }
 
-            m_connectionsView.Inspect(packedGCHandle.Value);
-            m_rootPathView.Inspect(m_selected.Value);
+            m_ConnectionsView.Inspect(packedGCHandle.Value);
+            m_RootPathView.Inspect(m_Selected.Value);
         }
 
         public override void OnGUI()
@@ -115,27 +112,27 @@ namespace HeapExplorer
                         {
                             EditorGUILayout.LabelField(string.Format("{0} GCHandle(s)", snapshot.gcHandles.Length), EditorStyles.boldLabel);
 
-                            if (m_objectsSearch.OnToolbarGUI())
-                                m_gcHandlesControl.Search(m_objectsSearch.text);
+                            if (m_HandlesSearchField.OnToolbarGUI())
+                                m_HandlesControl.Search(m_HandlesSearchField.text);
                         }
                         GUILayout.Space(2);
 
-                        m_gcHandlesControl.OnGUI();
+                        m_HandlesControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), ref m_splitterVert, 0.1f, 0.8f, window);
+                    HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), ref m_SplitterVert, 0.1f, 0.8f, window);
 
-                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_splitterVert)))
+                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_SplitterVert)))
                     {
-                        m_connectionsView.OnGUI();
+                        m_ConnectionsView.OnGUI();
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_splitterHorz, 0.1f, 0.8f, window);
+                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_SplitterHorz, 0.1f, 0.8f, window);
 
-                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_splitterHorz)))
+                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_SplitterHorz)))
                 {
-                    m_rootPathView.OnGUI();
+                    m_RootPathView.OnGUI();
                 }
             }
         }

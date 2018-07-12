@@ -8,7 +8,6 @@ namespace HeapExplorer
 {
     public class AbstractNativeObjectsView : HeapExplorerView
     {
-        protected string m_EditorPrefsKey;
         protected NativeObjectsControl m_NativeObjectsControl;
 
         NativeObjectControl m_NativeObjectControl;
@@ -27,11 +26,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(m_EditorPrefsKey + ".showAssets", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => showAssets), true);
             }
             set
             {
-                EditorPrefs.SetBool(m_EditorPrefsKey + ".showAssets", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => showAssets), value);
             }
         }
 
@@ -39,11 +38,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(m_EditorPrefsKey + ".showSceneObjects", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => showSceneObjects), true);
             }
             set
             {
-                EditorPrefs.SetBool(m_EditorPrefsKey + ".showSceneObjects", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => showSceneObjects), value);
             }
         }
 
@@ -51,11 +50,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(m_EditorPrefsKey + ".showRuntimeObjects", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => showRuntimeObjects), true);
             }
             set
             {
-                EditorPrefs.SetBool(m_EditorPrefsKey + ".showRuntimeObjects", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => showRuntimeObjects), value);
             }
         }
 
@@ -63,11 +62,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(m_EditorPrefsKey + ".showDestroyOnLoadObjects", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => showDestroyOnLoadObjects), true);
             }
             set
             {
-                EditorPrefs.SetBool(m_EditorPrefsKey + ".showDestroyOnLoadObjects", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => showDestroyOnLoadObjects), value);
             }
         }
 
@@ -75,11 +74,11 @@ namespace HeapExplorer
         {
             get
             {
-                return EditorPrefs.GetBool(m_EditorPrefsKey + ".showDontDestroyOnLoadObjects", true);
+                return EditorPrefs.GetBool(GetPrefsKey(() => showDontDestroyOnLoadObjects), true);
             }
             set
             {
-                EditorPrefs.SetBool(m_EditorPrefsKey + ".showDontDestroyOnLoadObjects", value);
+                EditorPrefs.SetBool(GetPrefsKey(() => showDontDestroyOnLoadObjects), value);
             }
         }
 
@@ -88,13 +87,13 @@ namespace HeapExplorer
             base.OnCreate();
 
             m_ConnectionsView = CreateView<ConnectionsView>();
-            m_ConnectionsView.editorPrefsKey = m_EditorPrefsKey + ".m_connectionsView";
+            m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
 
             m_RootPathView = CreateView<RootPathView>();
-            m_RootPathView.editorPrefsKey = m_EditorPrefsKey + ".m_rootPathView";
+            m_RootPathView.editorPrefsKey = GetPrefsKey(() => m_RootPathView);
 
             // The list at the left that contains all native objects
-            m_NativeObjectsControl = new NativeObjectsControl(window, m_EditorPrefsKey + ".m_nativeObjectsControl", new TreeViewState());
+            m_NativeObjectsControl = new NativeObjectsControl(window, GetPrefsKey(() => m_NativeObjectsControl), new TreeViewState());
             m_NativeObjectsControl.onSelectionChange += OnListViewSelectionChange;
             //m_NativeObjectsControl.gotoCB += Goto;
 
@@ -103,13 +102,13 @@ namespace HeapExplorer
             m_NativeObjectsControl.findPressed += m_SearchField.SetFocus;
 
             // The list at the right that shows the selected native object
-            m_NativeObjectControl = new NativeObjectControl(window, m_EditorPrefsKey + ".m_nativeObjectControl", new TreeViewState());
+            m_NativeObjectControl = new NativeObjectControl(window, GetPrefsKey(() => m_NativeObjectControl), new TreeViewState());
             m_PreviewView = CreateView<NativeObjectPreviewView>();
 
-            m_SplitterHorz = EditorPrefs.GetFloat(m_EditorPrefsKey + ".m_splitterHorz", m_SplitterHorz);
-            m_SplitterVert = EditorPrefs.GetFloat(m_EditorPrefsKey + ".m_splitterVert", m_SplitterVert);
-            m_PreviewSplitterVert = EditorPrefs.GetFloat(m_EditorPrefsKey + ".m_PreviewSplitterVert", m_PreviewSplitterVert);
-            m_RootPathSplitterVert = EditorPrefs.GetFloat(m_EditorPrefsKey + ".m_RootPathSplitterVert", m_RootPathSplitterVert);
+            m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            m_SplitterVert = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
+            m_PreviewSplitterVert = EditorPrefs.GetFloat(GetPrefsKey(() => m_PreviewSplitterVert), m_PreviewSplitterVert);
+            m_RootPathSplitterVert = EditorPrefs.GetFloat(GetPrefsKey(() => m_RootPathSplitterVert), m_RootPathSplitterVert);
 
             OnRebuild();
         }
@@ -121,10 +120,10 @@ namespace HeapExplorer
             m_NativeObjectsControl.SaveLayout();
             m_NativeObjectControl.SaveLayout();
 
-            EditorPrefs.SetFloat(m_EditorPrefsKey + ".m_splitterHorz", m_SplitterHorz);
-            EditorPrefs.SetFloat(m_EditorPrefsKey + ".m_splitterVert", m_SplitterVert);
-            EditorPrefs.SetFloat(m_EditorPrefsKey + ".m_PreviewSplitterVert", m_PreviewSplitterVert);
-            EditorPrefs.SetFloat(m_EditorPrefsKey + ".m_RootPathSplitterVert", m_RootPathSplitterVert);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterVert), m_SplitterVert);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_PreviewSplitterVert), m_PreviewSplitterVert);
+            EditorPrefs.SetFloat(GetPrefsKey(() => m_RootPathSplitterVert), m_RootPathSplitterVert);
         }
 
         protected virtual void OnRebuild()

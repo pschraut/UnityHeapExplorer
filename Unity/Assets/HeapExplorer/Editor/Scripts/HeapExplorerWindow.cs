@@ -169,7 +169,7 @@ namespace HeapExplorer
             }
 
             for (var n = 0; n < m_views.Count; ++n)
-                m_views[n].ThrowOutHeap();
+                m_views[n].EvictHeap();
         }
 
         void DestroyViews()
