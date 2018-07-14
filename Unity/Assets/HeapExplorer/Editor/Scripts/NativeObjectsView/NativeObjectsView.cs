@@ -21,6 +21,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C++ Objects", "");
+            viewMenuOrder = 550;
         }
 
         public override int CanProcessCommand(GotoCommand command)

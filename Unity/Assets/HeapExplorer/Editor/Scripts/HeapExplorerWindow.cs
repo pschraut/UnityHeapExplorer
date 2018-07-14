@@ -25,7 +25,7 @@ namespace HeapExplorer
         //[NonSerialized] Test_Editor m_testVariables = new Test_Editor();
         [NonSerialized] ManagedDelegatesView m_managedDelegatesView;
         [NonSerialized] string m_ErrorMsg;
-        [NonSerialized] bool m_UseThread = true;
+        //[NonSerialized] bool m_UseThread = true;
         [NonSerialized] string m_autoSavePath="";
         [NonSerialized] string m_statusBarString="";
         [NonSerialized] string m_busyString="";
@@ -94,12 +94,35 @@ namespace HeapExplorer
             EditorWindow.GetWindow<HeapExplorerWindow>();
         }
 
+        bool useThreads
+        {
+            get
+            {
+                return EditorPrefs.GetBool("HeapExplorerWindow.m_UseThread", true);
+            }
+            set
+            {
+                EditorPrefs.SetBool("HeapExplorerWindow.m_UseThread", value);
+            }
+        }
+
+        bool debugViewMenu
+        {
+            get
+            {
+                return EditorPrefs.GetBool("HeapExplorerWindow.debugViewMenu", false);
+            }
+            set
+            {
+                EditorPrefs.SetBool("HeapExplorerWindow.debugViewMenu", value);
+            }
+        }
+
         void OnEnable()
         {
             titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
-            m_UseThread = EditorPrefs.GetBool("HeapExplorerWindow.m_UseThread", m_UseThread);
 
             CreateViews();
 
@@ -439,10 +462,13 @@ namespace HeapExplorer
                     });
 
                     menu.AddSeparator("");
-                    menu.AddItem(new GUIContent("Settings/Use Multi-Threading"), m_UseThread, delegate()
+                    menu.AddItem(new GUIContent("Settings/Use Multi-Threading"), useThreads, delegate()
                     {
-                        m_UseThread = !m_UseThread;
-                        EditorPrefs.SetBool("HeapExplorerWindow.m_UseThread", m_UseThread);
+                        useThreads = !useThreads;
+                    });
+                    menu.AddItem(new GUIContent("Settings/Debug View Menu"), debugViewMenu, delegate ()
+                    {
+                        debugViewMenu = !debugViewMenu;
                     });
 
                     menu.DropDown(m_fileToolbarButtonRect);
@@ -454,10 +480,40 @@ namespace HeapExplorer
                 EditorGUI.BeginDisabledGroup(m_heap == null || !m_heap.isReady);
                 if (GUILayout.Button("View", EditorStyles.toolbarDropDown, GUILayout.Width(60)))
                 {
+                    m_views.Sort(delegate (HeapExplorerView x, HeapExplorerView y)
+                    {
+                        var value = x.viewMenuOrder.CompareTo(y.viewMenuOrder);
+                        if (value == 0)
+                            value = string.Compare(x.titleContent.text, y.titleContent.text);
+                        return value;
+                    });
+
+                    var prevOrder = -1;
                     var menu = new GenericMenu();
                     foreach (var view in m_views)
                     {
-                        menu.AddItem(new GUIContent(view.titleContent), m_activeView == view, (GenericMenu.MenuFunction2)delegate(System.Object o)
+                        if (view.viewMenuOrder < 0)
+                            continue;
+                        if (prevOrder == -1)
+                            prevOrder = view.viewMenuOrder;
+
+                        var p0 = prevOrder / 100;
+                        var p1 = view.viewMenuOrder / 100;
+                        if (p1 - p0 >= 1)
+                        {
+                            var i = view.titleContent.text.LastIndexOf("/");
+                            if (i == -1)
+                                menu.AddSeparator("");
+                            else
+                                menu.AddSeparator(view.titleContent.text.Substring(0, i));
+                        }
+                        prevOrder = view.viewMenuOrder;
+
+                        var c = new GUIContent(view.titleContent);
+                        if (debugViewMenu)
+                            c.text = string.Format("{2}   [viewMenuOrder={0}, type={1}]", view.viewMenuOrder, view.GetType().Name, c.text);
+
+                        menu.AddItem(c, m_activeView == view, (GenericMenu.MenuFunction2)delegate(System.Object o)
                         {
                             if (o == m_activeView)
                                 return;
@@ -554,7 +610,7 @@ namespace HeapExplorer
             Reset();
             m_heap = null;
 
-            if (m_UseThread)
+            if (useThreads)
             {
                 var job = new LoadThreadJob
                 {
@@ -767,7 +823,7 @@ namespace HeapExplorer
                 //Reset();
                 m_heap = null;
 
-                if (m_UseThread)
+                if (useThreads)
                 {
                     var job = new ReceiveThreadJob
                     {

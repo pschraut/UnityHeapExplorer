@@ -19,6 +19,17 @@ namespace HeapExplorer
         }
 
         /// <summary>
+        /// Lets you control the menu item order in Heap Explorer's View menu.
+        /// Specify a negative value to not create an item in the View menu.
+        /// If two items are 100 units apart, Heap Explorer inserts a seperator item.
+        /// </summary>
+        public int viewMenuOrder
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// The window in which the view is rendered to.
         /// </summary>
         public HeapExplorerWindow window
@@ -72,6 +83,7 @@ namespace HeapExplorer
         public HeapExplorerView()
         {
             editorPrefsKey = GetType().Name;
+            viewMenuOrder = int.MaxValue - 1;
         }
 
         public virtual void Awake()

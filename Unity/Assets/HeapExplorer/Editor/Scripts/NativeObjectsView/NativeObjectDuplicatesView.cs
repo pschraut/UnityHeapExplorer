@@ -23,6 +23,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C++ Asset Duplicates (guessed)", "");
+            viewMenuOrder = 560;
         }
 
         protected override void OnRebuild()

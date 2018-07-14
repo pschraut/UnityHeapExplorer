@@ -27,6 +27,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("GC Handles", "");
+            viewMenuOrder = 750;
         }
 
         protected override void OnCreate()

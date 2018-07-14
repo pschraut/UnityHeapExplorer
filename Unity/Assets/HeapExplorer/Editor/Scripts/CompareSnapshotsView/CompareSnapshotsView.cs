@@ -25,6 +25,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("Compare Snapshot", "");
+            viewMenuOrder = 850;
         }
 
         public override void OnDestroy()

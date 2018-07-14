@@ -19,6 +19,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Delegate Targets", "");
+            viewMenuOrder = 265;
         }
 
         protected override AbstractManagedObjectsControl CreateObjectsTreeView(string editorPrefsKey, TreeViewState state)
@@ -104,6 +105,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Delegates", "");
+            viewMenuOrder = 260;
         }
 
         protected override AbstractManagedObjectsControl CreateObjectsTreeView(string editorPrefsKey, TreeViewState state)
@@ -149,6 +151,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Objects", "");
+            viewMenuOrder = 250;
         }
 
         public override int CanProcessCommand(GotoCommand command)

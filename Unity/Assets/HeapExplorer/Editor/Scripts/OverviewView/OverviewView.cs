@@ -33,7 +33,8 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            titleContent = new GUIContent("Brief Overview", "");
+            titleContent = new GUIContent("Overview", "");
+            viewMenuOrder = 150;
         }
 
         public override void OnDestroy()

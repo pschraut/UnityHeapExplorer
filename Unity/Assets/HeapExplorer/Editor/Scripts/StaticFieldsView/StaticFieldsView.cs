@@ -28,6 +28,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Static Fields");
+            viewMenuOrder = 350;
         }
 
         public override void OnToolbarGUI()

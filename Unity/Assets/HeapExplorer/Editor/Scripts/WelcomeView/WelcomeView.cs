@@ -20,6 +20,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("Start Page", "");
+            viewMenuOrder = -1;
         }
 
         protected override void OnShow()

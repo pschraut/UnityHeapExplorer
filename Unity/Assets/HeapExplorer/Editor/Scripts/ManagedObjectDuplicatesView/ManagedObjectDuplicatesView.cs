@@ -31,9 +31,9 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Object Duplicates", "");
-            //m_editorPrefsKey = "HeapExplorer.ManagedObjectDuplicatesView";
+            viewMenuOrder = 255;
         }
-        
+
         protected override void OnCreate()
         {
             base.OnCreate();

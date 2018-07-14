@@ -27,6 +27,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Memory Sections", "Managed heap memory sections.");
+            viewMenuOrder = 450;
         }
 
         public override void OnDestroy()
