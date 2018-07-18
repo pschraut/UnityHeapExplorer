@@ -17,30 +17,29 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            var type = m_snapshot.managedTypes[field.managedTypesArrayIndex];
-            m_type = type;
-            typeIndex = type.managedTypesArrayIndex;
+            var type = m_Snapshot.managedTypes[field.managedTypesArrayIndex];
+            base.type = type;
+            //typeIndex = type.managedTypesArrayIndex;
             displayType = type.name;
             if (field.isStatic)
                 displayType = "static " + displayType;
 
             displayName = field.name;
-            displayValue = m_memoryReader.ReadFieldValueAsString(address, type);
-            allowExpand = false;
-            icon = HeEditorStyles.GetTypeImage(m_snapshot, type);
+            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type);
+            isExpandable = false;
+            icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);
 
             if (type.isPointer)
-                enabled = m_memoryReader.ReadPointer(address) > 0;
+                enabled = m_MemoryReader.ReadPointer(address) > 0;
         }
 
         protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)
         {
             var args = new BuildChildrenArgs();
             args.parent = this;
-            args.type = m_snapshot.managedTypes[field.managedTypesArrayIndex];
+            args.type = m_Snapshot.managedTypes[field.managedTypesArrayIndex];
             args.address = address;
-            args.memoryReader = field.isStatic ? (AbstractMemoryReader)(new StaticMemoryReader(m_snapshot, args.type.staticFieldBytes)) : (AbstractMemoryReader)(new MemoryReader(m_snapshot));// m_memoryReader;
-            //args.addInstance = true;
+            args.memoryReader = field.isStatic ? (AbstractMemoryReader)(new StaticMemoryReader(m_Snapshot, args.type.staticFieldBytes)) : (AbstractMemoryReader)(new MemoryReader(m_Snapshot));// m_memoryReader;
             add(args);
         }
     }

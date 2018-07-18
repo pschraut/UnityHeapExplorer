@@ -22,7 +22,7 @@ namespace HeapExplorer
         [NonSerialized] List<AbstractThreadJob> m_threadJobs = new List<AbstractThreadJob>();
         [NonSerialized] List<AbstractThreadJob> m_integrationJobs = new List<AbstractThreadJob>();
         [NonSerialized] bool m_repaint;
-        //[NonSerialized] Test_Editor m_testVariables = new Test_Editor();
+        [NonSerialized] Test_Editor m_testVariables = new Test_Editor();
         [NonSerialized] ManagedDelegatesView m_managedDelegatesView;
         [NonSerialized] string m_ErrorMsg;
         //[NonSerialized] bool m_UseThread = true;

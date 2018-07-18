@@ -17,52 +17,46 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            var type = m_snapshot.managedTypes[field.managedTypesArrayIndex];
-            m_type = type;
-            typeIndex = type.managedTypesArrayIndex;
+            type = m_Snapshot.managedTypes[field.managedTypesArrayIndex];
             displayName = field.name;
             displayType = type.name;
-            displayValue = m_memoryReader.ReadFieldValueAsString(address, type);
-            allowExpand = false;
+            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type);
+            isExpandable = false;
 
             if (field.isStatic)
             {
                 displayType = "static " + displayType;
 
                 //PackedManagedType firstType;
-                //if (PackedManageTypeUtility.HasTypeOrBaseAnyStaticField(m_snapshot, type, out firstType))
-                //    allowExpand = firstType.managedTypeArrayIndex != type.managedTypeArrayIndex;
+                //if (PackedManageTypeUtility.HasTypeOrBaseAnyStaticField(m_snapshot, m_Type, out firstType))
+                //    allowExpand = firstType.managedTypeArrayIndex != m_Type.managedTypeArrayIndex;
             }
             //else
             //{
             //    // HashString has a HashString static field (HashString.Empty)
             //    // The following line makes sure that we cannot infinitely expand the same type
             //    PackedManagedType firstType;
-            //    if (PackedManageTypeUtility.HasTypeOrBaseAnyInstanceField(m_snapshot, type, out firstType))
-            //        allowExpand = firstType.managedTypeArrayIndex != type.managedTypeArrayIndex;
+            //    if (PackedManageTypeUtility.HasTypeOrBaseAnyInstanceField(m_snapshot, m_Type, out firstType))
+            //        allowExpand = firstType.managedTypeArrayIndex != m_Type.managedTypeArrayIndex;
             //}
 
             // HashString has a HashString static field (HashString.Empty)
             // The following line makes sure that we cannot infinitely expand the same type
             PackedManagedType firstType;
-            if (PackedManagedTypeUtility.HasTypeOrBaseAnyInstanceField(m_snapshot, type, out firstType))
-                allowExpand = firstType.managedTypesArrayIndex != type.managedTypesArrayIndex;
+            if (PackedManagedTypeUtility.HasTypeOrBaseAnyInstanceField(m_Snapshot, type, out firstType))
+                isExpandable = firstType.managedTypesArrayIndex != type.managedTypesArrayIndex;
 
-            icon = HeEditorStyles.GetTypeImage(m_snapshot, type);
+            icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);
         }
 
         protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)
         {
             var args = new BuildChildrenArgs();
             args.parent = this;
-            args.type = m_snapshot.managedTypes[field.managedTypesArrayIndex];
-            args.address = address - (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize;
-            //args.memoryReader = new MemoryReader(m_snapshot);
-            args.memoryReader = field.isStatic ? (AbstractMemoryReader)(new StaticMemoryReader(m_snapshot, args.type.staticFieldBytes)) : (AbstractMemoryReader)(new MemoryReader(m_snapshot));// m_memoryReader;
-            //args.addInstance = true;
+            args.type = m_Snapshot.managedTypes[field.managedTypesArrayIndex];
+            args.address = address - (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize;
+            args.memoryReader = field.isStatic ? (AbstractMemoryReader)(new StaticMemoryReader(m_Snapshot, args.type.staticFieldBytes)) : (AbstractMemoryReader)(new MemoryReader(m_Snapshot));// m_memoryReader;
             add(args);
-
-            //add(this, m_snapshot.managedTypes[field.typeIndex], address - (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize);
         }
     }
 }

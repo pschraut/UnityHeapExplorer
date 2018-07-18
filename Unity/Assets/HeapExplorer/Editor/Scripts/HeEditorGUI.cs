@@ -30,17 +30,17 @@ namespace HeapExplorer
             return result;
         }
 
-        public static void VerticalSplitter(int id, ref float value, float min, float max, EditorWindow editorWindow)
+        public static float VerticalSplitter(int id, float value, float min, float max, EditorWindow editorWindow)
         {
-            Splitter(id, ref value, min, max, editorWindow, true);
+            return Splitter(id, ref value, min, max, editorWindow, true);
         }
 
-        public static void HorizontalSplitter(int id, ref float value, float min, float max, EditorWindow editorWindow)
+        public static float HorizontalSplitter(int id, float value, float min, float max, EditorWindow editorWindow)
         {
-            Splitter(id, ref value, min, max, editorWindow, false);
+            return Splitter(id, ref value, min, max, editorWindow, false);
         }
 
-        static void Splitter(int id, ref float value, float min, float max, EditorWindow editorWindow, bool vertical)
+        static float Splitter(int id, ref float value, float min, float max, EditorWindow editorWindow, bool vertical)
         {
             Rect position = new Rect();
 
@@ -106,6 +106,8 @@ namespace HeapExplorer
                     }
                     break;
             }
+
+            return value;
         }
 
         public static bool DelayedSearchField(SearchField searchField, ref string searchString)

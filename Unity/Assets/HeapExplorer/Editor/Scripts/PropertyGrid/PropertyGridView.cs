@@ -20,7 +20,7 @@ namespace HeapExplorer
         {
             base.Awake();
 
-            titleContent = new GUIContent("C# Objects", "");
+            titleContent = new GUIContent("C# Object", "");
         }
 
         protected override void OnCreate()

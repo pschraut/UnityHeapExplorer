@@ -125,7 +125,7 @@ namespace HeapExplorer
                         m_ObjectsControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVertConnections".GetHashCode(), ref m_SplitterVertConnections, 0.1f, 0.8f, window);
+                    m_SplitterVertConnections = HeEditorGUILayout.VerticalSplitter("m_splitterVertConnections".GetHashCode(), m_SplitterVertConnections, 0.1f, 0.8f, window);
 
                     using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_SplitterVertConnections)))
                     {
@@ -133,7 +133,7 @@ namespace HeapExplorer
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorzPropertyGrid".GetHashCode(), ref m_SplitterHorzPropertyGrid, 0.1f, 0.6f, window);
+                m_SplitterHorzPropertyGrid = HeEditorGUILayout.HorizontalSplitter("m_splitterHorzPropertyGrid".GetHashCode(), m_SplitterHorzPropertyGrid, 0.1f, 0.6f, window);
 
                 using (new EditorGUILayout.VerticalScope())
                 {
@@ -142,7 +142,7 @@ namespace HeapExplorer
                         m_PropertyGridView.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVertRootPath".GetHashCode(), ref m_SplitterVertRootPath, 0.1f, 0.8f, window);
+                    m_SplitterVertRootPath = HeEditorGUILayout.VerticalSplitter("m_splitterVertRootPath".GetHashCode(), m_SplitterVertRootPath, 0.1f, 0.8f, window);
 
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Width(window.position.width * m_SplitterHorzPropertyGrid), GUILayout.Height(window.position.height * m_SplitterVertRootPath)))
                     {

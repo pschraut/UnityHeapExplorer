@@ -148,7 +148,7 @@ namespace HeapExplorer
             GUILayoutOption[] options = null;
             if (showReferences && showReferencedBy)
             {
-                HeEditorGUILayout.HorizontalSplitter("m_splitterValue".GetHashCode(), ref m_SplitterValue, 0.1f, 0.6f, window);
+                m_SplitterValue = HeEditorGUILayout.HorizontalSplitter("m_splitterValue".GetHashCode(), m_SplitterValue, 0.1f, 0.6f, window);
                 options = new[] { GUILayout.Width(window.position.width * m_SplitterValue) };
             }
 

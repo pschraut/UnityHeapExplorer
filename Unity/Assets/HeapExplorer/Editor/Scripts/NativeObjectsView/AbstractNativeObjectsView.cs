@@ -205,7 +205,7 @@ namespace HeapExplorer
                         m_NativeObjectsControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), ref m_SplitterVert, 0.1f, 0.8f, window);
+                    m_SplitterVert = HeEditorGUILayout.VerticalSplitter("m_splitterVert".GetHashCode(), m_SplitterVert, 0.1f, 0.8f, window);
 
                     using (new EditorGUILayout.HorizontalScope(GUILayout.Height(window.position.height * m_SplitterVert)))
                     {
@@ -213,7 +213,7 @@ namespace HeapExplorer
                     }
                 }
 
-                HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), ref m_SplitterHorz, 0.1f, 0.8f, window);
+                m_SplitterHorz = HeEditorGUILayout.HorizontalSplitter("m_splitterHorz".GetHashCode(), m_SplitterHorz, 0.1f, 0.8f, window);
 
                 // Various panels at the right side
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(window.position.width * m_SplitterHorz)))
@@ -235,14 +235,14 @@ namespace HeapExplorer
                         m_NativeObjectControl.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_PreviewSplitterVert".GetHashCode(), ref m_PreviewSplitterVert, 0.1f, 0.8f, window);
+                    m_PreviewSplitterVert = HeEditorGUILayout.VerticalSplitter("m_PreviewSplitterVert".GetHashCode(), m_PreviewSplitterVert, 0.1f, 0.8f, window);
 
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(window.position.height * m_PreviewSplitterVert)))
                     {
                         m_PreviewView.OnGUI();
                     }
 
-                    HeEditorGUILayout.VerticalSplitter("m_RootPathSplitterVert".GetHashCode(), ref m_RootPathSplitterVert, 0.1f, 0.8f, window);
+                    m_RootPathSplitterVert = HeEditorGUILayout.VerticalSplitter("m_RootPathSplitterVert".GetHashCode(), m_RootPathSplitterVert, 0.1f, 0.8f, window);
 
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(window.position.height * m_RootPathSplitterVert)))
                     {

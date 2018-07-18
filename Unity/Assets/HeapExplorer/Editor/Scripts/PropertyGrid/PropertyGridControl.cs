@@ -8,11 +8,23 @@ namespace HeapExplorer
 {
     public class PropertyGridControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
-        
-        PackedMemorySnapshot m_snapshot;
-        EditorWindow m_window;
-        string m_splitterName;
+        PackedMemorySnapshot m_Snapshot;
+        AbstractDataVisualizer m_DataVisualizer;
+        Vector2 m_DataVisualizerScrollPos;
+
+        float splitterDataVisualizer
+        {
+            get
+            {
+                var key = m_editorPrefsKey + ".m_splitterHorzPropertyGrid";
+                return EditorPrefs.GetFloat(key, 0.15f);
+            }
+            set
+            {
+                var key = m_editorPrefsKey + ".m_splitterHorzPropertyGrid";
+                EditorPrefs.SetFloat(key, value);
+            }
+        }
 
         public PropertyGridControl(EditorWindow window, string editorPrefsKey, TreeViewState state)
             : base(window as HeapExplorerWindow, editorPrefsKey, state, new MultiColumnHeader(
@@ -24,9 +36,6 @@ namespace HeapExplorer
                 } )))
         {
             multiColumnHeader.canSort = false;
-            m_window = window;
-            m_splitterName = editorPrefsKey + ".m_splitterHorzPropertyGrid";
-            m_splitterHorzPropertyGrid = EditorPrefs.GetFloat(editorPrefsKey + m_splitterName, m_splitterHorzPropertyGrid);
             Reload();
         }
 
@@ -34,7 +43,7 @@ namespace HeapExplorer
         {
             var item = itm as PropertyGridItem;
             if (item != null)
-                return item.allowExpand;
+                return item.isExpandable;
 
             return itm.hasChildren;
         }
@@ -50,14 +59,14 @@ namespace HeapExplorer
 
         public void Inspect(PackedMemorySnapshot snapshot, PackedManagedObject managedObject)
         {
-            m_snapshot = snapshot;
+            m_Snapshot = snapshot;
             var m_type = snapshot.managedTypes[managedObject.managedTypesArrayIndex];
             var m_address = managedObject.address;
             if (m_type.isValueType)
-                m_address -= (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize;
+                m_address -= (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return;
@@ -81,12 +90,12 @@ namespace HeapExplorer
 
         public void InspectStaticType(PackedMemorySnapshot snapshot, PackedManagedType managedType)
         {
-            m_snapshot = snapshot;
+            m_Snapshot = snapshot;
             var m_type = managedType;
             var m_address = 0ul;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return;
@@ -110,10 +119,10 @@ namespace HeapExplorer
 
         public void Clear()
         {
-            m_snapshot = null;
+            m_Snapshot = null;
             SetTree(null);
-            m_dataVisualizer = null;
-            m_dataVisualizerScrollPos = new Vector2();
+            m_DataVisualizer = null;
+            m_DataVisualizerScrollPos = new Vector2();
         }
 
         public override void OnGUI()
@@ -127,69 +136,65 @@ namespace HeapExplorer
         {
             base.OnSelectionChanged(selectedItem);
 
-            m_dataVisualizer = null;
-            m_dataVisualizerScrollPos = new Vector2();
+            m_DataVisualizer = null;
+            m_DataVisualizerScrollPos = new Vector2();
             var item = selectedItem as PropertyGridItem;
             if (item != null)
-                TryCreateDataVisualizer(item.myMemoryReader, item.m_type, item.address, true);
+                TryCreateDataVisualizer(item.myMemoryReader, item.type, item.address, true);
         }
-
-        AbstractDataVisualizer m_dataVisualizer;
-        Vector2 m_dataVisualizerScrollPos;
-        float m_splitterHorzPropertyGrid = 0.15f;
 
         void TryCreateDataVisualizer(AbstractMemoryReader reader, PackedManagedType type, ulong address, bool resolveAddress)
         {
-            m_dataVisualizer = null;
-            m_dataVisualizerScrollPos = new Vector2();
+            m_DataVisualizer = null;
+            m_DataVisualizerScrollPos = new Vector2();
             
             //if (AbstractDataVisualizer.HasVisualizer(type.name))
             {
                 if (type.isPointer && resolveAddress)
                     address = reader.ReadPointer(address);
 
-                m_dataVisualizer = AbstractDataVisualizer.CreateVisualizer(type.name);
-                m_dataVisualizer.Initialize(m_snapshot, reader, address, type);
+                m_DataVisualizer = AbstractDataVisualizer.CreateVisualizer(type.name);
+                m_DataVisualizer.Initialize(m_Snapshot, reader, address, type);
             }
         }
 
         void DrawDataVisualizer()
         {
-            if (m_dataVisualizer == null)
+            if (m_DataVisualizer == null)
                 return;
 
             GUILayout.Space(2);
-            HeEditorGUILayout.VerticalSplitter(m_splitterName.GetHashCode(), ref m_splitterHorzPropertyGrid, 0.1f, 0.6f, m_window);
+            splitterDataVisualizer = HeEditorGUILayout.VerticalSplitter("splitterDataVisualizer".GetHashCode(), splitterDataVisualizer, 0.1f, 0.6f, m_Window);
             GUILayout.Space(2);
 
-            using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(m_window.position.height * m_splitterHorzPropertyGrid)))
+            using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(m_Window.position.height * splitterDataVisualizer)))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     // We draw a dataVisualizer always, but don't display the content of the fallback visualizer.
                     // This is to keep the UI free from hiding/showing the visualizer panel and keep it more stable.
                     // TODO: This is actually a HACK until I fixed the default preview
-                    if (!m_dataVisualizer.isFallback)
+                    if (!m_DataVisualizer.isFallback)
                         EditorGUILayout.LabelField("Preview", EditorStyles.boldLabel);
 
-                    if (m_dataVisualizer.hasMenu)
+                    if (m_DataVisualizer.hasMenu)
                     {
                         GUILayout.FlexibleSpace();
 
                         if (GUILayout.Button(new GUIContent("", "Open menu"), HeEditorStyles.paneOptions, GUILayout.Width(20)))
                         {
-                            m_dataVisualizer.ShowMenu();
+                            m_DataVisualizer.ShowMenu();
                         }
                     }
                 }
 
                 GUILayout.Space(4);
 
-                using (var scrollView = new EditorGUILayout.ScrollViewScope(m_dataVisualizerScrollPos))
+                using (var scrollView = new EditorGUILayout.ScrollViewScope(m_DataVisualizerScrollPos))
                 {
-                    m_dataVisualizerScrollPos = scrollView.scrollPosition;
+                    m_DataVisualizerScrollPos = scrollView.scrollPosition;
 
-                    m_dataVisualizer.GUI();
+                    m_DataVisualizer.GUI();
                 }
             }
         }
@@ -212,14 +217,14 @@ namespace HeapExplorer
             // Add the base class, if any, to the tree.
             if (type.isDerivedReferenceType && !type.isArray)
             {
-                var baseType = m_snapshot.managedTypes[type.baseOrElementTypeIndex];
-                var isSystemObject = baseType.managedTypesArrayIndex == m_snapshot.coreTypes.systemObject;
-                if (!isSystemObject && PackedManagedTypeUtility.HasTypeOrBaseAnyField(m_snapshot, baseType, !addStatic, addStatic))
+                var baseType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex];
+                var isSystemObject = baseType.managedTypesArrayIndex == m_Snapshot.coreTypes.systemObject;
+                if (!isSystemObject && PackedManagedTypeUtility.HasTypeOrBaseAnyField(m_Snapshot, baseType, !addStatic, addStatic))
                 {
-                    var item = new BaseClassPropertyGridItem(this, m_snapshot, address, reader)
+                    var item = new BaseClassPropertyGridItem(this, m_Snapshot, address, reader)
                     {
                         depth = target.depth + 1,
-                        baseClassTypeIndex = baseType.managedTypesArrayIndex
+                        type = baseType
                     };
                     item.Initialize();
 
@@ -240,10 +245,10 @@ namespace HeapExplorer
                     return;
 
                 var pointer = address;
-                var item = new ArrayPropertyGridItem(this, m_snapshot, pointer, reader)
+                var item = new ArrayPropertyGridItem(this, m_Snapshot, pointer, reader)
                 {
                     depth = target.depth + 1,
-                    arrayType = type,
+                    type = type,
                     displayName = type.name,
                 };
                 item.Initialize();
@@ -262,7 +267,7 @@ namespace HeapExplorer
                 if (!type.fields[n].isStatic && !addInstance)
                     continue;
 
-                var fieldType = m_snapshot.managedTypes[type.fields[n].managedTypesArrayIndex];
+                var fieldType = m_Snapshot.managedTypes[type.fields[n].managedTypesArrayIndex];
 
                 // Array
                 if (fieldType.isArray)
@@ -271,10 +276,10 @@ namespace HeapExplorer
                         continue;
 
                     var pointer = reader.ReadPointer(address + (ulong)type.fields[n].offset);
-                    var item = new ArrayPropertyGridItem(this, m_snapshot, pointer, new MemoryReader(m_snapshot))
+                    var item = new ArrayPropertyGridItem(this, m_Snapshot, pointer, new MemoryReader(m_Snapshot))
                     {
                         depth = target.depth + 1,
-                        arrayType = fieldType,
+                        type = fieldType,
                         displayName = type.fields[n].name
                     };
                     item.Initialize();
@@ -284,9 +289,9 @@ namespace HeapExplorer
                 }
 
                 // Primitive types and types derived from System.Enum
-                if (fieldType.isValueType && (fieldType.isPrimitive || m_snapshot.IsEnum(fieldType)))
+                if (fieldType.isValueType && (fieldType.isPrimitive || m_Snapshot.IsEnum(fieldType)))
                 {
-                    var item = new PrimitiveTypePropertyGridItem(this, m_snapshot, address + (ulong)type.fields[n].offset, reader)
+                    var item = new PrimitiveTypePropertyGridItem(this, m_Snapshot, address + (ulong)type.fields[n].offset, reader)
                     {
                         depth = target.depth + 1,
                         field = type.fields[n]
@@ -300,7 +305,7 @@ namespace HeapExplorer
                 // Value types
                 if (fieldType.isValueType)
                 {
-                    var item = new ValueTypePropertyGridItem(this, m_snapshot, address + (ulong)type.fields[n].offset, reader)
+                    var item = new ValueTypePropertyGridItem(this, m_Snapshot, address + (ulong)type.fields[n].offset, reader)
                     {
                         depth = target.depth + 1,
                         field = type.fields[n]
@@ -314,7 +319,7 @@ namespace HeapExplorer
                 // Reference types
                 //if (fieldType.isPointer)
                 {
-                    var item = new ReferenceTypePropertyGridItem(this, m_snapshot, address + (ulong)type.fields[n].offset, reader)
+                    var item = new ReferenceTypePropertyGridItem(this, m_Snapshot, address + (ulong)type.fields[n].offset, reader)
                     {
                         depth = target.depth + 1,
                         field = type.fields[n]
@@ -332,23 +337,17 @@ namespace HeapExplorer
             return 0;
         }
     }
+    
 
 
 
-
-
-
-
-
-
-
+#if false
     public class ManagedObjectInspectorWindow : EditorWindow
     {
-        PropertyGridControl m_propertyGrid;
-        PackedMemorySnapshot m_snapshot;
-        //ulong m_address;
-        string m_errorString = "";
-        PackedManagedObject m_managedObject;
+        PropertyGridControl m_PropertyGrid;
+        PackedMemorySnapshot m_Snapshot;
+        string m_ErrorString = "";
+        PackedManagedObject m_ManagedObject;
 
         private void OnEnable()
         {
@@ -364,32 +363,33 @@ namespace HeapExplorer
 
         void InspectInternal(PackedMemorySnapshot snapshot, PackedManagedObject managedObject)
         {
-            m_snapshot = snapshot;
-            m_managedObject = managedObject;
-            if (m_managedObject.address == 0)
+            m_Snapshot = snapshot;
+            m_ManagedObject = managedObject;
+            if (m_ManagedObject.address == 0)
             {
-                m_errorString = "Cannot inspect 'null' address.";
+                m_ErrorString = "Cannot inspect 'null' address.";
                 return;
             }
 
 
-            var type = m_snapshot.managedTypes[managedObject.managedTypesArrayIndex];
+            var type = m_Snapshot.managedTypes[managedObject.managedTypesArrayIndex];
 
             titleContent = new GUIContent(string.Format("C# Object Inspector | {0} | {1:X}", type.name, managedObject.address));
-            m_propertyGrid = new PropertyGridControl(null, "ManagedObjectInspectorWindow.m_propertyGrid", new TreeViewState());
-            m_propertyGrid.Inspect(m_snapshot, managedObject);
-            m_errorString = "";
+            m_PropertyGrid = new PropertyGridControl(null, "ManagedObjectInspectorWindow.m_propertyGrid", new TreeViewState());
+            m_PropertyGrid.Inspect(m_Snapshot, managedObject);
+            m_ErrorString = "";
         }
 
         private void OnGUI()
         {
-            if (!string.IsNullOrEmpty(m_errorString))
+            if (!string.IsNullOrEmpty(m_ErrorString))
             {
-                EditorGUILayout.HelpBox("The object cannot be inspected. Please see below for the reason.\n\n" + m_errorString, MessageType.Info);
+                EditorGUILayout.HelpBox("The object cannot be inspected. Please see below for the reason.\n\n" + m_ErrorString, MessageType.Info);
                 return;
             }
 
-            m_propertyGrid.OnGUI();
+            m_PropertyGrid.OnGUI();
         }
     }
+#endif
 }

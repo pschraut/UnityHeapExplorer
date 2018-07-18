@@ -8,8 +8,7 @@ namespace HeapExplorer
 {
     public class ArrayPropertyGridItem : PropertyGridItem
     {
-        public PackedManagedType arrayType;
-        const int kMaxItemsPerChunk = 1024*32;
+        const int k_MaxItemsPerChunk = 1024*32;
 
         public ArrayPropertyGridItem(PropertyGridControl owner, PackedMemorySnapshot snapshot, System.UInt64 address, AbstractMemoryReader memoryReader)
             : base(owner, snapshot, address, memoryReader)
@@ -18,40 +17,38 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            var pointer = m_memoryReader.ReadPointer(address);
-            var elementType = m_snapshot.managedTypes[arrayType.baseOrElementTypeIndex];
-            var dim0Length = address > 0 ? m_memoryReader.ReadArrayLength(address, arrayType, 0) : 0;
-
-            m_type = arrayType;
-            typeIndex = arrayType.managedTypesArrayIndex;
-            displayType = arrayType.name;
+            var pointer = m_MemoryReader.ReadPointer(address);
+            var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex];
+            var dim0Length = address > 0 ? m_MemoryReader.ReadArrayLength(address, type, 0) : 0;
+            
+            displayType = type.name;
             displayValue = "null";
-            allowExpand = dim0Length > 0;
+            isExpandable = dim0Length > 0;
             enabled = pointer > 0;
-            icon = HeEditorStyles.GetTypeImage(m_snapshot, arrayType);
+            icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);
 
             if (pointer != 0)
             {
                 displayValue = elementType.name;
 
-                var isJagged = arrayType.name.IndexOf("[][]") != -1;
+                var isJagged = type.name.IndexOf("[][]") != -1;
                 if (isJagged)
                 {
-                    for (var n = 0; n < arrayType.arrayRank; ++n)
+                    for (var n = 0; n < type.arrayRank; ++n)
                     {
-                        var length = m_memoryReader.ReadArrayLength(address, arrayType, n);
+                        var length = m_MemoryReader.ReadArrayLength(address, type, n);
                         displayValue += string.Format("[{0}]", length);
                     }
                 }
                 else
                 {
                     displayValue += "[";
-                    for (var n = 0; n < arrayType.arrayRank; ++n)
+                    for (var n = 0; n < type.arrayRank; ++n)
                     {
-                        var length = m_memoryReader.ReadArrayLength(address, arrayType, n);
+                        var length = m_MemoryReader.ReadArrayLength(address, type, n);
 
                         displayValue += string.Format("{0}", length);
-                        if (n + 1 < arrayType.arrayRank)
+                        if (n + 1 < type.arrayRank)
                             displayValue += ",";
                     }
                     displayValue += "]";
@@ -61,19 +58,19 @@ namespace HeapExplorer
 
         protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)
         {
-            if (arrayType.arrayRank == 1)
+            if (type.arrayRank == 1)
                 BuildOneDimArray(add);
 
-            if (arrayType.arrayRank > 1)
+            if (type.arrayRank > 1)
                 BuildMultiDimArray(add);
         }
 
         void BuildOneDimArray(System.Action<BuildChildrenArgs> add)
         {
-            var arrayLength = m_memoryReader.ReadArrayLength(address, arrayType);
-            var elementType = m_snapshot.managedTypes[arrayType.baseOrElementTypeIndex];
+            var arrayLength = m_MemoryReader.ReadArrayLength(address, type);
+            var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex];
 
-            for (var n = 0; n < Mathf.Min(arrayLength, kMaxItemsPerChunk); ++n)
+            for (var n = 0; n < Mathf.Min(arrayLength, k_MaxItemsPerChunk); ++n)
             {
                 AddArrayElement(elementType, n, add);
             }
@@ -88,18 +85,18 @@ namespace HeapExplorer
 
         void BuildMultiDimArray(System.Action<BuildChildrenArgs> add)
         {
-            var arrayLength = m_memoryReader.ReadArrayLength(address, arrayType);
-            var elementType = m_snapshot.managedTypes[arrayType.baseOrElementTypeIndex];
+            var arrayLength = m_MemoryReader.ReadArrayLength(address, type);
+            var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex];
 
-            for (var n = 0; n < Mathf.Min(arrayLength, kMaxItemsPerChunk); ++n)
+            for (var n = 0; n < Mathf.Min(arrayLength, k_MaxItemsPerChunk); ++n)
             {
                 AddArrayElement(elementType, n, add);
             }
 
             // an understandable way to name elements of an two dimensional array
-            if (arrayType.arrayRank == 2)
+            if (type.arrayRank == 2)
             {
-                var arrayLength2 = m_memoryReader.ReadArrayLength(address, arrayType, 1);
+                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, 1);
 
                 var x = 0;
                 var y = 0;
@@ -120,10 +117,10 @@ namespace HeapExplorer
             }
 
             // complicated way of naming elements of three and more dimensional arrays
-            if (arrayType.arrayRank == 3)
+            if (type.arrayRank == 3)
             {
-                var arrayLength2 = m_memoryReader.ReadArrayLength(address, arrayType, 1);
-                var arrayLength3 = m_memoryReader.ReadArrayLength(address, arrayType, 2);
+                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, 1);
+                var arrayLength3 = m_MemoryReader.ReadArrayLength(address, type, 2);
 
                 var x = 0;
                 var y = 0;
@@ -154,11 +151,11 @@ namespace HeapExplorer
         {
             if (elementType.isArray)
             {
-                var pointer = m_memoryReader.ReadPointer(address + (ulong)(elementIndex * m_snapshot.virtualMachineInformation.pointerSize) + (ulong)m_snapshot.virtualMachineInformation.arrayHeaderSize);
-                var item = new ArrayPropertyGridItem(m_owner, m_snapshot, pointer, m_memoryReader)
+                var pointer = m_MemoryReader.ReadPointer(address + (ulong)(elementIndex * m_Snapshot.virtualMachineInformation.pointerSize) + (ulong)m_Snapshot.virtualMachineInformation.arrayHeaderSize);
+                var item = new ArrayPropertyGridItem(m_Owner, m_Snapshot, pointer, m_MemoryReader)
                 {
                     depth = this.depth + 1,
-                    arrayType = elementType
+                    type = elementType
                 };
                 item.OnInitialize();
                 this.AddChild(item);
@@ -170,8 +167,8 @@ namespace HeapExplorer
                     var args = new BuildChildrenArgs();
                     args.parent = this;
                     args.type = elementType;
-                    args.address = address + (ulong)(elementIndex * elementType.size) + (ulong)m_snapshot.virtualMachineInformation.arrayHeaderSize - (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize;
-                    args.memoryReader = new MemoryReader(m_snapshot);
+                    args.address = address + (ulong)(elementIndex * elementType.size) + (ulong)m_Snapshot.virtualMachineInformation.arrayHeaderSize - (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize;
+                    args.memoryReader = new MemoryReader(m_Snapshot);
                     add(args);
                 }
                 else
@@ -179,9 +176,9 @@ namespace HeapExplorer
                     // this is the container node for the array elements.
                     // if we don't add the container, all fields are simply added to the array node itself.
                     // however, we want each array element being groupped
-                    var pointer = address + (ulong)(elementIndex * elementType.size) + (ulong)m_snapshot.virtualMachineInformation.arrayHeaderSize;
+                    var pointer = address + (ulong)(elementIndex * elementType.size) + (ulong)m_Snapshot.virtualMachineInformation.arrayHeaderSize;
 
-                    var item = new ArrayElementPropertyGridItem(m_owner, m_snapshot, pointer, new MemoryReader(m_snapshot))
+                    var item = new ArrayElementPropertyGridItem(m_Owner, m_Snapshot, pointer, new MemoryReader(m_Snapshot))
                     {
                         depth = this.depth + 1,
                         type = elementType
@@ -189,32 +186,32 @@ namespace HeapExplorer
                     item.Initialize();
                     this.AddChild(item);
 
-                    pointer = address + (ulong)(elementIndex * elementType.size) + (ulong)m_snapshot.virtualMachineInformation.arrayHeaderSize - (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize;
+                    pointer = address + (ulong)(elementIndex * elementType.size) + (ulong)m_Snapshot.virtualMachineInformation.arrayHeaderSize - (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize;
 
                     var args = new BuildChildrenArgs();
                     args.parent = item;
                     args.type = elementType;
                     args.address = pointer;
-                    args.memoryReader = new MemoryReader(m_snapshot);
+                    args.memoryReader = new MemoryReader(m_Snapshot);
                     add(args);
                 }
             }
             else
             {
                 // address of element
-                var addressOfElement = address + (ulong)(elementIndex * m_snapshot.virtualMachineInformation.pointerSize) + (ulong)m_snapshot.virtualMachineInformation.arrayHeaderSize;
-                var pointer = m_memoryReader.ReadPointer(addressOfElement);
+                var addressOfElement = address + (ulong)(elementIndex * m_Snapshot.virtualMachineInformation.pointerSize) + (ulong)m_Snapshot.virtualMachineInformation.arrayHeaderSize;
+                var pointer = m_MemoryReader.ReadPointer(addressOfElement);
                 if (pointer != 0)
                 {
-                    var i = m_snapshot.FindManagedObjectTypeOfAddress(pointer);
+                    var i = m_Snapshot.FindManagedObjectTypeOfAddress(pointer);
                     if (i != -1)
-                        elementType = m_snapshot.managedTypes[i];
+                        elementType = m_Snapshot.managedTypes[i];
                 }
 
                 // this is the container node for the reference type.
                 // if we don't add the container, all fields are simply added to the array node itself.
                 // however, we want each array element being groupped
-                var item = new ArrayElementPropertyGridItem(m_owner, m_snapshot, addressOfElement, m_memoryReader)
+                var item = new ArrayElementPropertyGridItem(m_Owner, m_Snapshot, addressOfElement, m_MemoryReader)
                 {
                     depth = this.depth + 1,
                     type = elementType
@@ -229,7 +226,7 @@ namespace HeapExplorer
                     args.parent = item;
                     args.type = elementType;
                     args.address = pointer;
-                    args.memoryReader = new MemoryReader(m_snapshot);
+                    args.memoryReader = new MemoryReader(m_Snapshot);
                     add(args);
                 }
             }

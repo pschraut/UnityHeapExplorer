@@ -19,7 +19,7 @@ namespace HeapExplorer
         public System.Action findPressed;
 
         SearchTextParser.Result m_search = new SearchTextParser.Result();
-        string m_editorPrefsKey;
+        protected string m_editorPrefsKey;
         int m_firstVisibleRow;
         IList<int> m_expanded = new List<int>(32);
         TreeViewItem m_tree;
