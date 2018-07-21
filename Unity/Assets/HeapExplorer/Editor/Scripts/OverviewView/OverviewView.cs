@@ -9,18 +9,20 @@ namespace HeapExplorer
     public class OverviewView : HeapExplorerView
     {
         const int k_ListItemCount = 20;
+        const int k_ColumnPercentageWidth = 60;
+        const int k_ColumnSizeWidth = 70;
 
         struct Entry
         {
             public int typeIndex;
-            public int size;
+            public long size;
         }
         Entry[] m_nativeMemory;
         Entry[] m_managedMemory;
         Entry[] m_staticMemory;
-        int m_nativeMemoryTotal;
-        int m_managedMemoryTotal;
-        int m_staticMemoryTotal;
+        long m_nativeMemoryTotal;
+        long m_managedMemoryTotal;
+        long m_staticMemoryTotal;
         Texture2D m_heapFragTexture;
 
         [InitializeOnLoadMethod]
@@ -71,8 +73,8 @@ namespace HeapExplorer
 
         void AnalyzeNative()
         {
-            m_nativeMemory = new Entry[snapshot.nativeTypes.Length];
-            for (int n = 0, nend = snapshot.nativeObjects.Length; n < nend; ++n)
+            m_nativeMemory = new Entry[snapshot.nativeTypes.LongLength];
+            for (long n = 0, nend = snapshot.nativeObjects.LongLength; n < nend; ++n)
             {
                 var obj = snapshot.nativeObjects[n];
 
@@ -88,8 +90,8 @@ namespace HeapExplorer
 
         void AnalyzeManaged()
         {
-            m_managedMemory = new Entry[snapshot.managedTypes.Length];
-            for (int n = 0, nend = snapshot.managedObjects.Length; n < nend; ++n)
+            m_managedMemory = new Entry[snapshot.managedTypes.LongLength];
+            for (long n = 0, nend = snapshot.managedObjects.LongLength; n < nend; ++n)
             {
                 var obj = snapshot.managedObjects[n];
                 var type = snapshot.managedTypes[obj.managedTypesArrayIndex];
@@ -106,8 +108,8 @@ namespace HeapExplorer
 
         void AnalyzeStatic()
         {
-            m_staticMemory = new Entry[snapshot.managedTypes.Length];
-            for (int n = 0, nend = snapshot.managedTypes.Length; n < nend; ++n)
+            m_staticMemory = new Entry[snapshot.managedTypes.LongLength];
+            for (long n = 0, nend = snapshot.managedTypes.LongLength; n < nend; ++n)
             {
                 var type = snapshot.managedTypes[n];
 
@@ -125,9 +127,6 @@ namespace HeapExplorer
                 return y.size.CompareTo(x.size);
             });
         }
-
-        const int k_ColumnPercentageWidth = 60;
-        const int k_ColumnSizeWidth = 70;
 
         void DrawStats(string field1, string field2, string field3)
         {
