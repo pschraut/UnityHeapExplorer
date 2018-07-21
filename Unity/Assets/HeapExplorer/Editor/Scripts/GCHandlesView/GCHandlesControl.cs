@@ -281,7 +281,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
                         }
                     }
 
@@ -289,7 +289,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
                         }
                     }
                 }

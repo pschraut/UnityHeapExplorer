@@ -553,7 +553,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_object.managedObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_object.managedObject));
                         }
                     }
                 }

@@ -372,14 +372,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle));
+                        m_owner.window.OnGoto(new GotoCommand(m_gcHandle));
                     }
 
                     if (m_gcHandle.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
                         }
                     }
 
@@ -387,7 +387,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
                         }
                     }
                 }
@@ -423,20 +423,20 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.gcHandle));
+                            m_owner.window.OnGoto(new GotoCommand(m_managedObject.gcHandle));
                         }
                     }
 
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject));
+                        m_owner.window.OnGoto(new GotoCommand(m_managedObject));
                     }
 
                     if (m_managedObject.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.nativeObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_managedObject.nativeObject));
                         }
                     }
                 }
@@ -469,7 +469,7 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsStaticButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
+                        m_owner.window.OnGoto(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
                     }
                 }
 
@@ -513,14 +513,14 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CppButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject));
+                        m_owner.window.OnGoto(new GotoCommand(m_nativeObject));
                     }
 
                     if (m_nativeObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.gcHandle));
+                            m_owner.window.OnGoto(new GotoCommand(m_nativeObject.gcHandle));
                         }
                     }
 
@@ -528,7 +528,7 @@ namespace HeapExplorer
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.managedObject));
+                            m_owner.window.OnGoto(new GotoCommand(m_nativeObject.managedObject));
                         }
                     }
                 }

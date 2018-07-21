@@ -16,20 +16,26 @@ namespace HeapExplorer
             }
         }
 
+        public HeapExplorerWindow window
+        {
+            get;
+            private set;
+        }
+
         public System.Action findPressed;
 
-        SearchTextParser.Result m_search = new SearchTextParser.Result();
-        protected string m_editorPrefsKey;
-        int m_firstVisibleRow;
-        IList<int> m_expanded = new List<int>(32);
-        TreeViewItem m_tree;
-        public HeapExplorerWindow m_Window;
+        SearchTextParser.Result m_Search = new SearchTextParser.Result();
+        protected string m_EditorPrefsKey;
+        int m_FirstVisibleRow;
+        IList<int> m_Expanded = new List<int>(32);
+        TreeViewItem m_Tree;
+
 
         public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(state)
         {
-            m_Window = window;
-            m_editorPrefsKey = editorPrefsKey;
+            this.window = window;
+            m_EditorPrefsKey = editorPrefsKey;
 
             rowHeight = 20;
             showAlternatingRowBackgrounds = true;
@@ -42,8 +48,8 @@ namespace HeapExplorer
         public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state, MultiColumnHeader multiColumnHeader)
             : base(state, multiColumnHeader)
         {
-            m_Window = window;
-            m_editorPrefsKey = editorPrefsKey;
+            this.window = window;
+            m_EditorPrefsKey = editorPrefsKey;
 
             rowHeight = 20;
             showAlternatingRowBackgrounds = true;
@@ -59,7 +65,7 @@ namespace HeapExplorer
 
         public void SetTree(TreeViewItem tree)
         {
-            m_tree = tree;
+            m_Tree = tree;
 
             Reload();
         }
@@ -71,8 +77,8 @@ namespace HeapExplorer
 
         protected override TreeViewItem BuildRoot()
         {
-            if (m_tree != null)
-                return m_tree;
+            if (m_Tree != null)
+                return m_Tree;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
             root.AddChild(new TreeViewItem { id = root.id + 1, depth = -1, displayName = "" });
@@ -114,7 +120,7 @@ namespace HeapExplorer
         {
             var selection = this.GetSelection();
 
-            m_search = SearchTextParser.Parse(search);
+            m_Search = SearchTextParser.Parse(search);
             base.searchString = search;
 
             if (selection != null && selection.Count > 0)
@@ -156,9 +162,9 @@ namespace HeapExplorer
 
             base.ExpandedStateChanged();
 
-            for (var n= m_expanded.Count-1; n>=0; --n)
+            for (var n= m_Expanded.Count-1; n>=0; --n)
             {
-                var id = m_expanded[n];
+                var id = m_Expanded[n];
                 if (!IsExpanded(id))
                 {
                     var item = FindItem(id, rootItem) as AbstractTreeViewItem;
@@ -170,11 +176,11 @@ namespace HeapExplorer
                 }
             }
 
-            m_expanded = GetExpanded();
+            m_Expanded = GetExpanded();
 
-            for (var n = m_expanded.Count - 1; n >= 0; --n)
+            for (var n = m_Expanded.Count - 1; n >= 0; --n)
             {
-                var id = m_expanded[n];
+                var id = m_Expanded[n];
 
                 var item = FindItem(id, rootItem) as AbstractTreeViewItem;
                 if (item != null && !item.isExpanded)
@@ -212,7 +218,7 @@ namespace HeapExplorer
             if (item == null)
                 return;
 
-            m_search = new SearchTextParser.Result();
+            m_Search = new SearchTextParser.Result();
             base.searchString = "";
             
             // If the same item is selected already, nothing to do
@@ -245,12 +251,10 @@ namespace HeapExplorer
                 }
                 m_searchBuilder.Append("\0");
 
-                if (m_search.IsNameMatch(m_searchBuilder.ToString()))
+                if (m_Search.IsNameMatch(m_searchBuilder.ToString()))
                     return true;
 
                 return false;
-
-               //return i.DoesItemMatchSearch(m_search);
             }
 
             return base.DoesItemMatchSearch(item, search);
@@ -262,7 +266,7 @@ namespace HeapExplorer
             base.BeforeRowsGUI();
 
             int lastVisibleRow;
-            GetFirstAndLastVisibleRows(out m_firstVisibleRow, out lastVisibleRow);
+            GetFirstAndLastVisibleRows(out m_FirstVisibleRow, out lastVisibleRow);
             UnityEngine.Profiling.Profiler.EndSample();
         }
 
@@ -281,7 +285,7 @@ namespace HeapExplorer
             {
                 var rect = args.GetCellRect(i);
 
-                if (args.row == m_firstVisibleRow)
+                if (args.row == m_FirstVisibleRow)
                 {
                     var r = rect;
                     r.x += r.width + (i > 0 ? 2 : -1);
@@ -336,12 +340,12 @@ namespace HeapExplorer
 
             var json = JsonUtility.ToJson(save, true);
             //Debug.Log("Save\n" + json);
-            EditorPrefs.SetString(m_editorPrefsKey, json);
+            EditorPrefs.SetString(m_EditorPrefsKey, json);
         }
 
         public void LoadLayout()
         {
-            var json = EditorPrefs.GetString(m_editorPrefsKey, "");
+            var json = EditorPrefs.GetString(m_EditorPrefsKey, "");
             if (string.IsNullOrEmpty(json))
             {
                 if (multiColumnHeader.canSort)
@@ -389,8 +393,7 @@ namespace HeapExplorer
         {
             count = 0;
         }
-
-        //public abstract bool DoesItemMatchSearch(SearchTextParser.Result search);
+        
         public abstract void OnGUI(Rect position, int column);
     }
 }

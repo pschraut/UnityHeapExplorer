@@ -100,7 +100,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_items.Length;
+                return m_Items.Length;
             }
         }
 
@@ -140,20 +140,20 @@ namespace HeapExplorer
             }
         }
 
-        ObjectProxy[] m_items = new ObjectProxy[0];
+        ObjectProxy[] m_Items = new ObjectProxy[0];
 
         public RootPath(RootPathReason reason, ObjectProxy[] path)
             : base()
         {
             this.reason = reason;
-            this.m_items = path;
+            this.m_Items = path;
         }
 
         public ObjectProxy this[int index]
         {
             get
             {
-                return m_items[index];
+                return m_Items[index];
             }
         }
 
@@ -167,13 +167,13 @@ namespace HeapExplorer
 
     public class RootPathUtility
     {
-        List<RootPath> m_items = new List<RootPath>();
+        List<RootPath> m_Items = new List<RootPath>();
 
         public int count
         {
             get
             {
-                return m_items.Count;
+                return m_Items.Count;
             }
         }
 
@@ -181,7 +181,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_items[index];
+                return m_Items[index];
             }
         }
 
@@ -191,12 +191,12 @@ namespace HeapExplorer
             {
                 RootPath value = null;
 
-                if (m_items.Count > 0)
+                if (m_Items.Count > 0)
                 {
-                    value = m_items[0];
+                    value = m_Items[0];
 
                     // Find the shortest path
-                    foreach (var p in m_items)
+                    foreach (var p in m_Items)
                     {
                         if (p.count < value.count && value.reason != RootPathReason.Static)
                             value = p;
@@ -220,7 +220,7 @@ namespace HeapExplorer
 
         public void Find(ObjectProxy obj)
         {
-            m_items = new List<RootPath>();
+            m_Items = new List<RootPath>();
             var seen = new HashSet<long>();
 
             var queue = new Queue<List<ObjectProxy>>();
@@ -232,7 +232,7 @@ namespace HeapExplorer
                 if (++guard > 100000)
                 {
                     Debug.LogWarning("guard kicked in");
-                    m_items = new List<RootPath>();
+                    m_Items = new List<RootPath>();
                     break;
                 }
 
@@ -242,7 +242,7 @@ namespace HeapExplorer
                 RootPathReason reason;
                 if (IsRoot(tip, out reason))
                 {
-                    m_items.Add(new RootPath(reason, pop.ToArray()));
+                    m_Items.Add(new RootPath(reason, pop.ToArray()));
                     continue;
                 }
 
@@ -258,7 +258,7 @@ namespace HeapExplorer
                 }
             }
 
-            m_items.Sort();
+            m_Items.Sort();
         }
 
         List<ObjectProxy> GetReferencedBy(ObjectProxy obj)
@@ -377,8 +377,8 @@ namespace HeapExplorer
         //public System.Action<GotoCommand> gotoCB;
         public System.Action<RootPath> onSelectionChange;
 
-        PackedMemorySnapshot m_snapshot;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        int m_UniqueId = 1;
 
         enum Column
         {
@@ -433,11 +433,11 @@ namespace HeapExplorer
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, RootPathUtility paths)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null || paths == null || paths.count == 0)
+            if (m_Snapshot == null || paths == null || paths.count == 0)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
@@ -477,11 +477,11 @@ namespace HeapExplorer
         {
             var item = new GCHandleItem
             {
-                id = m_uniqueId++,
+                id = m_UniqueId++,
                 depth = parent.depth + 1,
             };
 
-            item.Initialize(this, m_snapshot, gcHandle.gcHandlesArrayIndex);
+            item.Initialize(this, m_Snapshot, gcHandle.gcHandlesArrayIndex);
             parent.AddChild(item);
             return item;
         }
@@ -490,11 +490,11 @@ namespace HeapExplorer
         {
             var item = new ManagedObjectItem
             {
-                id = m_uniqueId++,
+                id = m_UniqueId++,
                 depth = parent.depth + 1,
             };
 
-            item.Initialize(this, m_snapshot, managedObject.managedObjectsArrayIndex);
+            item.Initialize(this, m_Snapshot, managedObject.managedObjectsArrayIndex);
             parent.AddChild(item);
             return item;
         }
@@ -503,11 +503,11 @@ namespace HeapExplorer
         {
             var item = new NativeObjectItem
             {
-                id = m_uniqueId++,
+                id = m_UniqueId++,
                 depth = parent.depth + 1,
             };
 
-            item.Initialize(this, m_snapshot, nativeObject);
+            item.Initialize(this, m_Snapshot, nativeObject);
             parent.AddChild(item);
             return item;
         }
@@ -516,11 +516,11 @@ namespace HeapExplorer
         {
             var item = new ManagedStaticFieldItem
             {
-                id = m_uniqueId++,
+                id = m_UniqueId++,
                 depth = parent.depth + 1,
             };
 
-            item.Initialize(this, m_snapshot, staticField.staticFieldsArrayIndex);
+            item.Initialize(this, m_Snapshot, staticField.staticFieldsArrayIndex);
             parent.AddChild(item);
             return item;
         }
@@ -534,16 +534,16 @@ namespace HeapExplorer
         {
             public RootPath rootPath;
 
-            protected RootPathControl m_owner;
-            protected string m_value;
-            protected System.UInt64 m_address;
+            protected RootPathControl m_Owner;
+            protected string m_Value;
+            protected System.UInt64 m_Address;
 
             public override void GetItemSearchString(string[] target, out int count)
             {
                 count = 0;
                 target[count++] = displayName;
-                target[count++] = m_value;
-                target[count++] = string.Format(StringFormat.Address, m_address);
+                target[count++] = m_Value;
+                target[count++] = string.Format(StringFormat.Address, m_Address);
             }
             
             public override void OnGUI(Rect position, int column)
@@ -568,12 +568,12 @@ namespace HeapExplorer
                         break;
 
                     case Column.Name:
-                        EditorGUI.LabelField(position, m_value);
+                        EditorGUI.LabelField(position, m_Value);
                         break;
 
                     case Column.Address:
-                        if (m_address != 0) // statics dont have an address in PackedMemorySnapshot and I don't want to display a misleading 0
-                            HeEditorGUI.Address(position, m_address);
+                        if (m_Address != 0) // statics dont have an address in PackedMemorySnapshot and I don't want to display a misleading 0
+                            HeEditorGUI.Address(position, m_Address);
                         break;
 
                     case Column.Depth:
@@ -588,18 +588,18 @@ namespace HeapExplorer
 
         class GCHandleItem : Item
         {
-            PackedMemorySnapshot m_snapshot;
-            RichGCHandle m_gcHandle;
+            PackedMemorySnapshot m_Snapshot;
+            RichGCHandle m_GCHandle;
 
             public void Initialize(RootPathControl owner, PackedMemorySnapshot snapshot, int gcHandleArrayIndex)
             {
-                m_owner = owner;
-                m_snapshot = snapshot;
-                m_gcHandle = new RichGCHandle(m_snapshot, gcHandleArrayIndex);
+                m_Owner = owner;
+                m_Snapshot = snapshot;
+                m_GCHandle = new RichGCHandle(m_Snapshot, gcHandleArrayIndex);
 
                 displayName = "GCHandle";
-                m_value = m_gcHandle.managedObject.isValid ? m_gcHandle.managedObject.type.name : "";
-                m_address = m_gcHandle.managedObjectAddress;
+                m_Value = m_GCHandle.managedObject.isValid ? m_GCHandle.managedObject.type.name : "";
+                m_Address = m_GCHandle.managedObjectAddress;
             }
 
             public override void OnGUI(Rect position, int column)
@@ -608,22 +608,22 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle));
+                        m_Owner.window.OnGoto(new GotoCommand(m_GCHandle));
                     }
 
-                    if (m_gcHandle.nativeObject.isValid)
+                    if (m_GCHandle.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.nativeObject));
                         }
                     }
 
-                    if (m_gcHandle.managedObject.isValid)
+                    if (m_GCHandle.managedObject.isValid)
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.managedObject));
                         }
                     }
                 }
@@ -636,16 +636,16 @@ namespace HeapExplorer
 
         class ManagedObjectItem : Item
         {
-            RichManagedObject m_managedObject;
+            RichManagedObject m_ManagedObject;
 
             public void Initialize(RootPathControl owner, PackedMemorySnapshot snapshot, int arrayIndex)
             {
-                m_owner = owner;
-                m_managedObject = new RichManagedObject(snapshot, arrayIndex);
+                m_Owner = owner;
+                m_ManagedObject = new RichManagedObject(snapshot, arrayIndex);
 
-                displayName = m_managedObject.type.name;
-                m_address = m_managedObject.address;
-                m_value = m_managedObject.nativeObject.isValid ? m_managedObject.nativeObject.name : "";
+                displayName = m_ManagedObject.type.name;
+                m_Address = m_ManagedObject.address;
+                m_Value = m_ManagedObject.nativeObject.isValid ? m_ManagedObject.nativeObject.name : "";
             }
 
             public override void OnGUI(Rect position, int column)
@@ -654,22 +654,22 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject));
+                        m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject));
                     }
 
-                    if (m_managedObject.gcHandle.isValid)
+                    if (m_ManagedObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.gcHandle));
+                            m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject.gcHandle));
                         }
                     }
 
-                    if (m_managedObject.nativeObject.isValid)
+                    if (m_ManagedObject.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_managedObject.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject.nativeObject));
                         }
                     }
                 }
@@ -682,22 +682,21 @@ namespace HeapExplorer
 
         class ManagedStaticFieldItem : Item
         {
-            PackedMemorySnapshot m_snapshot;
-            PackedManagedStaticField m_staticField;
+            PackedMemorySnapshot m_Snapshot;
+            PackedManagedStaticField m_StaticField;
 
             public void Initialize(RootPathControl owner, PackedMemorySnapshot snapshot, int arrayIndex)
             {
-                m_owner = owner;
-                m_snapshot = snapshot;
-                m_staticField = m_snapshot.managedStaticFields[arrayIndex];
+                m_Owner = owner;
+                m_Snapshot = snapshot;
+                m_StaticField = m_Snapshot.managedStaticFields[arrayIndex];
 
-                var staticClassType = m_snapshot.managedTypes[m_staticField.managedTypesArrayIndex];
-                var staticField = staticClassType.fields[m_staticField.fieldIndex];
-                //var staticFieldType = m_snapshot.managedTypes[staticField.managedTypesArrayIndex];
+                var staticClassType = m_Snapshot.managedTypes[m_StaticField.managedTypesArrayIndex];
+                var staticField = staticClassType.fields[m_StaticField.fieldIndex];
 
-                m_address = 0;
+                m_Address = 0;
                 displayName = staticClassType.name;
-                m_value = "static " + staticField.name;
+                m_Value = "static " + staticField.name;
             }
 
             public override void OnGUI(Rect position, int column)
@@ -706,7 +705,7 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsStaticButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(new RichStaticField(m_snapshot, m_staticField.staticFieldsArrayIndex)));
+                        m_Owner.window.OnGoto(new GotoCommand(new RichStaticField(m_Snapshot, m_StaticField.staticFieldsArrayIndex)));
                     }
                 }
 
@@ -718,26 +717,26 @@ namespace HeapExplorer
 
         class NativeObjectItem : Item
         {
-            PackedMemorySnapshot m_snapshot;
-            RichNativeObject m_nativeObject;
+            PackedMemorySnapshot m_Snapshot;
+            RichNativeObject m_NativeObject;
 
             public void Initialize(RootPathControl owner, PackedMemorySnapshot snapshot, PackedNativeUnityEngineObject nativeObject)
             {
-                m_owner = owner;
-                m_snapshot = snapshot;
-                m_nativeObject = new RichNativeObject(snapshot, nativeObject.nativeObjectsArrayIndex);
+                m_Owner = owner;
+                m_Snapshot = snapshot;
+                m_NativeObject = new RichNativeObject(snapshot, nativeObject.nativeObjectsArrayIndex);
 
-                m_value = m_nativeObject.name;
-                m_address = m_nativeObject.address;
-                displayName = m_nativeObject.type.name;
+                m_Value = m_NativeObject.name;
+                m_Address = m_NativeObject.address;
+                displayName = m_NativeObject.type.name;
 
                 // If it's a MonoBehaviour or ScriptableObject, use the C# typename instead
                 // It makes it easier to understand what it is, otherwise everything displays 'MonoBehaviour' only.
                 // TODO: Move to separate method
-                if (m_nativeObject.type.IsSubclassOf(m_snapshot.coreTypes.nativeMonoBehaviour) || m_nativeObject.type.IsSubclassOf(m_snapshot.coreTypes.nativeScriptableObject))
+                if (m_NativeObject.type.IsSubclassOf(m_Snapshot.coreTypes.nativeMonoBehaviour) || m_NativeObject.type.IsSubclassOf(m_Snapshot.coreTypes.nativeScriptableObject))
                 {
                     string monoScriptName;
-                    if (m_snapshot.FindNativeMonoScriptType(m_nativeObject.packed.nativeObjectsArrayIndex, out monoScriptName) != -1)
+                    if (m_Snapshot.FindNativeMonoScriptType(m_NativeObject.packed.nativeObjectsArrayIndex, out monoScriptName) != -1)
                     {
                         if (!string.IsNullOrEmpty(monoScriptName))
                             displayName = monoScriptName;
@@ -751,22 +750,22 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CppButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject));
+                        m_Owner.window.OnGoto(new GotoCommand(m_NativeObject));
                     }
 
-                    if (m_nativeObject.gcHandle.isValid)
+                    if (m_NativeObject.gcHandle.isValid)
                     {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.gcHandle));
+                            m_Owner.window.OnGoto(new GotoCommand(m_NativeObject.gcHandle));
                         }
                     }
 
-                    if (m_nativeObject.managedObject.isValid)
+                    if (m_NativeObject.managedObject.isValid)
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.m_Window.OnGoto(new GotoCommand(m_nativeObject.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_NativeObject.managedObject));
                         }
                     }
                 }
@@ -774,75 +773,5 @@ namespace HeapExplorer
                 base.OnGUI(position, column);
             }
         }
-
-#if false
-        
-
-         static void PathLabel12(Rect position, string text)
-        {
-            // TODO: not happy with it yet, because it generates garbage
-            var orgtext = text;
-            
-
-            var trycount = 0;
-            TryAgain:
-            trycount++;
-            if (trycount < 5 && EditorStyles.label.CalcSize(new GUIContent(text)).x > position.width)
-            {
-                text = text.Replace("###", ".");
-
-                var lastdot = text.LastIndexOf('.');
-                if (lastdot != -1)
-                {
-                    var index = text.LastIndexOf('.', lastdot - 1);
-                    if (index != -1)
-                    {
-                        var name = text.Substring(lastdot + 1);
-                        var path = text.Substring(0, index);
-                        text = path + "###" + name;
-
-                        goto TryAgain;
-                    }
-                }
-
-                text = "###" + GetFileName(orgtext);
-                if (EditorStyles.label.CalcSize(new GUIContent(text)).x > position.width)
-                {
-                    var dotrect = position;
-                    dotrect.x += dotrect.width - 18;
-                    dotrect.width = 16;
-
-                    position.width -= dotrect.width;
-                    GUI.Label(position, new GUIContent(text.Replace("###", "..."), orgtext));
-                    GUI.Label(dotrect, new GUIContent("...", orgtext));
-                }
-                else
-                    GUI.Label(position, new GUIContent(text.Replace("###", "...")));
-            }
-            else
-                GUI.Label(position, new GUIContent(text.Replace("###", "..."), trycount > 1 ? orgtext : ""));
-        }
-
-        static string GetFileName(string assetPath)
-        {
-            // this method is pretty much just System.IO.Path.GetFileName,
-            // but it won't thow an exception if an invalid path character is used.
-            if (assetPath != null)
-            {
-                int length = assetPath.Length;
-                int num2 = length;
-                while (--num2 >= 0)
-                {
-                    char ch = assetPath[num2];
-                    if (ch == '.')
-                    {
-                        return assetPath.Substring(num2 + 1, (length - num2) - 1);
-                    }
-                }
-            }
-            return assetPath;
-
-        }
-#endif
     }
 }

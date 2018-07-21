@@ -169,7 +169,7 @@ namespace HeapExplorer
             {
                 if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref rect, rect.height)))
                 {
-                    m_Owner.m_Window.OnGoto(new GotoCommand(new RichManagedObject(m_Snapshot, managedObjIndex)));
+                    m_Owner.window.OnGoto(new GotoCommand(new RichManagedObject(m_Snapshot, managedObjIndex)));
                 }
             }
 
@@ -179,7 +179,7 @@ namespace HeapExplorer
             {
                 if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref rect, rect.height)))
                 {
-                    m_Owner.m_Window.OnGoto(new GotoCommand(new RichNativeObject(m_Snapshot, nativeObjIndex)));
+                    m_Owner.window.OnGoto(new GotoCommand(new RichNativeObject(m_Snapshot, nativeObjIndex)));
                 }
             }
         }

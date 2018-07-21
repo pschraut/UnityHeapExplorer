@@ -16,12 +16,12 @@ namespace HeapExplorer
         {
             get
             {
-                var key = m_editorPrefsKey + ".m_splitterHorzPropertyGrid";
+                var key = m_EditorPrefsKey + ".m_splitterHorzPropertyGrid";
                 return EditorPrefs.GetFloat(key, 0.15f);
             }
             set
             {
-                var key = m_editorPrefsKey + ".m_splitterHorzPropertyGrid";
+                var key = m_EditorPrefsKey + ".m_splitterHorzPropertyGrid";
                 EditorPrefs.SetFloat(key, value);
             }
         }
@@ -164,10 +164,10 @@ namespace HeapExplorer
                 return;
 
             GUILayout.Space(2);
-            splitterDataVisualizer = HeEditorGUILayout.VerticalSplitter("splitterDataVisualizer".GetHashCode(), splitterDataVisualizer, 0.1f, 0.6f, m_Window);
+            splitterDataVisualizer = HeEditorGUILayout.VerticalSplitter("splitterDataVisualizer".GetHashCode(), splitterDataVisualizer, 0.1f, 0.6f, window);
             GUILayout.Space(2);
 
-            using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(m_Window.position.height * splitterDataVisualizer)))
+            using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, GUILayout.Height(window.position.height * splitterDataVisualizer)))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
