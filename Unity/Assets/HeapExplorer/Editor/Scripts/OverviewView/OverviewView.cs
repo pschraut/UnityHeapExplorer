@@ -293,7 +293,7 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.managedHeapSize), EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace));
+                var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
                 GUILayout.Label(text, EditorStyles.boldLabel);
 
                 GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
@@ -302,7 +302,7 @@ namespace HeapExplorer
                     EditorUtility.OpenWithDefaultApp("https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html");
 
                 GUILayout.Label(string.Format("Red represents the {0} address space allocated from the operating system. Green repesents the {1} allocated managed heap sections within this address space.",
-                    EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace),
+                    EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()),
                     snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
             }
         }

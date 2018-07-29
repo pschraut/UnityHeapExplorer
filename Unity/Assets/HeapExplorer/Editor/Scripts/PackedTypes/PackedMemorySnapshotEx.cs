@@ -10,81 +10,65 @@ namespace HeapExplorer
 {
     public partial class PackedMemorySnapshot
     {
+        /// <summary>
+        /// An array of extracted managed objects from the managed heap memory.
+        /// </summary>
         [NonSerialized]
         public PackedManagedObject[] managedObjects = new PackedManagedObject[0];
 
+        /// <summary>
+        /// An array of managed static fields.
+        /// </summary>
         [NonSerialized]
         public PackedManagedStaticField[] managedStaticFields = new PackedManagedStaticField[0];
 
-        [NonSerialized]
-        ulong m_managedHeapSize = ~0ul;
-
-        // The size of the managed heap
-        public ulong managedHeapSize
-        {
-            get
-            {
-                if (m_managedHeapSize != ~0ul)
-                    return m_managedHeapSize;
-
-                for (int n = 0, nend = managedHeapSections.Length; n < nend; ++n)
-                    m_managedHeapSize += managedHeapSections[n].size;
-
-                return m_managedHeapSize;
-            }
-        }
-
-        [NonSerialized]
-        ulong m_managedHeapAddressSpace = ~0ul;
-
-        // The address space from the operating system in which the managed heap sections are located.
-        public ulong managedHeapAddressSpace
-        {
-            get
-            {
-                if (m_managedHeapAddressSpace != ~0ul)
-                    return m_managedHeapAddressSpace;
-
-                if (managedHeapSections.Length == 0)
-                    return m_managedHeapAddressSpace = 0;
-
-                var first = managedHeapSections[0].startAddress;
-                var last = managedHeapSections[managedHeapSections.Length - 1].startAddress + managedHeapSections[managedHeapSections.Length - 1].size;
-                m_managedHeapAddressSpace = last - first;
-                return m_managedHeapAddressSpace;
-            }
-        }
-
-        // Indexes into the managedTypes array of static types
+        /// <summary>
+        /// Indices into the managedTypes array of static types.
+        /// </summary>
         [NonSerialized]
         public int[] managedStaticTypes = new int[0];
 
-        // Index in connections array
+        /// <summary>
+        /// Indices into the connections array.
+        /// </summary>
         [NonSerialized]
         public int[] connectionsToMonoScripts = new int[0];
 
+        /// <summary>
+        /// CoreTypes is a helper class that contains indices to frequently used classes, such as MonoBehaviour.
+        /// </summary>
         [NonSerialized]
         public PackedCoreTypes coreTypes = new PackedCoreTypes();
 
-        //[NonSerialized]
-        //public List<string> errors = new List<string>(256);
-
+        /// <summary>
+        /// Write to busyString while processing, such as loading a memory snapshot, causes heap explorer
+        /// to display the busyString in the main window.
+        /// </summary>
         [NonSerialized]
-        public string stateString = "";
+        public string busyString = "";
 
-        [NonSerialized] Dictionary<UInt64, int> m_findManagedObjectOfNativeObjectLUT;
-        [NonSerialized] Dictionary<UInt64, int> m_findManagedTypeOfTypeInfoAddressLUT;
-        [NonSerialized] Dictionary<UInt64, int> m_findNativeObjectOfAddressLUT;
-        [NonSerialized] Dictionary<UInt64, int> m_findManagedObjectOfAddressLUT;
-        [NonSerialized] Dictionary<ulong, int> m_findGCHandleOfTargetAddressLUT;
-
-        [NonSerialized] Dictionary<UInt64, List<PackedConnection>> m_connectionsFrom = new Dictionary<ulong, List<PackedConnection>>(1024*32);
-        [NonSerialized] Dictionary<UInt64, List<PackedConnection>> m_connectionsTo = new Dictionary<ulong, List<PackedConnection>>(1024 * 32);
-
-        public bool isReady
+        /// <summary>
+        /// Gets whether the snapshot is currently busy, such as loading.
+        /// </summary>
+        public bool isBusy
         {
             get;
             private set;
+        }
+
+        [NonSerialized] ulong m_ManagedHeapSize = ~0ul;
+        [NonSerialized] ulong m_ManagedHeapAddressSpace = ~0ul;
+        [NonSerialized] Dictionary<UInt64, int> m_FindManagedObjectOfNativeObjectLUT;
+        [NonSerialized] Dictionary<UInt64, int> m_FindManagedTypeOfTypeInfoAddressLUT;
+        [NonSerialized] Dictionary<UInt64, int> m_FindNativeObjectOfAddressLUT;
+        [NonSerialized] Dictionary<UInt64, int> m_FindManagedObjectOfAddressLUT;
+        [NonSerialized] Dictionary<ulong, int> m_FindGCHandleOfTargetAddressLUT;
+        [NonSerialized] Dictionary<UInt64, List<PackedConnection>> m_ConnectionsFrom = new Dictionary<ulong, List<PackedConnection>>(1024 * 32);
+        [NonSerialized] Dictionary<UInt64, List<PackedConnection>> m_ConnectionsTo = new Dictionary<ulong, List<PackedConnection>>(1024 * 32);
+
+        public PackedMemorySnapshot()
+        {
+            isBusy = true;
         }
 
         public void Error(string format, params object[] args)
@@ -94,18 +78,54 @@ namespace HeapExplorer
             Debug.LogError(text);
         }
 
+        /// <summary>
+        /// Gets the size of all managed heap sections combined.
+        /// </summary>
+        public ulong GetTotalManagedHeapSize()
+        {
+            if (m_ManagedHeapSize != ~0ul)
+                return m_ManagedHeapSize;
+
+            for (int n = 0, nend = managedHeapSections.Length; n < nend; ++n)
+                m_ManagedHeapSize += managedHeapSections[n].size;
+
+            return m_ManagedHeapSize;
+        }
+
+        /// <summary>
+        /// The address space from the operating system in which the managed heap sections are located.
+        /// </summary>
+        public ulong GetManagedHeapAddressSpace()
+        {
+            if (m_ManagedHeapAddressSpace != ~0ul)
+                return m_ManagedHeapAddressSpace;
+
+            if (managedHeapSections.Length == 0)
+                return m_ManagedHeapAddressSpace = 0;
+
+            var first = managedHeapSections[0].startAddress;
+            var last = managedHeapSections[managedHeapSections.Length - 1].startAddress + managedHeapSections[managedHeapSections.Length - 1].size;
+            m_ManagedHeapAddressSpace = last - first;
+            return m_ManagedHeapAddressSpace;
+        }
+
         public void FindManagedStaticFieldsOfType(PackedManagedType type, List<int> target)
         {
             if (target == null)
                 return;
 
-            for (int n=0, nend = managedStaticFields.Length; n < nend; ++n)
+            for (int n = 0, nend = managedStaticFields.Length; n < nend; ++n)
             {
                 if (managedStaticFields[n].managedTypesArrayIndex == type.managedTypesArrayIndex)
                     target.Add(managedStaticFields[n].staticFieldsArrayIndex);
             }
         }
 
+        /// <summary>
+        /// Find the managed object type at the specified address.
+        /// </summary>
+        /// <param name="address">The managed object memory address.</param>
+        /// <returns>An index into the snapshot.managedTypes array on success, -1 otherwise.</returns>
         public int FindManagedObjectTypeOfAddress(System.UInt64 address)
         {
             // IL2CPP has the class pointer as the first member of the object.
@@ -144,169 +164,138 @@ namespace HeapExplorer
 
             return typeIndex;
         }
-
-        //public int FindManagedObjectTypeOfAddress(System.UInt64 address)
-        //{
-        //    var heapIndex = FindHeapOfAddress(address);
-        //    if (heapIndex == -1)
-        //    {
-        //        Error("Cannot find memory segment for address '{0:X}'.", address);
-        //        return -1;
-        //    }
-
-        //    var typeIndex = FindManagedTypeOfTypeInfoAddress(managedHeapSections[heapIndex].startAddress);
-        //    if (typeIndex == -1)
-        //    {
-        //        var vtable = managedHeapSections[heapIndex];// heap.Find(objectAddress, _virtualMachineInformation);
-        //        var offset = (int)(address - vtable.startAddress);
-
-        //        var vtableClassPointer = virtualMachineInformation.pointerSize == 8 ? BitConverter.ToUInt64(vtable.bytes, offset) : BitConverter.ToUInt32(vtable.bytes, offset);
-        //        if (vtableClassPointer == 0)
-        //        {
-        //            Error("Cannot find memory segment for address '{0:X}', because the 'vtableClassPointer' points to NULL.", address);
-        //            return -1;
-        //        }
-
-        //        // IL2CPP has the class pointer as the first member of the object.
-        //        //var il2cppType = FindManagedTypeOfTypeInfoAddress(vtableClassPointer);
-        //        //if (il2cppType != -1)
-        //        //    return il2cppType;
-
-        //        // Mono has a vtable pointer as the first member of the object.
-        //        // The first member of the vtable is the class pointer.
-        //        heapIndex = FindHeapOfAddress(vtableClassPointer);
-        //        if (heapIndex == -1)
-        //        {
-        //            Error("Cannot find memory segment for vtableClassPointer pointing at address '{0:X}'.", vtableClassPointer);
-        //            return -1;
-        //        }
-
-        //        offset = (int)(vtableClassPointer - managedHeapSections[heapIndex].startAddress);
-
-        //        if (virtualMachineInformation.pointerSize == 8)
-        //            typeIndex = FindManagedTypeOfTypeInfoAddress(BitConverter.ToUInt64(managedHeapSections[heapIndex].bytes, offset));
-        //        else if (virtualMachineInformation.pointerSize == 4)
-        //            typeIndex = FindManagedTypeOfTypeInfoAddress(BitConverter.ToUInt32(managedHeapSections[heapIndex].bytes, offset));
-        //    }
-
-        //    return typeIndex;
-        //}
-
+        
+        /// <summary>
+        /// Find the managed object counter-part of a native object.
+        /// </summary>
+        /// <param name="nativeObjectAddress">The native object address.</param>
+        /// <returns>An index into the snapshot.managedObjects array on success, -1 otherwise.</returns>
         public int FindManagedObjectOfNativeObject(UInt64 nativeObjectAddress)
         {
             if (nativeObjectAddress == 0)
                 return -1;
 
-            if (m_findManagedObjectOfNativeObjectLUT == null)
+            if (m_FindManagedObjectOfNativeObjectLUT == null)
             {
-                m_findManagedObjectOfNativeObjectLUT = new Dictionary<ulong, int>(managedObjects.Length);
+                m_FindManagedObjectOfNativeObjectLUT = new Dictionary<ulong, int>(managedObjects.Length);
                 for (int n = 0, nend = managedObjects.Length; n < nend; ++n)
                 {
                     if (managedObjects[n].nativeObjectsArrayIndex >= 0)
                     {
                         var address = (ulong)nativeObjects[managedObjects[n].nativeObjectsArrayIndex].nativeObjectAddress;
-                        m_findManagedObjectOfNativeObjectLUT[address] = n;
+                        m_FindManagedObjectOfNativeObjectLUT[address] = n;
                     }
                 }
             }
 
             int index;
-            if (m_findManagedObjectOfNativeObjectLUT.TryGetValue(nativeObjectAddress, out index))
+            if (m_FindManagedObjectOfNativeObjectLUT.TryGetValue(nativeObjectAddress, out index))
                 return index;
 
             return -1;
         }
 
+        /// <summary>
+        /// Find the managed object at the specified address.
+        /// </summary>
+        /// <param name="managedObjectAddress">The managed object address.</param>
+        /// <returns>An index into the snapshot.managedObjects array on success, -1 otherwise.</returns>
         public int FindManagedObjectOfAddress(UInt64 managedObjectAddress)
         {
             if (managedObjectAddress == 0)
                 return -1;
 
-            if (m_findManagedObjectOfAddressLUT == null)
+            if (m_FindManagedObjectOfAddressLUT == null)
             {
-                m_findManagedObjectOfAddressLUT = new Dictionary<ulong, int>(managedObjects.Length);
+                m_FindManagedObjectOfAddressLUT = new Dictionary<ulong, int>(managedObjects.Length);
                 for (int n = 0, nend = managedObjects.Length; n < nend; ++n)
-                    m_findManagedObjectOfAddressLUT[managedObjects[n].address] = n;
+                    m_FindManagedObjectOfAddressLUT[managedObjects[n].address] = n;
             }
 
             int index;
-            if (m_findManagedObjectOfAddressLUT.TryGetValue(managedObjectAddress, out index))
+            if (m_FindManagedObjectOfAddressLUT.TryGetValue(managedObjectAddress, out index))
                 return index;
 
             return -1;
         }
 
+        /// <summary>
+        /// Find the native object at the specified address.
+        /// </summary>
+        /// <param name="nativeObjectAddress">The native object address.</param>
+        /// <returns>An index into the snapshot.nativeObjects array on success, -1 otherwise.</returns>
         public int FindNativeObjectOfAddress(UInt64 nativeObjectAddress)
         {
             if (nativeObjectAddress == 0)
                 return -1;
 
-            if (m_findNativeObjectOfAddressLUT == null)
+            if (m_FindNativeObjectOfAddressLUT == null)
             {
-                m_findNativeObjectOfAddressLUT = new Dictionary<ulong, int>(nativeObjects.Length);
+                m_FindNativeObjectOfAddressLUT = new Dictionary<ulong, int>(nativeObjects.Length);
                 for (int n = 0, nend = nativeObjects.Length; n < nend; ++n)
-                    m_findNativeObjectOfAddressLUT[(ulong)nativeObjects[n].nativeObjectAddress] = n;
+                    m_FindNativeObjectOfAddressLUT[(ulong)nativeObjects[n].nativeObjectAddress] = n;
             }
 
             int index;
-            if (m_findNativeObjectOfAddressLUT.TryGetValue(nativeObjectAddress, out index))
+            if (m_FindNativeObjectOfAddressLUT.TryGetValue(nativeObjectAddress, out index))
                 return index;
 
             return -1;
         }
-        
+
+        /// <summary>
+        /// Find the GCHandle at the specified address.
+        /// </summary>
+        /// <param name="targetAddress">The corresponding managed object address.</param>
+        /// <returns>An index into the snapshot.gcHandles array on success, -1 otherwise.</returns>
         public int FindGCHandleOfTargetAddress(UInt64 targetAddress)
         {
             if (targetAddress == 0)
                 return -1;
 
-            if (m_findGCHandleOfTargetAddressLUT == null)
+            if (m_FindGCHandleOfTargetAddressLUT == null)
             {
-                m_findGCHandleOfTargetAddressLUT = new Dictionary<ulong, int>(gcHandles.Length);
+                m_FindGCHandleOfTargetAddressLUT = new Dictionary<ulong, int>(gcHandles.Length);
                 for (int n = 0, nend = gcHandles.Length; n < nend; ++n)
-                    m_findGCHandleOfTargetAddressLUT[gcHandles[n].target] = gcHandles[n].gcHandlesArrayIndex;
+                    m_FindGCHandleOfTargetAddressLUT[gcHandles[n].target] = gcHandles[n].gcHandlesArrayIndex;
             }
 
             int index;
-            if (m_findGCHandleOfTargetAddressLUT.TryGetValue(targetAddress, out index))
+            if (m_FindGCHandleOfTargetAddressLUT.TryGetValue(targetAddress, out index))
                 return index;
 
             return -1;
         }
 
+        /// <summary>
+        /// Find the managed type of the address where the TypeInfo is stored.
+        /// </summary>
+        /// <param name="typeInfoAddress">The type info address.</param>
+        /// <returns>An index into the snapshot.managedTypes array on success, -1 otherwise.</returns>
         public int FindManagedTypeOfTypeInfoAddress(UInt64 typeInfoAddress)
         {
             if (typeInfoAddress == 0)
                 return -1;
 
-            if (m_findManagedTypeOfTypeInfoAddressLUT == null)
+            if (m_FindManagedTypeOfTypeInfoAddressLUT == null)
             {
-                m_findManagedTypeOfTypeInfoAddressLUT = new Dictionary<ulong, int>(managedTypes.Length);
+                m_FindManagedTypeOfTypeInfoAddressLUT = new Dictionary<ulong, int>(managedTypes.Length);
                 for (int n = 0, nend = managedTypes.Length; n < nend; ++n)
-                    m_findManagedTypeOfTypeInfoAddressLUT[managedTypes[n].typeInfoAddress] = managedTypes[n].managedTypesArrayIndex;
+                    m_FindManagedTypeOfTypeInfoAddressLUT[managedTypes[n].typeInfoAddress] = managedTypes[n].managedTypesArrayIndex;
             }
 
             int index;
-            if (m_findManagedTypeOfTypeInfoAddressLUT.TryGetValue(typeInfoAddress, out index))
+            if (m_FindManagedTypeOfTypeInfoAddressLUT.TryGetValue(typeInfoAddress, out index))
                 return index;
 
             return -1;
         }
 
-        public int FindManagedTypeOfName(string typeName, StringComparison comparison)
-        {
-            if (string.IsNullOrEmpty(typeName))
-                return -1;
-
-            for (int n=0, nend = managedTypes.Length; n < nend; ++n)
-            {
-                if (string.Equals(managedTypes[n].name, typeName, comparison))
-                    return n;
-            }
-
-            return -1;
-        }
-
+        /// <summary>
+        /// Find the managed heap section of the specified address.
+        /// </summary>
+        /// <param name="address">The memory address.</param>
+        /// <returns>An index into the snapshot.managedHeapSections array on success, -1 otherwise.</returns>
         public int FindHeapOfAddress(UInt64 address)
         {
             var first = 0;
@@ -329,12 +318,13 @@ namespace HeapExplorer
             return -1;
         }
 
-        UInt64 ComputeConnectionKey(PackedConnection.Kind kind, int index)
-        {
-            var value = (UInt64)(((int)kind << 50) + index);
-            return value;
-        }
-
+        /// <summary>
+        /// Add a connection between two objects, such as a connection from a native object to its managed counter-part.
+        /// </summary>
+        /// <param name="fromKind">The connection kind, that is pointing to another object.</param>
+        /// <param name="fromIndex">An index into a snapshot array, depending on specified fromKind. If the kind would be 'Native', then it must be an index into the snapshot.nativeObjects array.</param>
+        /// <param name="toKind">The connection kind, to which the 'from' object is pointing to.</param>
+        /// <param name="toIndex">An index into a snapshot array, depending on the specified toKind. If the kind would be 'Native', then it must be an index into the snapshot.nativeObjects array.</param>
         public void AddConnection(PackedConnection.Kind fromKind, int fromIndex, PackedConnection.Kind toKind, int toIndex)
         {
             var connection = new PackedConnection
@@ -350,8 +340,8 @@ namespace HeapExplorer
                 var key = ComputeConnectionKey(connection.fromKind, connection.from);
 
                 List<PackedConnection> list;
-                if (!m_connectionsFrom.TryGetValue(key, out list))
-                    m_connectionsFrom[key] = list = new List<PackedConnection>(1); // Capacity=1 to reduce memory usage on HUGE memory snapshots
+                if (!m_ConnectionsFrom.TryGetValue(key, out list))
+                    m_ConnectionsFrom[key] = list = new List<PackedConnection>(1); // Capacity=1 to reduce memory usage on HUGE memory snapshots
 
                 list.Add(connection);
             }
@@ -364,12 +354,19 @@ namespace HeapExplorer
                 var key = ComputeConnectionKey(connection.toKind, connection.to);
 
                 List<PackedConnection> list;
-                if (!m_connectionsTo.TryGetValue(key, out list))
-                    m_connectionsTo[key] = list = new List<PackedConnection>(1); // Capacity=1 to reduce memory usage on HUGE memory snapshots
+                if (!m_ConnectionsTo.TryGetValue(key, out list))
+                    m_ConnectionsTo[key] = list = new List<PackedConnection>(1); // Capacity=1 to reduce memory usage on HUGE memory snapshots
 
                 list.Add(connection);
             }
         }
+
+        UInt64 ComputeConnectionKey(PackedConnection.Kind kind, int index)
+        {
+            var value = (UInt64)(((int)kind << 50) + index);
+            return value;
+        }
+
         void GetConnectionsInternal(PackedConnection.Kind kind, int index, List<PackedConnection> references, List<PackedConnection> referencedBy)
         {
             var key = ComputeConnectionKey(kind, index);
@@ -377,14 +374,14 @@ namespace HeapExplorer
             if (references != null)
             {
                 List<PackedConnection> refs;
-                if (m_connectionsFrom.TryGetValue(key, out refs))
+                if (m_ConnectionsFrom.TryGetValue(key, out refs))
                     references.AddRange(refs);
             }
 
             if (referencedBy != null)
             {
                 List<PackedConnection> refsBy;
-                if (m_connectionsTo.TryGetValue(key, out refsBy))
+                if (m_ConnectionsTo.TryGetValue(key, out refsBy))
                     referencedBy.AddRange(refsBy);
             }
         }
@@ -393,15 +390,15 @@ namespace HeapExplorer
         {
             referencesCount = 0;
             referencedByCount = 0;
-            
+
             var key = ComputeConnectionKey(kind, index);
 
             List<PackedConnection> refs;
-            if (m_connectionsFrom.TryGetValue(key, out refs))
+            if (m_ConnectionsFrom.TryGetValue(key, out refs))
                 referencesCount = refs.Count;
 
             List<PackedConnection> refBy;
-            if (m_connectionsTo.TryGetValue(key, out refBy))
+            if (m_ConnectionsTo.TryGetValue(key, out refBy))
                 referencedByCount = refBy.Count;
         }
 
@@ -478,11 +475,11 @@ namespace HeapExplorer
         public int FindNativeMonoScriptType(int nativeObjectIndex, out string monoScriptName)
         {
             monoScriptName = "";
-            
+
             var key = ComputeConnectionKey(PackedConnection.Kind.Native, nativeObjectIndex);
 
             List<PackedConnection> list;
-            if (m_connectionsFrom.TryGetValue(key, out list))
+            if (m_ConnectionsFrom.TryGetValue(key, out list))
             {
                 for (int n = 0, nend = list.Count; n < nend; ++n)
                 {
@@ -585,7 +582,7 @@ namespace HeapExplorer
 
         void InitializeConnectionsToMonoScripts()
         {
-            stateString = "Initializing Connections to MonoScripts";
+            busyString = "Initializing Connections to MonoScripts";
 
             var list = new List<int>(256);
             var nativeMonoScriptTypeIndex = coreTypes.nativeMonoScript;
@@ -603,8 +600,8 @@ namespace HeapExplorer
 
         void InitializeConnections()
         {
-            stateString = "Analyzing Object Connections";
-            
+            busyString = "Analyzing Object Connections";
+
             var managedStart = 0;
             var managedEnd = managedStart + gcHandles.Length;
             var nativeStart = managedStart + managedEnd;
@@ -618,7 +615,7 @@ namespace HeapExplorer
                 if ((n % (nend / 100)) == 0)
                 {
                     var progress = ((n + 1.0f) / nend) * 100;
-                    stateString = string.Format("Analyzing Object Connections\n{0}/{1}, {2:F0}% done", n+1, connections.Length, progress);
+                    busyString = string.Format("Analyzing Object Connections\n{0}/{1}, {2:F0}% done", n + 1, connections.Length, progress);
                 }
 
                 var connection = connections[n];
@@ -650,7 +647,7 @@ namespace HeapExplorer
 
         void InitializeManagedHeapSections()
         {
-            stateString = "Initializing Managed Heap Sections";
+            busyString = "Initializing Managed Heap Sections";
 
             // sort sections by address. This allows us to use binary search algorithms.
             Array.Sort(managedHeapSections, delegate (PackedMemorySection x, PackedMemorySection y)
@@ -664,7 +661,7 @@ namespace HeapExplorer
             for (int n = 0, nend = managedTypes.Length; n < nend; ++n)
             {
                 var type = managedTypes[n];
-                for (int k=0, kend=type.fields.Length; k < kend; ++k)
+                for (int k = 0, kend = type.fields.Length; k < kend; ++k)
                 {
                     var name = type.fields[k].name;
                     if (name != null && name[0] == '<')
@@ -682,7 +679,7 @@ namespace HeapExplorer
 
         void InitializeManagedTypes()
         {
-            stateString = "Initializing Managed Types";
+            busyString = "Initializing Managed Types";
 
             for (int n = 0, nend = managedTypes.Length; n < nend; ++n)
             {
@@ -737,7 +734,7 @@ namespace HeapExplorer
 
         void InitializeCoreTypes()
         {
-            stateString = "Initializing Core Types";
+            busyString = "Initializing Core Types";
 
             for (int n = 0, nend = managedTypes.Length; n < nend; ++n)
             {
@@ -960,12 +957,12 @@ namespace HeapExplorer
                 }
             }
         }
-        
+
         void InitializeNativeTypes()
         {
-            stateString = "Processing Native Types";
+            busyString = "Processing Native Types";
 
-            for (int n=0, nend = nativeObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = nativeObjects.Length; n < nend; ++n)
             {
                 var nativeTypesArrayIndex = nativeObjects[n].nativeTypesArrayIndex;
                 if (nativeTypesArrayIndex < 0)
@@ -975,7 +972,7 @@ namespace HeapExplorer
                 nativeTypes[nativeTypesArrayIndex].totalObjectSize += nativeObjects[n].size;
             }
 
-            stateString = "Processing Managed Types";
+            busyString = "Processing Managed Types";
 
             for (int n = 0, nend = managedObjects.Length; n < nend; ++n)
             {
@@ -1017,16 +1014,16 @@ namespace HeapExplorer
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeManagedObjects");
-                stateString = "Analyzing ManagedObjects";
+                busyString = "Analyzing ManagedObjects";
                 var crawler = new PackedManagedObjectCrawler();
                 crawler.Crawl(this);
                 EndProfilerSample();
 
                 InitializeNativeTypes();
 
-                stateString = "Finalizing";
+                busyString = "Finalizing";
                 System.Threading.Thread.Sleep(30);
-                isReady = true;
+                isBusy = false;
             }
             catch (System.Exception e)
             {
@@ -1035,6 +1032,6 @@ namespace HeapExplorer
             }
         }
 
-#endregion
+        #endregion
     }
 }

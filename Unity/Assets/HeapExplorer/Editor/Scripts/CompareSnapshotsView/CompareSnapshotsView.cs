@@ -208,7 +208,7 @@ namespace HeapExplorer
                 get
                 {
                     if (snapshotB != null)
-                        return snapshotB.stateString;
+                        return snapshotB.busyString;
                     return "<null> snapshot";
                 }
             }

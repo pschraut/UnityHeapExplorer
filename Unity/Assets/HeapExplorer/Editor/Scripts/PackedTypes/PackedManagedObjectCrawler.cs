@@ -542,7 +542,7 @@ namespace HeapExplorer
 
         void UpdateProgress()
         {
-            m_snapshot.stateString = string.Format("Analyzing Managed Objects\n{0} crawled, {1} extracted", m_totalCrawled, m_managedObjects.Count);
+            m_snapshot.busyString = string.Format("Analyzing Managed Objects\n{0} crawled, {1} extracted", m_totalCrawled, m_managedObjects.Count);
         }
 
         void SetObjectSize(ref PackedManagedObject managedObj, PackedManagedType type)

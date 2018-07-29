@@ -290,7 +290,7 @@ namespace HeapExplorer
 
             using (new EditorGUILayout.VerticalScope(GUILayout.MaxWidth(position.width), GUILayout.MaxHeight(position.height)))
             {
-                using (new EditorGUI.DisabledGroupScope(m_isCapturing || (m_heap != null && !m_heap.isReady) || (m_busyDraws > 0)))
+                using (new EditorGUI.DisabledGroupScope(m_isCapturing || (m_heap != null && m_heap.isBusy) || (m_busyDraws > 0)))
                 {
                     m_busyDraws--;
                     m_busyString = "";
@@ -300,10 +300,10 @@ namespace HeapExplorer
 
                     if (m_heap != null)
                     {
-                        if (!m_heap.isReady)
-                            SetBusy(m_heap.stateString);
+                        if (m_heap.isBusy)
+                            SetBusy(m_heap.busyString);
 
-                        if (m_heap.isReady && m_activeView == null && Event.current.type == EventType.Layout)
+                        if (!m_heap.isBusy && m_activeView == null && Event.current.type == EventType.Layout)
                             RestoreView();
                     }
 
@@ -374,7 +374,7 @@ namespace HeapExplorer
 
         void DrawView()
         {
-            if (m_activeView == null || (m_heap != null && !m_heap.isReady))
+            if (m_activeView == null || (m_heap != null && m_heap.isBusy))
                 return;
 
             UnityEngine.Profiling.Profiler.BeginSample(m_activeView.GetType().Name);
@@ -478,7 +478,7 @@ namespace HeapExplorer
                     m_fileToolbarButtonRect = GUILayoutUtility.GetLastRect();
 
 
-                EditorGUI.BeginDisabledGroup(m_heap == null || !m_heap.isReady);
+                EditorGUI.BeginDisabledGroup(m_heap == null || m_heap.isBusy);
                 if (GUILayout.Button("View", EditorStyles.toolbarDropDown, GUILayout.Width(60)))
                 {
                     m_views.Sort(delegate (HeapExplorerView x, HeapExplorerView y)

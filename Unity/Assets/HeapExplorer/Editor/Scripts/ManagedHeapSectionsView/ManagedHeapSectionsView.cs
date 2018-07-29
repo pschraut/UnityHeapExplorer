@@ -165,7 +165,7 @@ namespace HeapExplorer
                     // Managed heap fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.managedHeapSize), EditorUtility.FormatBytes((long)snapshot.managedHeapAddressSpace));
+                        var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
                         GUILayout.Label(text, EditorStyles.boldLabel);
                         GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
                     }
@@ -321,8 +321,8 @@ namespace HeapExplorer
                 var offset = section.startAddress - snapshot.managedHeapSections[0].startAddress;
                 var size = section.bytes == null ? 0 : section.bytes.LongLength;
 
-                var left = (int)((total.width / snapshot.managedHeapAddressSpace) * offset);
-                var width = (int)Mathf.Max(1, (total.width / snapshot.managedHeapAddressSpace) * size);
+                var left = (int)((total.width / snapshot.GetManagedHeapAddressSpace()) * offset);
+                var width = (int)Mathf.Max(1, (total.width / snapshot.GetManagedHeapAddressSpace()) * size);
 
                 for (int y = 0; y < k_TextureHeight; ++y)
                 {
