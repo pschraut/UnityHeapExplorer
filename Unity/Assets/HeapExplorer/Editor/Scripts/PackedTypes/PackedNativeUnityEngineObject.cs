@@ -69,9 +69,10 @@ namespace HeapExplorer
             }
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedNativeUnityEngineObject[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedNativeUnityEngineObject[] value, out string stateString)
         {
             value = new PackedNativeUnityEngineObject[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -79,6 +80,7 @@ namespace HeapExplorer
 #endif
             {
                 var length = reader.ReadInt32();
+                stateString = string.Format("Loading {0} Native Objects", length);
                 value = new PackedNativeUnityEngineObject[length];
 
                 for (int n = 0, nend = value.Length; n < nend; ++n)

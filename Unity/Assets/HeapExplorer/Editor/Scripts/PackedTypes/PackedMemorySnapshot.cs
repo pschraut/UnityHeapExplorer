@@ -40,30 +40,37 @@ namespace HeapExplorer
         public static PackedMemorySnapshot FromMemoryProfiler(UnityEditor.MemoryProfiler.PackedMemorySnapshot source)
         {
             var value = new PackedMemorySnapshot();
+            try
+            {
+                value.stateString = "Loading Header";
+                value.header = PackedMemorySnapshotHeader.FromMemoryProfiler();
 
-            value.header = PackedMemorySnapshotHeader.FromMemoryProfiler();
+                value.stateString = string.Format("Loading {0} Native Types", source.nativeTypes.Length);
+                value.nativeTypes = PackedNativeType.FromMemoryProfiler(source.nativeTypes);
 
-            value.stateString = "Loading Native Types";
-            value.nativeTypes = PackedNativeType.FromMemoryProfiler(source.nativeTypes);
+                value.stateString = string.Format("Loading {0} Native Objects", source.nativeObjects.Length);
+                value.nativeObjects = PackedNativeUnityEngineObject.FromMemoryProfiler(source.nativeObjects);
 
-            value.stateString = "Loading Native Objects";
-            value.nativeObjects = PackedNativeUnityEngineObject.FromMemoryProfiler(source.nativeObjects);
+                value.stateString = string.Format("Loading {0} GC Handles", source.gcHandles.Length);
+                value.gcHandles = PackedGCHandle.FromMemoryProfiler(source.gcHandles);
 
-            value.stateString = "Loading GC Handles";
-            value.gcHandles = PackedGCHandle.FromMemoryProfiler(source.gcHandles);
+                value.stateString = string.Format("Loading {0} Object Connections", source.connections.Length);
+                value.connections = PackedConnection.FromMemoryProfiler(source.connections);
 
-            value.stateString = "Loading Object Connections";
-            value.connections = PackedConnection.FromMemoryProfiler(source.connections);
+                value.stateString = string.Format("Loading {0} Managed Heap Sections", source.managedHeapSections.Length);
+                value.managedHeapSections = PackedMemorySection.FromMemoryProfiler(source.managedHeapSections);
 
-            value.stateString = "Loading Managed Heap Sections";
-            value.managedHeapSections = PackedMemorySection.FromMemoryProfiler(source.managedHeapSections);
+                value.stateString = string.Format("Loading {0} Managed Types", source.typeDescriptions.Length);
+                value.managedTypes = PackedManagedType.FromMemoryProfiler(source.typeDescriptions);
 
-            value.stateString = "Loading Managed Types";
-            value.managedTypes = PackedManagedType.FromMemoryProfiler(source.typeDescriptions);
-
-            value.stateString = "Loading VM Information";
-            value.virtualMachineInformation = PackedVirtualMachineInformation.FromMemoryProfiler(source.virtualMachineInformation);
-
+                value.stateString = "Loading VM Information";
+                value.virtualMachineInformation = PackedVirtualMachineInformation.FromMemoryProfiler(source.virtualMachineInformation);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                value = null;
+            }
             return value;
         }
 
@@ -79,46 +86,35 @@ namespace HeapExplorer
             {
                 using (var reader = new System.IO.BinaryReader(fileStream))
                 {
-                    stateString = "Loading Header";
-                    PackedMemorySnapshotHeader.Read(reader, out header);
-                    if (!header.isValid)
-                        return false;
-
-                    stateString = "Loading Native Types";
-                    PackedNativeType.Read(reader, out nativeTypes);
-                    if (nativeTypes == null || nativeTypes.Length == 0)
+                    try
                     {
-                        Debug.LogErrorFormat("'nativeTypes' array is empty.");
+                        PackedMemorySnapshotHeader.Read(reader, out header, out stateString);
+                        if (!header.isValid)
+                            throw new Exception("Invalid header.");
+
+                        PackedNativeType.Read(reader, out nativeTypes, out stateString);
+                        if (nativeTypes == null || nativeTypes.Length == 0)
+                            throw new Exception("snapshot.nativeTypes array mus not be empty.");
+
+                        PackedNativeUnityEngineObject.Read(reader, out nativeObjects, out stateString);
+                        PackedGCHandle.Read(reader, out gcHandles, out stateString);
+                        PackedConnection.Read(reader, out connections, out stateString);
+
+                        PackedMemorySection.Read(reader, out managedHeapSections, out stateString);
+                        if (managedHeapSections == null || managedHeapSections.Length == 0)
+                            throw new Exception("snapshot.managedHeapSections array mus not be empty.");    
+
+                        PackedManagedType.Read(reader, out managedTypes, out stateString);
+                        if (managedTypes == null || managedTypes.Length == 0)
+                            throw new Exception("snapshot.managedTypes array mus not be empty.");
+
+                        PackedVirtualMachineInformation.Read(reader, out virtualMachineInformation, out stateString);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
                         return false;
                     }
-
-                    stateString = "Loading Native Objects";
-                    PackedNativeUnityEngineObject.Read(reader, out nativeObjects);
-
-                    stateString = "Loading GC Handles";
-                    PackedGCHandle.Read(reader, out gcHandles);
-
-                    stateString = "Loading Object Connections";
-                    PackedConnection.Read(reader, out connections);
-
-                    stateString = "Loading Managed Heap Sections";
-                    PackedMemorySection.Read(reader, out managedHeapSections);
-                    if (managedHeapSections == null || managedHeapSections.Length == 0)
-                    {
-                        Debug.LogErrorFormat("'managedHeapSections' array is empty.");
-                        return false;
-                    }
-
-                    stateString = "Loading Managed Types";
-                    PackedManagedType.Read(reader, out managedTypes);
-                    if (managedTypes == null || managedTypes.Length == 0)
-                    {
-                        Debug.LogErrorFormat("'managedTypes' array is empty.");
-                        return false;
-                    }
-
-                    stateString = "Loading VM Information";
-                    PackedVirtualMachineInformation.Read(reader, out virtualMachineInformation);
                 }
             }
 

@@ -66,8 +66,8 @@ namespace HeapExplorer
         [NonSerialized]
         public PackedCoreTypes coreTypes = new PackedCoreTypes();
 
-        [NonSerialized]
-        public List<string> errors = new List<string>(256);
+        //[NonSerialized]
+        //public List<string> errors = new List<string>(256);
 
         [NonSerialized]
         public string stateString = "";
@@ -87,16 +87,11 @@ namespace HeapExplorer
             private set;
         }
 
-        //bool m_abort;
-        public void Abort()
-        {
-            //m_abort = true;
-        }
-
         public void Error(string format, params object[] args)
         {
-            //Debug.LogErrorFormat(format, args);
-            errors.Add(string.Format(format, args));
+            var text = string.Format(format, args);
+            //errors.Add(text);
+            Debug.LogError(text);
         }
 
         public void FindManagedStaticFieldsOfType(PackedManagedType type, List<int> target)
@@ -623,7 +618,7 @@ namespace HeapExplorer
                 if ((n % (nend / 100)) == 0)
                 {
                     var progress = ((n + 1.0f) / nend) * 100;
-                    stateString = string.Format("Analyzing {0} Object Connections, {1:F0}% done", connections.Length, progress);
+                    stateString = string.Format("Analyzing Object Connections\n{0}/{1}, {2:F0}% done", n+1, connections.Length, progress);
                 }
 
                 var connection = connections[n];

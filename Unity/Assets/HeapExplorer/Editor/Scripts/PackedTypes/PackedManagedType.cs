@@ -292,9 +292,10 @@ namespace HeapExplorer
             }
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedManagedType[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedManagedType[] value, out string stateString)
         {
             value = new PackedManagedType[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -302,6 +303,7 @@ namespace HeapExplorer
 #endif
             {
                 var length = reader.ReadInt32();
+                stateString = string.Format("Loading {0} Managed Types", length);
                 value = new PackedManagedType[length];
 
                 for (int n = 0, nend = value.Length; n < nend; ++n)

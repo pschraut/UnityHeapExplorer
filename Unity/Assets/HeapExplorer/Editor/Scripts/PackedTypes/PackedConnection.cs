@@ -43,9 +43,10 @@ namespace HeapExplorer
             }
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedConnection[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedConnection[] value, out string stateString)
         {
             value = new PackedConnection[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -53,12 +54,17 @@ namespace HeapExplorer
 #endif
             {
                 var length = reader.ReadInt32();
+                //stateString = string.Format("Loading {0} Object Connections", length);
                 value = new PackedConnection[length];
                 if (length == 0)
                     return;
 
+                var onePercent = Math.Max(1, value.Length / 100);
                 for (int n = 0, nend = value.Length; n < nend; ++n)
                 {
+                    if ((n % onePercent) == 0)
+                        stateString = string.Format("Loading Object Connections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
+
                     value[n].from = reader.ReadInt32();
                     value[n].to = reader.ReadInt32();
                 }

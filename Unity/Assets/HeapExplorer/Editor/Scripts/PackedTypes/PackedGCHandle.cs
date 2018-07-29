@@ -41,9 +41,10 @@ namespace HeapExplorer
             }
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedGCHandle[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedGCHandle[] value, out string stateString)
         {
             value = new PackedGCHandle[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -51,6 +52,7 @@ namespace HeapExplorer
 #endif
             {
                 var length = reader.ReadInt32();
+                stateString = string.Format("Loading {0} GC Handles", length);
                 value = new PackedGCHandle[length];
 
                 for (int n = 0, nend = value.Length; n < nend; ++n)

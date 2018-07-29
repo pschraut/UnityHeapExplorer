@@ -45,9 +45,10 @@ namespace HeapExplorer
             }
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedMemorySection[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedMemorySection[] value, out string stateString)
         {
             value = new PackedMemorySection[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -57,8 +58,12 @@ namespace HeapExplorer
                 var length = reader.ReadInt32();
                 value = new PackedMemorySection[length];
 
+                var onePercent = Math.Max(1, value.Length / 100);
                 for (int n = 0, nend = value.Length; n < nend; ++n)
                 {
+                    if ((n % onePercent) == 0)
+                        stateString = string.Format("Loading Managed Heap Sections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
+
                     var count = reader.ReadInt32();
                     value[n].bytes = reader.ReadBytes(count);
                     value[n].startAddress = reader.ReadUInt64();

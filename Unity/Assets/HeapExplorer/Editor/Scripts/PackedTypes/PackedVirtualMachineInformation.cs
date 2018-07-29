@@ -48,9 +48,10 @@ namespace HeapExplorer
             writer.Write(value.heapFormatVersion);
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedVirtualMachineInformation value)
+        public static void Read(System.IO.BinaryReader reader, out PackedVirtualMachineInformation value, out string stateString)
         {
             value = new PackedVirtualMachineInformation();
+            stateString = "Loading VM Information";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();

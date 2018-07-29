@@ -61,9 +61,10 @@ namespace HeapExplorer
         /// <summary>
         /// Reads a PackedNativeType array from the specified reader and stores the result in the specified value.
         /// </summary>
-        public static void Read(System.IO.BinaryReader reader, out PackedNativeType[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedNativeType[] value, out string stateString)
         {
             value = new PackedNativeType[0];
+            stateString = "";
 
 #if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
@@ -71,6 +72,8 @@ namespace HeapExplorer
 #endif
             {
                 var length = reader.ReadInt32();
+                stateString = string.Format("Loading {0} Native Types", length);
+
                 value = new PackedNativeType[length];
 
                 for (int n = 0, nend = value.Length; n < nend; ++n)

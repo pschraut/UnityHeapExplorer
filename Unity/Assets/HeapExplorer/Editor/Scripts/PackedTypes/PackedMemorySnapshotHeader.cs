@@ -61,9 +61,10 @@ namespace HeapExplorer
 #endif
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedMemorySnapshotHeader value)
+        public static void Read(System.IO.BinaryReader reader, out PackedMemorySnapshotHeader value, out string stateString)
         {
             value = new PackedMemorySnapshotHeader();
+            stateString = "Loading Header";
 
 #if HEAPEXPLORER_READ_HEADER
             value.snapshotMagic = reader.ReadInt32();
