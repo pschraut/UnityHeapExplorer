@@ -294,6 +294,7 @@ namespace HeapExplorer
                 {
                     m_busyDraws--;
                     m_busyString = "";
+                    Repaint();
 
                     DrawToolbar();
 
