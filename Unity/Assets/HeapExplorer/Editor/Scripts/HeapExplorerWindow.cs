@@ -8,91 +8,53 @@ namespace HeapExplorer
 {
     public class HeapExplorerWindow : EditorWindow
     {
-#pragma warning disable 0414
-        [NonSerialized] bool m_isCapturing;
-        [NonSerialized] GotoHistory m_gotoHistory = new GotoHistory();
-        [NonSerialized] PackedMemorySnapshot m_heap;
-        [NonSerialized] List<HeapExplorerView> m_views = new List<HeapExplorerView>();
-        [NonSerialized] HeapExplorerView m_activeView;
-        [NonSerialized] System.Threading.Thread m_thread;
-        [NonSerialized] Rect m_fileToolbarButtonRect;
-        [NonSerialized] Rect m_viewToolbarButtonRect;
-        [NonSerialized] Rect m_captureToolbarButtonRect;
-        [NonSerialized] Rect m_customToolbarButtonRect;
-        [NonSerialized] List<AbstractThreadJob> m_threadJobs = new List<AbstractThreadJob>();
-        [NonSerialized] List<AbstractThreadJob> m_integrationJobs = new List<AbstractThreadJob>();
-        [NonSerialized] bool m_repaint;
-        [NonSerialized] Test_Editor m_testVariables = new Test_Editor();
-        [NonSerialized] ManagedDelegatesView m_managedDelegatesView;
-        [NonSerialized] string m_ErrorMsg;
-        //[NonSerialized] bool m_UseThread = true;
-        [NonSerialized] string m_autoSavePath="";
-        [NonSerialized] string m_statusBarString="";
-        [NonSerialized] string m_busyString="";
-        [NonSerialized] int m_busyDraws;
-#pragma warning restore 0414
-
+        /// <summary>
+        /// Path of the active memory snapshot or an empty string if no snapshot is active.
+        /// </summary>
         public string snapshotPath
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// The active memory snapshot or null if no snapshot is active.
+        /// </summary>
         public PackedMemorySnapshot snapshot
         {
             get
             {
-                return m_heap;
+                return m_Heap;
             }
             set
             {
-                m_heap = value;
+                m_Heap = value;
             }
         }
+
+#pragma warning disable 0414
+        [NonSerialized] Test_Editor m_TestVariables = new Test_Editor(); // Allows me to easily check/test various types when capturing a snapshot in the editor.
+        [NonSerialized] bool m_IsCapturing; // Whether the tool is currently capturing a memory snapshot
+        [NonSerialized] GotoHistory m_GotoHistory = new GotoHistory();
+        [NonSerialized] PackedMemorySnapshot m_Heap; // The active memory snapshot
+        [NonSerialized] List<HeapExplorerView> m_Views = new List<HeapExplorerView>();
+        [NonSerialized] HeapExplorerView m_ActiveView; // The view that is currently active
+        [NonSerialized] System.Threading.Thread m_Thread; // The tool uses a thread to execute various jobs to not block the main UI.
+        [NonSerialized] Rect m_FileToolbarButtonRect; // The rect of the File button in the toolbar menu. Used as position to open its popup menu.
+        [NonSerialized] Rect m_ViewToolbarButtonRect; // The rect of the View button in the toolbar menu. Used as position to open its popup menu.
+        [NonSerialized] Rect m_CaptureToolbarButtonRect; // The rect of the Capture button in the toolbar menu. Used as position to open its popup menu.
+        [NonSerialized] List<AbstractThreadJob> m_ThreadJobs = new List<AbstractThreadJob>(); // Jobs to run on a background thread
+        [NonSerialized] List<AbstractThreadJob> m_IntegrationJobs = new List<AbstractThreadJob>(); // These are completed thread jobs that are not being integrated on the main-thread
+        [NonSerialized] bool m_Repaint; // Threads write to this variable rather than calling window.Repaint()
+        [NonSerialized] string m_ErrorMsg = ""; // If an error occured, threads write to this string.
+        [NonSerialized] string m_AutoSavePath = ""; //
+        [NonSerialized] string m_StatusBarString = "";
+        [NonSerialized] string m_BusyString = "";
+        [NonSerialized] int m_BusyDraws;
+        [NonSerialized] List<Exception> m_Exceptions = new List<Exception>(); // If exception occur in threaded jobs, these are collected and logged on the main thread
 
         static List<System.Type> s_ViewTypes = new List<Type>();
-
-        public static void Register<T>() where T : HeapExplorerView
-        {
-            var type = typeof(T);
-            if (s_ViewTypes.Contains(type))
-                return;
-
-            s_ViewTypes.Add(type);
-        }
-
-        [MenuItem("Window/Heap Explorer")]
-        static void Create()
-        {
-            var supported = true;
-
-            var numbers = Application.unityVersion.Split('.');
-            if (numbers != null && numbers.Length >= 2)
-            {
-                int major, minor;
-                if (!int.TryParse(numbers[0], out major)) major = -1;
-                if (!int.TryParse(numbers[1], out minor)) minor = -1;
-
-                if (major < 2017) supported = false;
-                if (major == 2017 && minor < 3) supported = false;
-            }
-
-            if (!supported)
-            {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.3 or newer.", HeGlobals.k_Title), "Forum", "Close"))
-                    Application.OpenURL(HeGlobals.k_ForumUrl);
-                return;
-            }
-
-            if (DateTime.Now.Year > 2018)
-            {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
-                    Application.OpenURL(HeGlobals.k_ForumUrl);
-                return;
-            }
-
-            EditorWindow.GetWindow<HeapExplorerWindow>();
-        }
+#pragma warning restore 0414
 
         bool useThreads
         {
@@ -118,49 +80,16 @@ namespace HeapExplorer
             }
         }
 
-        void OnEnable()
+        string autoSavePath
         {
-            titleContent = new GUIContent(HeGlobals.k_Title);
-            minSize = new Vector2(800, 600);
-            snapshotPath = "";
-
-            CreateViews();
-
-            m_threadJobs = new List<AbstractThreadJob>();
-            m_thread = new System.Threading.Thread(ThreadLoop);
-            m_thread.Start();
-
-            EditorApplication.update += OnApplicationUpdate;
-        }
-
-        void OnDisable()
-        {
-            TryAbortThread();
-            m_threadJobs = new List<AbstractThreadJob>();
-
-            UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnHeapReceived;
-            EditorApplication.update -= OnApplicationUpdate;
-
-            DestroyViews();
-        }
-
-        void OnApplicationUpdate()
-        {
-            if (m_repaint)
+            get
             {
-                m_repaint = false;
-                Repaint();
+                return EditorPrefs.GetString("HeapExplorerWindow.autoSavePath", "");
             }
-        }
-
-        void CreateViews()
-        {
-            foreach(var type in s_ViewTypes)
+            set
             {
-                CreateView(type);
+                EditorPrefs.SetString("HeapExplorerWindow.autoSavePath", value);
             }
-
-            ActivateView(welcomeView);
         }
 
         HeapExplorerView welcomeView
@@ -171,9 +100,100 @@ namespace HeapExplorer
             }
         }
 
+        /// <summary>
+        /// Register a view to be added to the Heap Explorer 'Views' menu.
+        /// </summary>
+        /// <typeparam name="T">The type of the HeapExplorerView to register.</typeparam>
+        public static void Register<T>() where T : HeapExplorerView
+        {
+            var type = typeof(T);
+            if (s_ViewTypes.Contains(type))
+                return;
+
+            s_ViewTypes.Add(type);
+        }
+
+        [MenuItem("Window/Heap Explorer")]
+        static void Create()
+        {
+            var supported = true;
+
+            var numbers = Application.unityVersion.Split('.');
+            if (numbers != null && numbers.Length >= 2)
+            {
+                int major, minor;
+                if (!int.TryParse(numbers[0], out major)) major = -1;
+                if (!int.TryParse(numbers[1], out minor)) minor = -1;
+
+                if (major < 2017) supported = false;
+                if (major == 2017 && minor < 4) supported = false;
+            }
+
+            if (!supported)
+            {
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.4 or newer. I tested the tool with Unity 2017.4.6f1, not sure if newer Unity versions work too.", HeGlobals.k_Title), "Forum", "Close"))
+                    Application.OpenURL(HeGlobals.k_ForumUrl);
+                return;
+            }
+
+            if (DateTime.Now.Year > 2018)
+            {
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
+                    Application.OpenURL(HeGlobals.k_ForumUrl);
+                return;
+            }
+
+            EditorWindow.GetWindow<HeapExplorerWindow>();
+        }
+        
+        void OnEnable()
+        {
+            titleContent = new GUIContent(HeGlobals.k_Title);
+            minSize = new Vector2(800, 600);
+            snapshotPath = "";
+
+            m_ThreadJobs = new List<AbstractThreadJob>();
+            m_Thread = new System.Threading.Thread(ThreadLoop);
+            m_Thread.Start();
+
+            CreateViews();
+
+            EditorApplication.update += OnApplicationUpdate;
+        }
+
+        void OnDisable()
+        {
+            TryAbortThread();
+            m_ThreadJobs = new List<AbstractThreadJob>();
+
+            UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnHeapReceived;
+            EditorApplication.update -= OnApplicationUpdate;
+
+            DestroyViews();
+        }
+
+        void OnApplicationUpdate()
+        {
+            if (m_Repaint)
+            {
+                m_Repaint = false;
+                Repaint();
+            }
+        }
+
+        void CreateViews()
+        {
+            foreach (var type in s_ViewTypes)
+            {
+                CreateView(type);
+            }
+
+            ActivateView(welcomeView);
+        }
+
         public T FindView<T>() where T : HeapExplorerView
         {
-            foreach(var view in m_views)
+            foreach (var view in m_Views)
             {
                 var v = view as T;
                 if (v != null)
@@ -185,47 +205,46 @@ namespace HeapExplorer
 
         void ResetViews()
         {
-            if (m_activeView != null)
+            if (m_ActiveView != null)
             {
-                m_activeView.Hide();
-                m_activeView = null;
+                m_ActiveView.Hide();
+                m_ActiveView = null;
             }
 
-            for (var n = 0; n < m_views.Count; ++n)
-                m_views[n].EvictHeap();
+            for (var n = 0; n < m_Views.Count; ++n)
+                m_Views[n].EvictHeap();
         }
 
         void DestroyViews()
         {
-            if (m_activeView != null)
+            if (m_ActiveView != null)
             {
-                m_activeView.Hide();
-                m_activeView = null;
+                m_ActiveView.Hide();
+                m_ActiveView = null;
             }
 
-            for (var n = 0; n < m_views.Count; ++n)
-                m_views[n].OnDestroy();
-            m_views.Clear();
+            for (var n = 0; n < m_Views.Count; ++n)
+                m_Views[n].OnDestroy();
+            m_Views.Clear();
         }
 
         HeapExplorerView CreateView(System.Type type)
         {
-            var view = (HeapExplorerView)System.Activator.CreateInstance(type);
+            var view = (HeapExplorerView)Activator.CreateInstance(type);
             view.window = this;
-            //view.gotoCB += OnGoto;
             view.Awake();
-            m_views.Add(view);
+            m_Views.Add(view);
             return view;
         }
 
         public void OnGoto(GotoCommand command)
         {
-            command.fromView = m_activeView;
-            m_gotoHistory.Add(command, command);
+            command.fromView = m_ActiveView;
+            m_GotoHistory.Add(command, command);
 
             GotoInternal(command, false);
         }
-        
+
         void GotoInternal(GotoCommand command, bool restoreFromView)
         {
             if (restoreFromView)
@@ -245,7 +264,7 @@ namespace HeapExplorer
                 return;
             }
 
-            var sortedViews = new List<HeapExplorerView>(m_views);
+            var sortedViews = new List<HeapExplorerView>(m_Views);
             sortedViews.Sort(delegate (HeapExplorerView x, HeapExplorerView y)
             {
                 var xx = x.CanProcessCommand(command);
@@ -263,7 +282,7 @@ namespace HeapExplorer
             {
                 if (Event.current.type != EventType.Layout)
                 {
-                    m_repaint = true;
+                    m_Repaint = true;
                     return;
                 }
 
@@ -272,38 +291,38 @@ namespace HeapExplorer
                 return;
             }
 
-            for(var n=0; n< m_exceptions.Count; ++n)
-                Debug.LogException(m_exceptions[n]);
-            m_exceptions.Clear();
+            for (var n = 0; n < m_Exceptions.Count; ++n)
+                Debug.LogException(m_Exceptions[n]);
+            m_Exceptions.Clear();
 
-            if (m_integrationJobs.Count > 0 && Event.current.type == EventType.Layout)
+            if (m_IntegrationJobs.Count > 0 && Event.current.type == EventType.Layout)
             {
-                lock(m_integrationJobs)
+                lock (m_IntegrationJobs)
                 {
-                    if (m_integrationJobs.Count > 0)
+                    if (m_IntegrationJobs.Count > 0)
                     {
-                        m_integrationJobs[0].IntegrateFunc();
-                        m_integrationJobs.RemoveAt(0);
+                        m_IntegrationJobs[0].IntegrateFunc();
+                        m_IntegrationJobs.RemoveAt(0);
                     }
                 }
             }
 
             using (new EditorGUILayout.VerticalScope(GUILayout.MaxWidth(position.width), GUILayout.MaxHeight(position.height)))
             {
-                using (new EditorGUI.DisabledGroupScope(m_isCapturing || (m_heap != null && m_heap.isBusy) || (m_busyDraws > 0)))
+                using (new EditorGUI.DisabledGroupScope(m_IsCapturing || (m_Heap != null && m_Heap.isBusy) || (m_BusyDraws > 0)))
                 {
-                    m_busyDraws--;
-                    m_busyString = "";
+                    m_BusyDraws--;
+                    m_BusyString = "";
                     Repaint();
 
                     DrawToolbar();
 
-                    if (m_heap != null)
+                    if (m_Heap != null)
                     {
-                        if (m_heap.isBusy)
-                            SetBusy(m_heap.busyString);
+                        if (m_Heap.isBusy)
+                            SetBusy(m_Heap.busyString);
 
-                        if (!m_heap.isBusy && m_activeView == null && Event.current.type == EventType.Layout)
+                        if (!m_Heap.isBusy && m_ActiveView == null && Event.current.type == EventType.Layout)
                             RestoreView();
                     }
 
@@ -313,22 +332,22 @@ namespace HeapExplorer
                 }
             }
 
-            if (!string.IsNullOrEmpty(m_busyString))
+            if (!string.IsNullOrEmpty(m_BusyString))
             {
-                m_repaint = true;
+                m_Repaint = true;
                 DrawBusy();
             }
         }
 
         public void SetBusy(string text)
         {
-            m_busyString = text;
-            m_busyDraws = 3;
+            m_BusyString = text;
+            m_BusyDraws = 3;
         }
 
         public void SetStatusbarString(string text)
         {
-            m_statusBarString = text;
+            m_StatusBarString = text;
         }
 
         void DrawBusy()
@@ -347,9 +366,8 @@ namespace HeapExplorer
             GUI.matrix = oldMatrix;
             GUI.color = oldColor;
 
-            r = new Rect(new Vector2(0, pivotPoint.y - iconSize), new Vector2(position.width, iconSize*0.5f));
-            //GUI.Label(r, m_heap.stateString, HeEditorStyles.loadingLabel);
-            GUI.Label(r, m_busyString, HeEditorStyles.loadingLabel);
+            r = new Rect(new Vector2(0, pivotPoint.y - iconSize), new Vector2(position.width, iconSize * 0.5f));
+            GUI.Label(r, m_BusyString, HeEditorStyles.loadingLabel);
         }
 
         void FreeMem()
@@ -360,26 +378,26 @@ namespace HeapExplorer
         void ActivateView(object userData)
         {
             var view = userData as HeapExplorerView;
-            if (m_activeView != null)
-                m_activeView.Hide();
+            if (m_ActiveView != null)
+                m_ActiveView.Hide();
 
-            m_statusBarString = "";
-            m_activeView = view;
+            m_StatusBarString = "";
+            m_ActiveView = view;
 
-            if (m_activeView != null)
-                m_activeView.Show(m_heap);
+            if (m_ActiveView != null)
+                m_ActiveView.Show(m_Heap);
 
-            m_repaint = true;
+            m_Repaint = true;
         }
 
         void DrawView()
         {
-            if (m_activeView == null || (m_heap != null && m_heap.isBusy))
+            if (m_ActiveView == null || (m_Heap != null && m_Heap.isBusy))
                 return;
 
-            UnityEngine.Profiling.Profiler.BeginSample(m_activeView.GetType().Name);
+            UnityEngine.Profiling.Profiler.BeginSample(m_ActiveView.GetType().Name);
 
-            m_activeView.OnGUI();
+            m_ActiveView.OnGUI();
 
             UnityEngine.Profiling.Profiler.EndSample();
         }
@@ -394,26 +412,26 @@ namespace HeapExplorer
 
             r.x += 4;
             r.y += 2;
-            GUI.Label(r, m_statusBarString, EditorStyles.boldLabel);
+            GUI.Label(r, m_StatusBarString, EditorStyles.boldLabel);
         }
 
         void DrawToolbar()
         {
             using (new GUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.ExpandWidth(true)))
             {
-                EditorGUI.BeginDisabledGroup(!m_gotoHistory.HasBack());
+                EditorGUI.BeginDisabledGroup(!m_GotoHistory.HasBack());
                 if (GUILayout.Button(new GUIContent(HeEditorStyles.backwardImage, "Navigate Backward"), EditorStyles.toolbarButton, GUILayout.Width(24)))
                 {
-                    var cmd = m_gotoHistory.Back();
+                    var cmd = m_GotoHistory.Back();
                     if (cmd != null)
                         GotoInternal(cmd, true);
                 }
                 EditorGUI.EndDisabledGroup();
 
-                EditorGUI.BeginDisabledGroup(!m_gotoHistory.HasForward());
+                EditorGUI.BeginDisabledGroup(!m_GotoHistory.HasForward());
                 if (GUILayout.Button(new GUIContent(HeEditorStyles.forwardImage, "Navigate Forward"), EditorStyles.toolbarButton, GUILayout.Width(24)))
                 {
-                    var cmd = m_gotoHistory.Forward();
+                    var cmd = m_GotoHistory.Forward();
                     if (cmd != null)
                         GotoInternal(cmd, false);
                 }
@@ -435,14 +453,14 @@ namespace HeapExplorer
                         if (!System.IO.File.Exists(path))
                             continue;
 
-                        menu.AddItem(new GUIContent(string.Format("Recent/{0}     {1}", (n + 1), path.Replace('/', '\\'))), false, delegate(System.Object obj)
+                        menu.AddItem(new GUIContent(string.Format("Recent/{0}     {1}", (n + 1), path.Replace('/', '\\'))), false, delegate (System.Object obj)
                         {
                             var p = obj as string;
                             LoadFromFile(p);
                         }, path);
                     }
                     menu.AddSeparator("Recent/");
-                    menu.AddItem(new GUIContent("Recent/Clear list"), false, delegate() 
+                    menu.AddItem(new GUIContent("Recent/Clear list"), false, delegate ()
                     {
                         if (EditorUtility.DisplayDialog("Clear list...", "Do you want to clear the most recently used files list?", "Clear", "Cancel"))
                             HeMruFiles.RemoveAll();
@@ -451,19 +469,19 @@ namespace HeapExplorer
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent("Close Snapshot"), false, CloseFile);
                     menu.AddSeparator("");
-                    if (m_heap == null)
+                    if (m_Heap == null)
                         menu.AddDisabledItem(new GUIContent("Save as..."));
                     else
                         menu.AddItem(new GUIContent("Save as..."), false, SaveToFile);
                     menu.AddSeparator("");
-                    menu.AddItem(new GUIContent("New Window"), false, delegate()
+                    menu.AddItem(new GUIContent("New Window"), false, delegate ()
                     {
                         var wnd = EditorWindow.CreateInstance<HeapExplorerWindow>();
                         wnd.Show();
                     });
 
                     menu.AddSeparator("");
-                    menu.AddItem(new GUIContent("Settings/Use Multi-Threading"), useThreads, delegate()
+                    menu.AddItem(new GUIContent("Settings/Use Multi-Threading"), useThreads, delegate ()
                     {
                         useThreads = !useThreads;
                     });
@@ -472,16 +490,16 @@ namespace HeapExplorer
                         debugViewMenu = !debugViewMenu;
                     });
 
-                    menu.DropDown(m_fileToolbarButtonRect);
+                    menu.DropDown(m_FileToolbarButtonRect);
                 }
                 if (Event.current.type == EventType.Repaint)
-                    m_fileToolbarButtonRect = GUILayoutUtility.GetLastRect();
+                    m_FileToolbarButtonRect = GUILayoutUtility.GetLastRect();
 
 
-                EditorGUI.BeginDisabledGroup(m_heap == null || m_heap.isBusy);
+                EditorGUI.BeginDisabledGroup(m_Heap == null || m_Heap.isBusy);
                 if (GUILayout.Button("View", EditorStyles.toolbarDropDown, GUILayout.Width(60)))
                 {
-                    m_views.Sort(delegate (HeapExplorerView x, HeapExplorerView y)
+                    m_Views.Sort(delegate (HeapExplorerView x, HeapExplorerView y)
                     {
                         var value = x.viewMenuOrder.CompareTo(y.viewMenuOrder);
                         if (value == 0)
@@ -491,7 +509,7 @@ namespace HeapExplorer
 
                     var prevOrder = -1;
                     var menu = new GenericMenu();
-                    foreach (var view in m_views)
+                    foreach (var view in m_Views)
                     {
                         if (view.viewMenuOrder < 0)
                             continue;
@@ -514,23 +532,23 @@ namespace HeapExplorer
                         if (debugViewMenu)
                             c.text = string.Format("{2}   [viewMenuOrder={0}, type={1}]", view.viewMenuOrder, view.GetType().Name, c.text);
 
-                        menu.AddItem(c, m_activeView == view, (GenericMenu.MenuFunction2)delegate(System.Object o)
+                        menu.AddItem(c, m_ActiveView == view, (GenericMenu.MenuFunction2)delegate (System.Object o)
                         {
-                            if (o == m_activeView)
+                            if (o == m_ActiveView)
                                 return;
 
                             var v = o as HeapExplorerView;
-                            var c0 = m_activeView.GetRestoreCommand(); c0.fromView = m_activeView;
+                            var c0 = m_ActiveView.GetRestoreCommand(); c0.fromView = m_ActiveView;
                             var c1 = v.GetRestoreCommand(); c1.toView = v;
-                            m_gotoHistory.Add(c0, c1);
+                            m_GotoHistory.Add(c0, c1);
                             ActivateView(v);
                         }, view);
                     }
 
-                    menu.DropDown(m_viewToolbarButtonRect);
+                    menu.DropDown(m_ViewToolbarButtonRect);
                 }
                 if (Event.current.type == EventType.Repaint)
-                    m_viewToolbarButtonRect = GUILayoutUtility.GetLastRect();
+                    m_ViewToolbarButtonRect = GUILayoutUtility.GetLastRect();
                 EditorGUI.EndDisabledGroup();
 
 
@@ -542,13 +560,13 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent(string.Format("Capture and Analyze '{0}'", connectedProfiler)), false, CaptureAndAnalyzeHeap);
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent(string.Format("Open Profiler")), false, delegate () { HeEditorUtility.OpenProfiler(); });
-                    menu.DropDown(m_captureToolbarButtonRect);
+                    menu.DropDown(m_CaptureToolbarButtonRect);
                 }
                 if (Event.current.type == EventType.Repaint)
-                    m_captureToolbarButtonRect = GUILayoutUtility.GetLastRect();
+                    m_CaptureToolbarButtonRect = GUILayoutUtility.GetLastRect();
 
-                if (m_activeView != null)
-                    m_activeView.OnToolbarGUI();
+                if (m_ActiveView != null)
+                    m_ActiveView.OnToolbarGUI();
             }
         }
 
@@ -559,14 +577,14 @@ namespace HeapExplorer
                 return;
             HeMruFiles.AddPath(path);
 
-            m_heap.SaveToFile(path);
+            m_Heap.SaveToFile(path);
             snapshotPath = path;
         }
 
         void CloseFile()
         {
             snapshotPath = "";
-            m_heap = null;
+            m_Heap = null;
             Reset(true);
             ActivateView(welcomeView);
             FreeMem();
@@ -580,17 +598,17 @@ namespace HeapExplorer
 
             LoadFromFile(path);
         }
-        
+
         void TryAbortThread()
         {
-            if (m_thread == null)
+            if (m_Thread == null)
                 return;
 
             var guard = 0;
             var flags = System.Threading.ThreadState.Stopped | System.Threading.ThreadState.Aborted;
 
-            m_thread.Abort();
-            while ((m_thread.ThreadState & flags) == 0)
+            m_Thread.Abort();
+            while ((m_Thread.ThreadState & flags) == 0)
             {
                 System.Threading.Thread.Sleep(1);
                 if (++guard > 1000)
@@ -600,7 +618,7 @@ namespace HeapExplorer
                 }
             }
 
-            m_thread = null;
+            m_Thread = null;
         }
 
         public void LoadFromFile(string path)
@@ -609,7 +627,7 @@ namespace HeapExplorer
             FreeMem();
             HeMruFiles.AddPath(path);
             Reset();
-            m_heap = null;
+            m_Heap = null;
 
             if (useThreads)
             {
@@ -626,7 +644,6 @@ namespace HeapExplorer
                 LoadFromFileThreaded(path);
             }
         }
-        List<Exception> m_exceptions = new List<Exception>();
 
         void ThreadLoop()
         {
@@ -634,7 +651,7 @@ namespace HeapExplorer
             while (keepRunning)
             {
                 System.Threading.Thread.Sleep(10);
-                switch (m_thread.ThreadState)
+                switch (m_Thread.ThreadState)
                 {
                     case System.Threading.ThreadState.Aborted:
                     case System.Threading.ThreadState.AbortRequested:
@@ -646,19 +663,19 @@ namespace HeapExplorer
 
                 AbstractThreadJob job = null;
 
-                lock (m_threadJobs)
+                lock (m_ThreadJobs)
                 {
-                    if (m_threadJobs.Count == 0)
+                    if (m_ThreadJobs.Count == 0)
                         continue;
-     
-                    job = m_threadJobs[0];
-                    m_threadJobs.RemoveAt(0);
+
+                    job = m_ThreadJobs[0];
+                    m_ThreadJobs.RemoveAt(0);
                 }
 
                 job.state = AbstractThreadJob.State.Running;
                 try
                 {
-                    m_repaint = true;
+                    m_Repaint = true;
                     job.ThreadFunc();
                 }
                 catch (System.Threading.ThreadAbortException e)
@@ -667,18 +684,17 @@ namespace HeapExplorer
                 }
                 catch (System.Exception e)
                 {
-                    m_exceptions.Add(e);
-                    //Debug.LogException(e);
+                    m_Exceptions.Add(e);
                 }
                 finally
                 {
-                    m_repaint = true;
+                    m_Repaint = true;
                     job.state = AbstractThreadJob.State.Completed;
                 }
 
-                lock(m_integrationJobs)
+                lock (m_IntegrationJobs)
                 {
-                    m_integrationJobs.Add(job);
+                    m_IntegrationJobs.Add(job);
                 }
             }
         }
@@ -688,23 +704,22 @@ namespace HeapExplorer
             var filePath = userData as string;
             snapshotPath = filePath;
 
-            m_heap = new PackedMemorySnapshot();
-            if (!m_heap.LoadFromFile(filePath))
+            m_Heap = new PackedMemorySnapshot();
+            if (!m_Heap.LoadFromFile(filePath))
             {
                 m_ErrorMsg = string.Format("Could not load memory snapshot.");
                 return;
             }
 
-            m_heap.Initialize();
+            m_Heap.Initialize();
         }
 
         void SaveView()
         {
             EditorPrefs.SetString("HeapExplorerWindow.restoreView", "");
-            if (m_activeView != null && m_activeView != welcomeView)
+            if (m_ActiveView != null && m_ActiveView != welcomeView)
             {
-                EditorPrefs.SetString("HeapExplorerWindow.restoreView", m_activeView.GetType().Name);
-                //Debug.Log("Saving" + m_activeView.GetType().Name);
+                EditorPrefs.SetString("HeapExplorerWindow.restoreView", m_ActiveView.GetType().Name);
             }
         }
 
@@ -713,19 +728,18 @@ namespace HeapExplorer
             var viewType = EditorPrefs.GetString("HeapExplorerWindow.restoreView", "");
 
             HeapExplorerView view = null;
-            for (int n = 0; n < m_views.Count; ++n)
+            for (int n = 0; n < m_Views.Count; ++n)
             {
-                if (m_views[n].GetType().Name == viewType)
+                if (m_Views[n].GetType().Name == viewType)
                 {
-                    view = m_views[n];
+                    view = m_Views[n];
                     break;
                 }
             }
 
             if (view == null)
-                view = FindView<OverviewView>();// m_overviewView;
-
-            //Debug.Log("Restoring" + view.GetType().Name);
+                view = FindView<OverviewView>();
+            
             ActivateView(view);
         }
 
@@ -741,28 +755,25 @@ namespace HeapExplorer
                 ResetViews();
             }
 
-            m_gotoHistory = new GotoHistory();
+            m_GotoHistory = new GotoHistory();
             ActivateView(null);
         }
 
         void CaptureAndSaveHeap()
         {
-            var autoSavePath = EditorPrefs.GetString("HeapExplorerWindow.autoSavePath", "");
             if (string.IsNullOrEmpty(autoSavePath))
                 autoSavePath = Application.dataPath + "/memory.heap";
 
             var path = EditorUtility.SaveFilePanel("Save snapshot as...", System.IO.Path.GetDirectoryName(autoSavePath), System.IO.Path.GetFileNameWithoutExtension(autoSavePath), "heap");
             if (string.IsNullOrEmpty(path))
                 return;
-
-            EditorPrefs.SetString("HeapExplorerWindow.autoSavePath", path);
-            m_autoSavePath = path;
+            autoSavePath = path;
 
             EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Receiving memory...", 0.0f);
             try
             {
                 FreeMem();
-                m_isCapturing = true;
+                m_IsCapturing = true;
 
                 UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived += OnHeapReceivedSaveOnly;
                 UnityEditor.MemoryProfiler.MemorySnapshot.RequestNewSnapshot();
@@ -770,7 +781,7 @@ namespace HeapExplorer
             finally
             {
                 EditorUtility.ClearProgressBar();
-                m_repaint = true;
+                m_Repaint = true;
             }
         }
 
@@ -782,14 +793,14 @@ namespace HeapExplorer
             try
             {
                 var heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
-                heap.SaveToFile(m_autoSavePath);
-                HeMruFiles.AddPath(m_autoSavePath);
-                ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", m_autoSavePath)));
+                heap.SaveToFile(autoSavePath);
+                HeMruFiles.AddPath(autoSavePath);
+                ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", autoSavePath)));
             }
             finally
             {
-                m_isCapturing = false;
-                m_repaint = true;
+                m_IsCapturing = false;
+                m_Repaint = true;
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -802,7 +813,7 @@ namespace HeapExplorer
                 SaveView();
                 FreeMem();
                 Reset();
-                m_isCapturing = true;
+                m_IsCapturing = true;
 
                 UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived += OnHeapReceived;
                 UnityEditor.MemoryProfiler.MemorySnapshot.RequestNewSnapshot();
@@ -810,7 +821,7 @@ namespace HeapExplorer
             finally
             {
                 EditorUtility.ClearProgressBar();
-                m_repaint = true;
+                m_Repaint = true;
             }
         }
 
@@ -821,8 +832,7 @@ namespace HeapExplorer
             EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Reading memory...", 0.5f);
             try
             {
-                //Reset();
-                m_heap = null;
+                m_Heap = null;
 
                 if (useThreads)
                 {
@@ -842,8 +852,8 @@ namespace HeapExplorer
             finally
             {
                 snapshotPath = string.Format("Captured Snapshot at {0}", DateTime.Now.ToShortTimeString());
-                m_isCapturing = false;
-                m_repaint = true;
+                m_IsCapturing = false;
+                m_Repaint = true;
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -851,31 +861,31 @@ namespace HeapExplorer
         void ReceiveHeapThreaded(object userData)
         {
             var snapshot = userData as UnityEditor.MemoryProfiler.PackedMemorySnapshot;
-            m_heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
-            m_heap.Initialize();
+            m_Heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
+            m_Heap.Initialize();
         }
 
         public void ScheduleJob(AbstractThreadJob job)
         {
             job.state = AbstractThreadJob.State.Queued;
 
-            lock (m_threadJobs)
+            lock (m_ThreadJobs)
             {
                 // Remove unstarted jobs of same type
-                for (var n = m_threadJobs.Count - 1; n >= 0; --n)
+                for (var n = m_ThreadJobs.Count - 1; n >= 0; --n)
                 {
-                    var j = m_threadJobs[n];
+                    var j = m_ThreadJobs[n];
                     if (j.state == AbstractThreadJob.State.Queued && j.GetType() == job.GetType())
                     {
-                        m_threadJobs.RemoveAt(n);
+                        m_ThreadJobs.RemoveAt(n);
                         continue;
                     }
                 }
 
-                m_threadJobs.Add(job);
+                m_ThreadJobs.Add(job);
             }
 
-            m_repaint = true;
+            m_Repaint = true;
         }
     }
 
