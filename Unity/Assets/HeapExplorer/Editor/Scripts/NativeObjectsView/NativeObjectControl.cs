@@ -12,9 +12,9 @@ namespace HeapExplorer
     /// </summary>
     sealed public class NativeObjectControl : AbstractTreeView
     {
-        PackedMemorySnapshot m_snapshot;
-        PackedNativeUnityEngineObject m_object;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        PackedNativeUnityEngineObject m_Object;
+        int m_UniqueId = 1;
 
         public NativeObjectControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(window, editorPrefsKey, state, new MultiColumnHeader(
@@ -31,36 +31,36 @@ namespace HeapExplorer
 
         public void Inspect(PackedMemorySnapshot snapshot, PackedNativeUnityEngineObject nativeObject)
         {
-            m_snapshot = snapshot;
-            m_object = nativeObject;
+            m_Snapshot = snapshot;
+            m_Object = nativeObject;
 
             Reload();
         }
 
         public void Clear()
         {
-            m_snapshot = null;
+            m_Snapshot = null;
             Reload();
         }
 
         protected override TreeViewItem BuildRoot()
         {
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
             }
 
-            AddTreeViewItem(root, new Item() { displayName = "Name", value = m_object.name });
-            AddTreeViewItem(root, new Item() { displayName = "Type", value = m_snapshot.nativeTypes[m_object.nativeTypesArrayIndex].name });
-            AddTreeViewItem(root, new Item() { displayName = "Size", value = EditorUtility.FormatBytes(m_object.size) });
-            AddTreeViewItem(root, new Item() { displayName = "Address", value = string.Format(StringFormat.Address, m_object.nativeObjectAddress) });
-            AddTreeViewItem(root, new Item() { displayName = "InstanceID", value = m_object.instanceId.ToString() });
-            AddTreeViewItem(root, new Item() { displayName = "Persistent", value = m_object.isPersistent.ToString() });
-            AddTreeViewItem(root, new Item() { displayName = "DontDestroyOnLoad", value = m_object.isDontDestroyOnLoad.ToString() });
-            AddTreeViewItem(root, new Item() { displayName = "IsManager", value = m_object.isManager.ToString() });
-            AddTreeViewItem(root, new Item() { displayName = "HideFlags", value = m_object.hideFlags.ToString() });
+            AddTreeViewItem(root, new Item() { displayName = "Name", value = m_Object.name });
+            AddTreeViewItem(root, new Item() { displayName = "Type", value = m_Snapshot.nativeTypes[m_Object.nativeTypesArrayIndex].name });
+            AddTreeViewItem(root, new Item() { displayName = "Size", value = EditorUtility.FormatBytes(m_Object.size) });
+            AddTreeViewItem(root, new Item() { displayName = "Address", value = string.Format(StringFormat.Address, m_Object.nativeObjectAddress) });
+            AddTreeViewItem(root, new Item() { displayName = "InstanceID", value = m_Object.instanceId.ToString() });
+            AddTreeViewItem(root, new Item() { displayName = "Persistent", value = m_Object.isPersistent.ToString() });
+            AddTreeViewItem(root, new Item() { displayName = "DontDestroyOnLoad", value = m_Object.isDontDestroyOnLoad.ToString() });
+            AddTreeViewItem(root, new Item() { displayName = "IsManager", value = m_Object.isManager.ToString() });
+            AddTreeViewItem(root, new Item() { displayName = "HideFlags", value = m_Object.hideFlags.ToString() });
 
             return root;
         }
@@ -72,7 +72,7 @@ namespace HeapExplorer
 
         void AddTreeViewItem(TreeViewItem parent, TreeViewItem item)
         {
-            item.id = m_uniqueId++;
+            item.id = m_UniqueId++;
             item.depth = parent.depth + 1;
             parent.AddChild(item);
         }

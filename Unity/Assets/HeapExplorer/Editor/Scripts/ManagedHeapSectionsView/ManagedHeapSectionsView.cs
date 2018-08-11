@@ -209,18 +209,18 @@ namespace HeapExplorer
             public Texture2D texture;
             public PackedMemorySnapshot snapshot;
 
-            Color32[] m_data;
+            Color32[] m_Data;
 
             public override void ThreadFunc()
             {
-                m_data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(snapshot);
+                m_Data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(snapshot);
             }
 
             public override void IntegrateFunc()
             {
-                if (texture != null && m_data != null)
+                if (texture != null && m_Data != null)
                 {
-                    texture.SetPixels32(m_data);
+                    texture.SetPixels32(m_Data);
                     texture.Apply(false);
                 }
             }
@@ -232,18 +232,18 @@ namespace HeapExplorer
             public PackedMemorySection memorySection;
             public PackedMemorySnapshot snapshot;
 
-            Color32[] m_data;
+            Color32[] m_Data;
 
             public override void ThreadFunc()
             {
-                m_data = ManagedHeapSectionsUtility.GetManagedMemorySectionUsageAsTextureData(snapshot, memorySection);
+                m_Data = ManagedHeapSectionsUtility.GetManagedMemorySectionUsageAsTextureData(snapshot, memorySection);
             }
 
             public override void IntegrateFunc()
             {
-                if (texture != null && m_data != null)
+                if (texture != null && m_Data != null)
                 {
-                    texture.SetPixels32(m_data);
+                    texture.SetPixels32(m_Data);
                     texture.Apply(false);
                 }
             }

@@ -9,19 +9,18 @@ namespace HeapExplorer
         public RichStaticField(PackedMemorySnapshot snapshot, int staticFieldsArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_managedStaticFieldsArrayIndex = staticFieldsArrayIndex;
-            m_isValid = m_snapshot != null && m_managedStaticFieldsArrayIndex >= 0 && m_managedStaticFieldsArrayIndex < m_snapshot.managedStaticFields.Length;
+            m_Snapshot = snapshot;
+            m_ManagedStaticFieldsArrayIndex = staticFieldsArrayIndex;
         }
 
         public PackedManagedStaticField packed
         {
             get
             {
-                if (!m_isValid)
+                if (!isValid)
                     return PackedManagedStaticField.New();
 
-                return m_snapshot.managedStaticFields[m_managedStaticFieldsArrayIndex];
+                return m_Snapshot.managedStaticFields[m_ManagedStaticFieldsArrayIndex];
             }
         }
 
@@ -29,7 +28,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -37,7 +36,8 @@ namespace HeapExplorer
         {
             get
             {
-                return m_isValid;
+                var value = m_Snapshot != null && m_ManagedStaticFieldsArrayIndex >= 0 && m_ManagedStaticFieldsArrayIndex < m_Snapshot.managedStaticFields.Length;
+                return value;
             }
         }
 
@@ -45,7 +45,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_managedStaticFieldsArrayIndex;
+                return m_ManagedStaticFieldsArrayIndex;
             }
         }
 
@@ -53,15 +53,15 @@ namespace HeapExplorer
         {
             get
             {
-                if (m_isValid)
+                if (isValid)
                 {
-                    var mo = m_snapshot.managedStaticFields[m_managedStaticFieldsArrayIndex];
+                    var mo = m_Snapshot.managedStaticFields[m_ManagedStaticFieldsArrayIndex];
 
-                    var staticClassType = m_snapshot.managedTypes[mo.managedTypesArrayIndex];
+                    var staticClassType = m_Snapshot.managedTypes[mo.managedTypesArrayIndex];
                     var staticField = staticClassType.fields[mo.fieldIndex];
-                    var staticFieldType = m_snapshot.managedTypes[staticField.managedTypesArrayIndex];
+                    var staticFieldType = m_Snapshot.managedTypes[staticField.managedTypesArrayIndex];
 
-                    return new RichManagedType(m_snapshot, staticFieldType.managedTypesArrayIndex);
+                    return new RichManagedType(m_Snapshot, staticFieldType.managedTypesArrayIndex);
                 }
 
                 return RichManagedType.invalid;
@@ -72,10 +72,10 @@ namespace HeapExplorer
         {
             get
             {
-                if (m_isValid)
+                if (isValid)
                 {
-                    var mo = m_snapshot.managedStaticFields[m_managedStaticFieldsArrayIndex];
-                    return new RichManagedType(m_snapshot, mo.managedTypesArrayIndex);
+                    var mo = m_Snapshot.managedStaticFields[m_ManagedStaticFieldsArrayIndex];
+                    return new RichManagedType(m_Snapshot, mo.managedTypesArrayIndex);
                 }
 
                 return RichManagedType.invalid;
@@ -84,13 +84,11 @@ namespace HeapExplorer
 
         public static readonly RichStaticField invalid = new RichStaticField()
         {
-            m_snapshot = null,
-            m_managedStaticFieldsArrayIndex = -1,
-            m_isValid = false,
+            m_Snapshot = null,
+            m_ManagedStaticFieldsArrayIndex = -1
         };
 
-        PackedMemorySnapshot m_snapshot;
-        int m_managedStaticFieldsArrayIndex;
-        bool m_isValid;
+        PackedMemorySnapshot m_Snapshot;
+        int m_ManagedStaticFieldsArrayIndex;
     }
 }

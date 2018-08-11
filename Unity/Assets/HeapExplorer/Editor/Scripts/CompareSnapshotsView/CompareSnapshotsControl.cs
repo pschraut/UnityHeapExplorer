@@ -294,7 +294,6 @@ namespace HeapExplorer
             {
                 get
                 {
-                    //return size[0] - size[1];
                     return size[1] - size[0];
                 }
             }
@@ -303,12 +302,11 @@ namespace HeapExplorer
             {
                 get
                 {
-                    //return count[0] - count[1];
                     return count[1] - count[0];
                 }
             }
 
-            const string k_unknownTypeString = "<unknown type>";
+            const string k_UnknownTypeString = "<unknown type>";
 
             public void Swap()
             {
@@ -320,7 +318,7 @@ namespace HeapExplorer
             public override void GetItemSearchString(string[] target, out int count)
             {
                 count = 0;
-                target[count++] = displayName ?? k_unknownTypeString;
+                target[count++] = displayName ?? k_UnknownTypeString;
             }
 
             public override void OnGUI(Rect position, int column)
@@ -333,7 +331,7 @@ namespace HeapExplorer
                 switch((EColumn)column)
                 {
                     case EColumn.Type:
-                        HeEditorGUI.TypeName(position, displayName ?? k_unknownTypeString);
+                        HeEditorGUI.TypeName(position, displayName ?? k_UnknownTypeString);
                         break;
 
                     case EColumn.SizeA:

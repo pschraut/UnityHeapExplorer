@@ -10,8 +10,8 @@ namespace HeapExplorer
         public RichNativeType(PackedMemorySnapshot snapshot, int nativeTypesArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_nativeTypesArrayIndex = nativeTypesArrayIndex;
+            m_Snapshot = snapshot;
+            m_NativeTypesArrayIndex = nativeTypesArrayIndex;
         }
 
         public PackedNativeType packed
@@ -21,7 +21,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return new PackedNativeType() { nativeTypeArrayIndex = -1, nativeBaseTypeArrayIndex = -1, name = "" };
 
-                return m_snapshot.nativeTypes[m_nativeTypesArrayIndex];
+                return m_Snapshot.nativeTypes[m_NativeTypesArrayIndex];
             }
         }
 
@@ -29,7 +29,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -37,7 +37,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot != null && m_nativeTypesArrayIndex >= 0 && m_nativeTypesArrayIndex < m_snapshot.nativeTypes.Length;
+                return m_Snapshot != null && m_NativeTypesArrayIndex >= 0 && m_NativeTypesArrayIndex < m_Snapshot.nativeTypes.Length;
             }
         }
 
@@ -48,7 +48,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return "<unknown type>";
 
-                var t = m_snapshot.nativeTypes[m_nativeTypesArrayIndex];
+                var t = m_Snapshot.nativeTypes[m_NativeTypesArrayIndex];
                 return t.name;
             }
         }
@@ -60,11 +60,11 @@ namespace HeapExplorer
                 if (!isValid)
                     return RichNativeType.invalid;
 
-                var t = m_snapshot.nativeTypes[m_nativeTypesArrayIndex];
+                var t = m_Snapshot.nativeTypes[m_NativeTypesArrayIndex];
                 if (t.nativeBaseTypeArrayIndex < 0)
                     return RichNativeType.invalid;
 
-                return new RichNativeType(m_snapshot, t.nativeBaseTypeArrayIndex);
+                return new RichNativeType(m_Snapshot, t.nativeBaseTypeArrayIndex);
             }
         }
 
@@ -76,16 +76,16 @@ namespace HeapExplorer
             if (!isValid || baseTypeIndex < 0)
                 return false;
 
-            return m_snapshot.IsSubclassOf(m_snapshot.nativeTypes[m_nativeTypesArrayIndex], baseTypeIndex);
+            return m_Snapshot.IsSubclassOf(m_Snapshot.nativeTypes[m_NativeTypesArrayIndex], baseTypeIndex);
         }
 
         public static readonly RichNativeType invalid = new RichNativeType()
         {
-            m_snapshot = null,
-            m_nativeTypesArrayIndex = -1
+            m_Snapshot = null,
+            m_NativeTypesArrayIndex = -1
         };
 
-        PackedMemorySnapshot m_snapshot;
-        int m_nativeTypesArrayIndex;
+        PackedMemorySnapshot m_Snapshot;
+        int m_NativeTypesArrayIndex;
     }
 }

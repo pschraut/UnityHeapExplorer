@@ -30,15 +30,15 @@ namespace HeapExplorer
 
         public class Result
         {
-            internal List<ResultExpr> NamesExpr = new List<ResultExpr>();
+            internal List<ResultExpr> m_NamesExpr = new List<ResultExpr>();
 
-            public List<string> Names = new List<string>();
-            public List<string> Types = new List<string>();
-            public List<string> Labels = new List<string>();
+            public List<string> names = new List<string>();
+            public List<string> types = new List<string>();
+            public List<string> labels = new List<string>();
 
             public bool IsNameMatch(string text)
             {
-                if (NamesExpr.Count == 0)
+                if (m_NamesExpr.Count == 0)
                     return true;
                 if (text == null || text.Length == 0)
                     return true;
@@ -46,9 +46,9 @@ namespace HeapExplorer
                 var or_result = false;
                 var or_result_missing = true;
 
-                for (var n = 0; n < NamesExpr.Count; ++n)
+                for (var n = 0; n < m_NamesExpr.Count; ++n)
                 {
-                    var expression = NamesExpr[n];
+                    var expression = m_NamesExpr[n];
 
                     if (expression.Op == SearchTextParser.LogicalOperator.And)
                     {
@@ -101,9 +101,9 @@ namespace HeapExplorer
             if (string.IsNullOrEmpty(text))
                 return result;
 
-            var names = result.NamesExpr;
-            var types = result.Types;
-            var labels = result.Labels;
+            var names = result.m_NamesExpr;
+            var types = result.types;
+            var labels = result.labels;
             var builder = new System.Text.StringBuilder(64);
             var loopguard = 0;
             var condition = LogicalOperator.And;
@@ -227,18 +227,18 @@ namespace HeapExplorer
             //for (n = 0; n < labels.Count; ++n)
             //    builder.AppendLine("Label: " + labels[n]);
 
-            foreach (var v in result.NamesExpr)
-                result.Names.Add(v.Text);
+            foreach (var v in result.m_NamesExpr)
+                result.names.Add(v.Text);
 
             // sort by operator. AND first, OR second
             var nam = new List<ResultExpr>();
-            foreach (var v in result.NamesExpr)
+            foreach (var v in result.m_NamesExpr)
                 if (v.Op == LogicalOperator.And)
                     nam.Add(v);
-            foreach (var v in result.NamesExpr)
+            foreach (var v in result.m_NamesExpr)
                 if (v.Op == LogicalOperator.Or)
                     nam.Add(v);
-            result.NamesExpr = nam;
+            result.m_NamesExpr = nam;
 
             //foreach (var e in result.NamesExpr)
             //    UnityEngine.Debug.Log("Op: " + e.Op + (e.Not ? " not " : "") + (e.Exact ? " exact " : "") + ", " + e.Text);

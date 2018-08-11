@@ -35,7 +35,8 @@ namespace HeapExplorer
             base.OnGUI();
 
             GUILayout.Space(4);
-            GUILayout.Label(HeGlobals.k_Title, HeEditorStyles.heading1);
+            GUILayout.Label(string.Format("{0} {1}", HeGlobals.k_Title, HeGlobals.k_Version), HeEditorStyles.heading1);
+            GUILayout.Label("Created by Peter Schraut");
             GUILayout.Space(16);
 
             using (new EditorGUILayout.HorizontalScope())
@@ -62,8 +63,9 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
-                GUILayout.Label("Please do not spread this plugin. This alpha build expires on Jan 2019.");
+                //GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
+                GUILayout.Label("Beta Notice", HeEditorStyles.heading2);
+                GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.\nI don't know if it works with newer Unity versions.");
             }
         }
 
@@ -78,16 +80,17 @@ namespace HeapExplorer
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_DocuUrl))) Application.OpenURL(HeGlobals.k_DocuUrl);
                 GUILayout.Space(8);
 
-                GUILayout.Label("Feedback and bug-reports", EditorStyles.boldLabel);
+                GUILayout.Label("Download, feedback and bug-reports", EditorStyles.boldLabel);
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
 
                 GUILayout.Label("My Asset Store Publisher page", EditorStyles.boldLabel);
+                //GUILayout.Label("Is Heap Explorer useful to you? Consider buying one of my products in the Unity Asset Store.");
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_PublisherUrl))) Application.OpenURL(HeGlobals.k_PublisherUrl);
                 GUILayout.Space(8);
 
-                GUILayout.Label("Contact", EditorStyles.boldLabel);
-                GUILayout.Label("If you want to send me an email, please use the email from my Asset Store Publisher page (the link above this text).");
+                //GUILayout.Label("Contact", EditorStyles.boldLabel);
+                //GUILayout.Label("If you want to send me an email, please use the email from my Asset Store Publisher page (the link above this text).");
             }
         }
 

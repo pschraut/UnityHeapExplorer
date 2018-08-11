@@ -8,7 +8,6 @@ namespace HeapExplorer
 {
     public class AbstractManagedObjectsControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedManagedObject?> onSelectionChange;
 
         /// <summary>
@@ -18,7 +17,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_managedObjectCount;
+                return m_ManagedObjectCount;
             }
         }
 
@@ -29,14 +28,14 @@ namespace HeapExplorer
         {
             get
             {
-                return m_managedObjectSize;
+                return m_ManagedObjectSize;
             }
         }
 
-        protected PackedMemorySnapshot m_snapshot;
-        protected int m_uniqueId = 1;
-        protected long m_managedObjectCount;
-        protected long m_managedObjectSize;
+        protected PackedMemorySnapshot m_Snapshot;
+        protected int m_UniqueId = 1;
+        protected long m_ManagedObjectCount;
+        protected long m_ManagedObjectSize;
 
         enum Column
         {
@@ -114,14 +113,14 @@ namespace HeapExplorer
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
-            m_managedObjectCount = 0;
-            m_managedObjectSize = 0;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
+            m_ManagedObjectCount = 0;
+            m_ManagedObjectSize = 0;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
 
-            if (m_snapshot == null || m_snapshot.managedObjects == null || m_snapshot.managedObjects.Length == 0)
+            if (m_Snapshot == null || m_Snapshot.managedObjects == null || m_Snapshot.managedObjects.Length == 0)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
@@ -165,9 +164,9 @@ namespace HeapExplorer
             // int=typeIndex
             var groupLookup = new Dictionary<int, GroupItem>();
 
-            for (int n = 0, nend = m_snapshot.managedObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
-                var mo = m_snapshot.managedObjects[n];
+                var mo = m_Snapshot.managedObjects[n];
                 if (!OnCanAddObject(mo))
                     continue;
 
@@ -176,11 +175,11 @@ namespace HeapExplorer
                 {
                     group = new GroupItem
                     {
-                        id = m_uniqueId++,
+                        id = m_UniqueId++,
                         depth = 0,
                         displayName = ""
                     };
-                    group.Initialize(m_snapshot, m_snapshot.managedTypes[mo.managedTypesArrayIndex]);
+                    group.Initialize(m_Snapshot, m_Snapshot.managedTypes[mo.managedTypesArrayIndex]);
 
                     groupLookup[mo.managedTypesArrayIndex] = group;
                     root.AddChild(group);
@@ -188,16 +187,16 @@ namespace HeapExplorer
 
                 var item = new ManagedObjectItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = group.depth + 1,
                     displayName = ""
                 };
-                item.Initialize(this, m_snapshot, mo);
+                item.Initialize(this, m_Snapshot, mo);
 
                 group.AddChild(item);
 
-                m_managedObjectCount++;
-                m_managedObjectSize += item.size;
+                m_ManagedObjectCount++;
+                m_ManagedObjectSize += item.size;
             }
         }
 
@@ -247,7 +246,7 @@ namespace HeapExplorer
                 get;
             }
 
-            public abstract int size
+            public abstract long size
             {
                 get;
             }
@@ -273,14 +272,14 @@ namespace HeapExplorer
 
         public class ManagedObjectItem : AbstractItem
         {
-            RichManagedObject m_object;
-            AbstractManagedObjectsControl m_owner;
+            RichManagedObject m_Object;
+            AbstractManagedObjectsControl m_Owner;
 
             public RichManagedObject managedObject
             {
                 get
                 {
-                    return m_object;
+                    return m_Object;
                 }
             }
 
@@ -288,7 +287,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.type.name;
+                    return m_Object.type.name;
                 }
             }
 
@@ -296,7 +295,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.type.assemblyName;
+                    return m_Object.type.assemblyName;
                 }
             }
 
@@ -304,7 +303,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    var nativeObj = m_object.nativeObject;
+                    var nativeObj = m_Object.nativeObject;
                     if (nativeObj.isValid)
                         return nativeObj.name;
 
@@ -312,11 +311,11 @@ namespace HeapExplorer
                 }
             }
 
-            public override int size
+            public override long size
             {
                 get
                 {
-                    return m_object.size;
+                    return m_Object.size;
                 }
             }
 
@@ -333,22 +332,22 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.address;
+                    return m_Object.address;
                 }
             }
 
             public void Initialize(AbstractManagedObjectsControl owner, PackedMemorySnapshot snapshot, PackedManagedObject managedObject)
             {
-                m_owner = owner;
+                m_Owner = owner;
 
-                m_object = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
+                m_Object = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
             }
 
             public override void GetItemSearchString(string[] target, out int count)
             {
                 count = 0;
                 target[count++] = typeName;
-                target[count++] = string.Format(StringFormat.Address, m_object.address);
+                target[count++] = string.Format(StringFormat.Address, m_Object.address);
                 target[count++] = cppName;
                 target[count++] = assembly;
             }
@@ -367,11 +366,11 @@ namespace HeapExplorer
                     //    }
                     //}
 
-                    if (m_object.nativeObject.isValid)
+                    if (m_Object.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.window.OnGoto(new GotoCommand(m_object.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_Object.nativeObject));
                         }
                     }
                 }
@@ -380,12 +379,11 @@ namespace HeapExplorer
                 {
                     case Column.Type:
                         HeEditorGUI.TypeName(position, typeName);
-                        //.TypeName(position, typeName, PackedManagedTypeUtility.GetInheritanceAsString(m_object.snapshot, m_object.type.packed.managedTypesArrayIndex));
                         break;
 
                     case Column.CppCounterpart:
-                        if (m_object.nativeObject.isValid)
-                            GUI.Label(position, m_object.nativeObject.name);
+                        if (m_Object.nativeObject.isValid)
+                            GUI.Label(position, m_Object.nativeObject.name);
                         break;
 
                     case Column.Size:
@@ -393,7 +391,7 @@ namespace HeapExplorer
                         break;
 
                     case Column.Address:
-                        HeEditorGUI.Address(position, m_object.address);
+                        HeEditorGUI.Address(position, m_Object.address);
                         break;
 
                     case Column.Assembly:
@@ -407,14 +405,14 @@ namespace HeapExplorer
 
         public class GroupItem : AbstractItem
         {
-            RichManagedType m_type;
-            int m_size = -1;
+            RichManagedType m_Type;
+            long m_Size = -1;
 
             public override string typeName
             {
                 get
                 {
-                    return m_type.name;
+                    return m_Type.name;
                 }
             }
 
@@ -422,7 +420,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_type.assemblyName;
+                    return m_Type.assemblyName;
                 }
             }
 
@@ -434,24 +432,24 @@ namespace HeapExplorer
                 }
             }
 
-            public override int size
+            public override long size
             {
                 get
                 {
-                    if (m_size == -1)
+                    if (m_Size == -1)
                     {
-                        m_size = 0;
+                        m_Size = 0;
                         if (hasChildren)
                         {
                             for (int n = 0, nend = children.Count; n < nend; ++n)
                             {
                                 var child = children[n] as AbstractItem;
                                 if (child != null)
-                                    m_size += child.size;
+                                    m_Size += child.size;
                             }
                         }
                     }
-                    return m_size;
+                    return m_Size;
                 }
             }
 
@@ -475,7 +473,7 @@ namespace HeapExplorer
 
             public void Initialize(PackedMemorySnapshot snapshot, PackedManagedType type)
             {
-                m_type = new RichManagedType(snapshot, type.managedTypesArrayIndex);
+                m_Type = new RichManagedType(snapshot, type.managedTypesArrayIndex);
             }
 
             public override void OnGUI(Rect position, int column)
@@ -484,7 +482,6 @@ namespace HeapExplorer
                 {
                     case Column.Type:
                         HeEditorGUI.TypeName(position, typeName);
-                        //HeEditorGUI.TypeName(position, typeName, PackedManagedTypeUtility.GetInheritanceAsString(m_type.snapshot, m_type.packed.managedTypesArrayIndex));
                         break;
 
                     case Column.Size:

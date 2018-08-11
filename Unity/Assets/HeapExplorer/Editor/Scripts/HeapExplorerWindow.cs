@@ -136,12 +136,12 @@ namespace HeapExplorer
                 return;
             }
 
-            if (DateTime.Now.Year > 2018)
-            {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
-                    Application.OpenURL(HeGlobals.k_ForumUrl);
-                return;
-            }
+            //if (DateTime.Now.Year > 2018)
+            //{
+            //    if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
+            //        Application.OpenURL(HeGlobals.k_ForumUrl);
+            //    return;
+            //}
 
             EditorWindow.GetWindow<HeapExplorerWindow>();
         }

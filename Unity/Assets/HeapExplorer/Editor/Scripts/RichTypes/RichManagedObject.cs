@@ -9,9 +9,8 @@ namespace HeapExplorer
         public RichManagedObject(PackedMemorySnapshot snapshot, int managedObjectsArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_managedObjectArrayIndex = managedObjectsArrayIndex;
-            //m_isValid = m_snapshot != null && m_managedObjectArrayIndex >= 0 && m_managedObjectArrayIndex < m_snapshot.managedObjects.Length;
+            m_Snapshot = snapshot;
+            m_ManagedObjectArrayIndex = managedObjectsArrayIndex;
         }
 
         public PackedManagedObject packed
@@ -21,7 +20,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return PackedManagedObject.New();
 
-                return m_snapshot.managedObjects[m_managedObjectArrayIndex];
+                return m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
             }
         }
 
@@ -29,7 +28,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -37,9 +36,8 @@ namespace HeapExplorer
         {
             get
             {
-                var value = m_snapshot != null && m_managedObjectArrayIndex >= 0 && m_managedObjectArrayIndex < m_snapshot.managedObjects.Length;
+                var value = m_Snapshot != null && m_ManagedObjectArrayIndex >= 0 && m_ManagedObjectArrayIndex < m_Snapshot.managedObjects.Length;
                 return value;
-                //return m_isValid;
             }
         }
 
@@ -47,7 +45,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_managedObjectArrayIndex;
+                return m_ManagedObjectArrayIndex;
             }
         }
 
@@ -58,7 +56,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return 0;
 
-                var mo = m_snapshot.managedObjects[m_managedObjectArrayIndex];
+                var mo = m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
                 return mo.address;
             }
         }
@@ -69,7 +67,7 @@ namespace HeapExplorer
             {
                 if (isValid)
                 {
-                    var mo = m_snapshot.managedObjects[m_managedObjectArrayIndex];
+                    var mo = m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
                     return mo.size;
                 }
 
@@ -83,8 +81,8 @@ namespace HeapExplorer
             {
                 if (isValid)
                 {
-                    var mo = m_snapshot.managedObjects[m_managedObjectArrayIndex];
-                    return new RichManagedType(m_snapshot, mo.managedTypesArrayIndex);
+                    var mo = m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
+                    return new RichManagedType(m_Snapshot, mo.managedTypesArrayIndex);
                 }
 
                 return RichManagedType.invalid;
@@ -97,9 +95,9 @@ namespace HeapExplorer
             {
                 if (isValid)
                 {
-                    var mo = m_snapshot.managedObjects[m_managedObjectArrayIndex];
+                    var mo = m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
                     if (mo.gcHandlesArrayIndex >= 0)
-                        return new RichGCHandle(m_snapshot, mo.gcHandlesArrayIndex);
+                        return new RichGCHandle(m_Snapshot, mo.gcHandlesArrayIndex);
                 }
 
                 return RichGCHandle.invalid;
@@ -112,9 +110,9 @@ namespace HeapExplorer
             {
                 if (isValid)
                 {
-                    var mo = m_snapshot.managedObjects[m_managedObjectArrayIndex];
+                    var mo = m_Snapshot.managedObjects[m_ManagedObjectArrayIndex];
                     if (mo.nativeObjectsArrayIndex >= 0)
-                        return new RichNativeObject(m_snapshot, mo.nativeObjectsArrayIndex);
+                        return new RichNativeObject(m_Snapshot, mo.nativeObjectsArrayIndex);
                 }
 
                 return RichNativeObject.invalid;
@@ -128,13 +126,11 @@ namespace HeapExplorer
 
         public static readonly RichManagedObject invalid = new RichManagedObject()
         {
-            m_snapshot = null,
-            m_managedObjectArrayIndex = -1,
-            //m_isValid = false,
+            m_Snapshot = null,
+            m_ManagedObjectArrayIndex = -1
         };
 
-        PackedMemorySnapshot m_snapshot;
-        int m_managedObjectArrayIndex;
-        //bool m_isValid;
+        PackedMemorySnapshot m_Snapshot;
+        int m_ManagedObjectArrayIndex;
     }
 }

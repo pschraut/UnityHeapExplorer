@@ -21,13 +21,13 @@ namespace HeapExplorer
                 return -1;
 
             // check if address still in the memory section we have already
-            if (address >= m_startAddress && address < m_endAddress)
+            if (address >= m_StartAddress && address < m_EndAddress)
             {
-                return (int)(address - m_startAddress);
+                return (int)(address - m_StartAddress);
             }
 
             // it is a new section, try to find it
-            var heapIndex = m_snapshot.FindHeapOfAddress(address);
+            var heapIndex = m_Snapshot.FindHeapOfAddress(address);
             if (heapIndex == -1)
             {
                 Debug.LogWarningFormat("heap {0:X} not found", address);
@@ -35,13 +35,13 @@ namespace HeapExplorer
             }
 
             // setup new section
-            var memorySection = m_snapshot.managedHeapSections[heapIndex];
-            m_startAddress = memorySection.startAddress;
-            m_endAddress = m_startAddress + (ulong)memorySection.bytes.LongLength;
-            m_bytes = memorySection.bytes;
+            var memorySection = m_Snapshot.managedHeapSections[heapIndex];
+            m_StartAddress = memorySection.startAddress;
+            m_EndAddress = m_StartAddress + (ulong)memorySection.bytes.LongLength;
+            m_Bytes = memorySection.bytes;
 
             //Debug.LogFormat("accessing heap {0:X}", address);
-            return (int)(address - m_startAddress);
+            return (int)(address - m_StartAddress);
         }
     }
 
@@ -51,7 +51,7 @@ namespace HeapExplorer
         public StaticMemoryReader(PackedMemorySnapshot snapshot, System.Byte[] staticBytes)
             : base(snapshot)
         {
-            m_bytes = staticBytes;
+            m_Bytes = staticBytes;
         }
 
         // returns the offset in the m_memorySection.bytes[] array of the specified address,
@@ -59,18 +59,18 @@ namespace HeapExplorer
         protected override int TryBeginRead(System.UInt64 address)
         {
             // trying to access null?
-            if (m_bytes == null || m_bytes.LongLength == 0 || address >= (ulong)m_bytes.LongLength)
+            if (m_Bytes == null || m_Bytes.LongLength == 0 || address >= (ulong)m_Bytes.LongLength)
                 return -1;
 
             // check if address still in the memory section we have already
-            if (address >= m_startAddress && address < m_endAddress)
+            if (address >= m_StartAddress && address < m_EndAddress)
             {
                 return (int)(address);
             }
 
             // setup new section
-            m_startAddress = 0;
-            m_endAddress = m_startAddress + (ulong)m_bytes.LongLength;
+            m_StartAddress = 0;
+            m_EndAddress = m_StartAddress + (ulong)m_Bytes.LongLength;
 
             return (int)(address);
         }
@@ -78,21 +78,20 @@ namespace HeapExplorer
 
     abstract public class AbstractMemoryReader
     {
-        protected PackedMemorySnapshot m_snapshot;
-        protected System.Byte[] m_bytes;
-        protected System.UInt64 m_startAddress = System.UInt64.MaxValue;
-        protected System.UInt64 m_endAddress = System.UInt64.MaxValue;
+        protected PackedMemorySnapshot m_Snapshot;
+        protected System.Byte[] m_Bytes;
+        protected System.UInt64 m_StartAddress = System.UInt64.MaxValue;
+        protected System.UInt64 m_EndAddress = System.UInt64.MaxValue;
         protected System.Int32 m_RecursionGuard;
-        protected System.Text.StringBuilder m_stringBuilder = new System.Text.StringBuilder(128);
-        protected System.Security.Cryptography.MD5 m_hasher;
+        protected System.Text.StringBuilder m_StringBuilder = new System.Text.StringBuilder(128);
+        protected System.Security.Cryptography.MD5 m_Hasher;
 
         protected AbstractMemoryReader(PackedMemorySnapshot snapshot)
         {
-            m_snapshot = snapshot;
+            m_Snapshot = snapshot;
         }
 
         protected abstract int TryBeginRead(System.UInt64 address);
-
 
         public System.SByte ReadSByte(System.UInt64 address)
         {
@@ -100,7 +99,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.SByte);
 
-            var value = (System.SByte)m_bytes[offset];
+            var value = (System.SByte)m_Bytes[offset];
             return value;
         }
 
@@ -110,7 +109,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Byte);
 
-            var value = m_bytes[offset];
+            var value = m_Bytes[offset];
             return value;
         }
 
@@ -120,7 +119,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Char);
 
-            var value = System.BitConverter.ToChar(m_bytes, offset);
+            var value = System.BitConverter.ToChar(m_Bytes, offset);
             return value;
         }
 
@@ -130,7 +129,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Boolean);
 
-            var value = System.BitConverter.ToBoolean(m_bytes, offset);
+            var value = System.BitConverter.ToBoolean(m_Bytes, offset);
             return value;
         }
 
@@ -140,7 +139,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Single);
 
-            var value = System.BitConverter.ToSingle(m_bytes, offset);
+            var value = System.BitConverter.ToSingle(m_Bytes, offset);
             return value;
         }
 
@@ -150,7 +149,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(Quaternion);
 
-            var sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size;
+            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
             var value = new Quaternion()
             {
                 x = ReadSingle(address + (uint)(sizeOfSingle * 0)),
@@ -170,7 +169,7 @@ namespace HeapExplorer
 
             var value = new Matrix4x4();
 
-            var sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size;
+            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
             var element = 0;
             for (var y = 0; y < 4; ++y)
             {
@@ -190,7 +189,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Double);
 
-            var value = System.BitConverter.ToDouble(m_bytes, offset);
+            var value = System.BitConverter.ToDouble(m_Bytes, offset);
             return value;
         }
 
@@ -223,10 +222,10 @@ namespace HeapExplorer
             const int ScaleMask = 0x00FF0000;
             const int ScaleShift = 16;
 
-            var flags = System.BitConverter.ToInt32(m_bytes, offset + 0);
-            var hi = System.BitConverter.ToInt32(m_bytes, offset + 4);
-            var lo = System.BitConverter.ToInt32(m_bytes, offset + 8);
-            var mid = System.BitConverter.ToInt32(m_bytes, offset + 12);
+            var flags = System.BitConverter.ToInt32(m_Bytes, offset + 0);
+            var hi = System.BitConverter.ToInt32(m_Bytes, offset + 4);
+            var lo = System.BitConverter.ToInt32(m_Bytes, offset + 8);
+            var mid = System.BitConverter.ToInt32(m_Bytes, offset + 12);
 
             var isNegative = (flags & SignMask) != 0;
             var scale = (flags & ScaleMask) >> ScaleShift;
@@ -240,7 +239,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Int16);
 
-            var value = System.BitConverter.ToInt16(m_bytes, offset);
+            var value = System.BitConverter.ToInt16(m_Bytes, offset);
             return value;
         }
 
@@ -250,7 +249,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.UInt16);
 
-            var value = System.BitConverter.ToUInt16(m_bytes, offset);
+            var value = System.BitConverter.ToUInt16(m_Bytes, offset);
             return value;
         }
 
@@ -260,7 +259,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Int32);
 
-            var value = System.BitConverter.ToInt32(m_bytes, offset);
+            var value = System.BitConverter.ToInt32(m_Bytes, offset);
             return value;
         }
 
@@ -270,7 +269,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.UInt32);
 
-            var value = System.BitConverter.ToUInt32(m_bytes, offset);
+            var value = System.BitConverter.ToUInt32(m_Bytes, offset);
             return value;
         }
 
@@ -280,7 +279,7 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.Int64);
 
-            var value = System.BitConverter.ToInt64(m_bytes, offset);
+            var value = System.BitConverter.ToInt64(m_Bytes, offset);
             return value;
         }
 
@@ -290,13 +289,13 @@ namespace HeapExplorer
             if (offset < 0)
                 return default(System.UInt64);
 
-            var value = System.BitConverter.ToUInt64(m_bytes, offset);
+            var value = System.BitConverter.ToUInt64(m_Bytes, offset);
             return value;
         }
 
         public System.UInt64 ReadPointer(System.UInt64 address)
         {
-            if (m_snapshot.virtualMachineInformation.pointerSize == 8)
+            if (m_Snapshot.virtualMachineInformation.pointerSize == 8)
                 return ReadUInt64(address);
 
             return ReadUInt32(address);
@@ -347,15 +346,15 @@ namespace HeapExplorer
 
             // In one memory snapshot, it occured that a 1mb StringBuffer wasn't entirely available in m_bytes.
             // We check for such case here and fix the length.
-            if ((m_bytes.LongLength - offset) < length)
+            if ((m_Bytes.LongLength - offset) < length)
             {
                 var wantedLength = length;
-                length = m_bytes.Length - offset;
-                Debug.LogErrorFormat("Cannot read entire string 0x{0:X}. The wanted length in bytes is {1}, but the memory segment holds {2} bytes only.\n{3}...", address, wantedLength, length, System.Text.Encoding.Unicode.GetString(m_bytes, offset, Mathf.Min(length, 32)));
+                length = m_Bytes.Length - offset;
+                Debug.LogErrorFormat("Cannot read entire string 0x{0:X}. The wanted length in bytes is {1}, but the memory segment holds {2} bytes only.\n{3}...", address, wantedLength, length, System.Text.Encoding.Unicode.GetString(m_Bytes, offset, Mathf.Min(length, 32)));
             }
 
 
-            var value = System.Text.Encoding.Unicode.GetString(m_bytes, offset, length);
+            var value = System.Text.Encoding.Unicode.GetString(m_Bytes, offset, length);
             return value;
         }
 
@@ -379,14 +378,14 @@ namespace HeapExplorer
         /// </summary>
         public UnityEngine.Hash128 ComputeObjectHash(System.UInt64 address, PackedManagedType type)
         {
-            if (m_hasher == null)
-                m_hasher = System.Security.Cryptography.MD5.Create();
+            if (m_Hasher == null)
+                m_Hasher = System.Security.Cryptography.MD5.Create();
 
             var content = ReadObjectBytes(address, type);
             if (content.Count == 0)
                 return new Hash128();
 
-            var bytes = m_hasher.ComputeHash(content.Array, content.Offset, content.Count);
+            var bytes = m_Hasher.ComputeHash(content.Array, content.Offset, content.Count);
             if (bytes.Length != 16)
                 return new Hash128();
 
@@ -412,16 +411,16 @@ namespace HeapExplorer
             // Unity bug? For a reason that I do not understand, sometimes a memory segment is smaller
             // than the actual size of an object. In order to workaround this issue, we make sure to never
             // try to read more data from the segment than is available.
-            if ((m_bytes.Length - offset) < size)
+            if ((m_Bytes.Length - offset) < size)
             {
                 //var wantedLength = size;
-                size = m_bytes.Length - offset;
+                size = m_Bytes.Length - offset;
                 //Debug.LogErrorFormat("Cannot read entire string 0x{0:X}. The requested length in bytes is {1}, but the memory segment holds {2} bytes only.\n{3}...", address, wantedLength, size, System.Text.Encoding.Unicode.GetString(m_bytes, offset, Mathf.Min(size, 32)));
                 if (size <= 0)
                     return new System.ArraySegment<byte>();
             }
 
-            var segment = new System.ArraySegment<byte>(m_bytes, offset, size);
+            var segment = new System.ArraySegment<byte>(m_Bytes, offset, size);
             return segment;
         }
 
@@ -431,7 +430,7 @@ namespace HeapExplorer
             // Do not display its pointer-size, but the actual size of its content.
             if (typeDescription.isArray)
             {
-                if (typeDescription.baseOrElementTypeIndex < 0 || typeDescription.baseOrElementTypeIndex >= m_snapshot.managedTypes.Length)
+                if (typeDescription.baseOrElementTypeIndex < 0 || typeDescription.baseOrElementTypeIndex >= m_Snapshot.managedTypes.Length)
                 {
                     var details = "";
                     details = "arrayRank=" + typeDescription.arrayRank + ", " +
@@ -446,20 +445,20 @@ namespace HeapExplorer
                 }
 
                 var arrayLength = ReadArrayLength(address, typeDescription);
-                var elementType = m_snapshot.managedTypes[typeDescription.baseOrElementTypeIndex];
-                var elementSize = elementType.isValueType ? elementType.size : m_snapshot.virtualMachineInformation.pointerSize;
+                var elementType = m_Snapshot.managedTypes[typeDescription.baseOrElementTypeIndex];
+                var elementSize = elementType.isValueType ? elementType.size : m_Snapshot.virtualMachineInformation.pointerSize;
 
-                var size = m_snapshot.virtualMachineInformation.arrayHeaderSize;
+                var size = m_Snapshot.virtualMachineInformation.arrayHeaderSize;
                 size += elementSize * arrayLength;
                 return size;
             }
 
             // System.String
-            if (typeDescription.managedTypesArrayIndex == m_snapshot.coreTypes.systemString)
+            if (typeDescription.managedTypesArrayIndex == m_Snapshot.coreTypes.systemString)
             {
-                var size = m_snapshot.virtualMachineInformation.objectHeaderSize;
+                var size = m_Snapshot.virtualMachineInformation.objectHeaderSize;
                 size += sizeof(System.Int32); // string length
-                size += ReadStringLength(address + (uint)m_snapshot.virtualMachineInformation.objectHeaderSize) * sizeof(char);
+                size += ReadStringLength(address + (uint)m_Snapshot.virtualMachineInformation.objectHeaderSize) * sizeof(char);
                 size += 2; // two null terminators aka \0\0
                 return size;
             }
@@ -469,7 +468,7 @@ namespace HeapExplorer
 
         public int ReadArrayLength(System.UInt64 address, PackedManagedType arrayType)
         {
-            var vm = m_snapshot.virtualMachineInformation;
+            var vm = m_Snapshot.virtualMachineInformation;
 
             var bounds = ReadPointer(address + (ulong)vm.arrayBoundsOffsetInHeader);
             if (bounds == 0)
@@ -489,7 +488,7 @@ namespace HeapExplorer
             if (dimension >= arrayType.arrayRank)
                 return 0;
 
-            var vm = m_snapshot.virtualMachineInformation;
+            var vm = m_Snapshot.virtualMachineInformation;
 
             var bounds = ReadPointer(address + (ulong)vm.arrayBoundsOffsetInHeader);
             if (bounds == 0)
@@ -508,19 +507,19 @@ namespace HeapExplorer
             // https://docs.microsoft.com/en-us/dotnet/standard/class-library-overview
             ///////////////////////////////////////////////////////////////////
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemByte)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemByte)
                 return string.Format(StringFormat.Unsigned, ReadByte(address));
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemSByte)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemSByte)
                 return ReadByte(address).ToString();
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemChar)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemChar)
                 return string.Format("'{0}'", ReadChar(address));
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemBoolean)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemBoolean)
                 return ReadBoolean(address).ToString();
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemSingle)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemSingle)
             {
                 var v = ReadSingle(address);
 
@@ -534,7 +533,7 @@ namespace HeapExplorer
                 return v.ToString("F");
             }
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemDouble)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemDouble)
             {
                 var v = ReadDouble(address);
 
@@ -548,29 +547,29 @@ namespace HeapExplorer
                 return v.ToString("G");
             }
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemInt16)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt16)
                 return ReadInt16(address).ToString();
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemUInt16)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt16)
                 return string.Format(StringFormat.Unsigned, ReadUInt16(address));
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemInt32)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt32)
                 return ReadInt32(address).ToString();
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemUInt32)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt32)
                 return string.Format(StringFormat.Unsigned, ReadUInt32(address));
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemInt64)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt64)
                 return ReadInt64(address).ToString();
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemUInt64)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt64)
                 return string.Format(StringFormat.Unsigned, ReadUInt64(address));
 
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemDecimal)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemDecimal)
                 return ReadDecimal(address).ToString();
 
             // String
-            if (type.managedTypesArrayIndex == m_snapshot.coreTypes.systemString)
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemString)
             {
                 // While string is actually a reference type, we handle it here, because it's so common.
                 // Rather than showing the address, we show the value, which is the text.
@@ -583,10 +582,10 @@ namespace HeapExplorer
                 // Therefore we create a new MemoryReader here.
                 var heapreader = this;
                 if (!(heapreader is MemoryReader))
-                    heapreader = new MemoryReader(m_snapshot);
+                    heapreader = new MemoryReader(m_Snapshot);
 
                 // https://stackoverflow.com/questions/3815227/understanding-clr-object-size-between-32-bit-vs-64-bit
-                var value = '\"' + heapreader.ReadString(pointer + (ulong)m_snapshot.virtualMachineInformation.objectHeaderSize) + '\"';
+                var value = '\"' + heapreader.ReadString(pointer + (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize) + '\"';
                 return value;
             }
 
@@ -620,8 +619,8 @@ namespace HeapExplorer
                 // For the actual value, or value preview, we are interested in instance fields only.
                 var instanceFields = type.instanceFields;
 
-                m_stringBuilder.Length = 0;
-                m_stringBuilder.Append('(');
+                m_StringBuilder.Length = 0;
+                m_StringBuilder.Append('(');
 
                 // If the struct contains further structs, aka nested structs, we might run into an infinite recursion.
                 // Therefore, lets gracefully handle this case by detecting whether we calling it recursively.
@@ -635,23 +634,23 @@ namespace HeapExplorer
                     {
                         var offset = 0;
                         if (n > 0)
-                            offset += instanceFields[n].offset - m_snapshot.virtualMachineInformation.objectHeaderSize; // TODO: this is trial&error. make sure to understand it!
+                            offset += instanceFields[n].offset - m_Snapshot.virtualMachineInformation.objectHeaderSize; // TODO: this is trial&error. make sure to understand it!
 
-                        m_stringBuilder.Append(ReadFieldValueAsString(address + (ulong)offset, m_snapshot.managedTypes[instanceFields[n].managedTypesArrayIndex]));
+                        m_StringBuilder.Append(ReadFieldValueAsString(address + (ulong)offset, m_Snapshot.managedTypes[instanceFields[n].managedTypesArrayIndex]));
                         if (n < count - 1)
-                            m_stringBuilder.Append(", ");
+                            m_StringBuilder.Append(", ");
                     }
 
                     if (instanceFields.Length > count)
-                        m_stringBuilder.Append(", ...");
+                        m_StringBuilder.Append(", ...");
                 }
                 finally
                 {
                     m_RecursionGuard--;
                 }
 
-                m_stringBuilder.Append(')');
-                return m_stringBuilder.ToString();
+                m_StringBuilder.Append(')');
+                return m_StringBuilder.ToString();
             }
 
             return "<???>";

@@ -8,7 +8,6 @@ namespace HeapExplorer
 {
     public class StaticFieldsControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedManagedType?> onTypeSelected;
 
         public int count
@@ -22,8 +21,8 @@ namespace HeapExplorer
             }
         }
 
-        PackedMemorySnapshot m_snapshot;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        int m_UniqueId = 1;
 
         enum Column
         {
@@ -44,7 +43,6 @@ namespace HeapExplorer
                 })))
         {
             multiColumnHeader.canSort = true;
-            //multiColumnHeader.sortingChanged += OnSortingChanged;
 
             Reload();
         }
@@ -79,12 +77,6 @@ namespace HeapExplorer
             return null;
         }
 
-        //void OnSortingChanged(MultiColumnHeader multiColumnHeader)
-        //{
-        //    //Reload();
-        //    SetTree(BuildTree(m_snapshot));
-        //}
-
         protected override void OnSelectionChanged(TreeViewItem selectedItem)
         {
             base.OnSelectionChanged(selectedItem);
@@ -100,27 +92,27 @@ namespace HeapExplorer
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
             }
             
-            for (int n = 0, nend = m_snapshot.managedStaticTypes.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.managedStaticTypes.Length; n < nend; ++n)
             {
-                var type = m_snapshot.managedTypes[m_snapshot.managedStaticTypes[n]];
+                var type = m_Snapshot.managedTypes[m_Snapshot.managedStaticTypes[n]];
 
                 var group = new StaticTypeItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = 0,
                     displayName = ""
                 };
-                group.Initialize(this, m_snapshot, type);
+                group.Initialize(this, m_Snapshot, type);
                 
                 root.AddChild(group);
             }
@@ -146,14 +138,14 @@ namespace HeapExplorer
 
         class StaticTypeItem : AbstractTreeViewItem
         {
-            StaticFieldsControl m_owner;
-            PackedManagedType m_typeDescription;
+            StaticFieldsControl m_Owner;
+            PackedManagedType m_TypeDescription;
 
             public PackedManagedType type
             {
                 get
                 {
-                    return m_typeDescription;
+                    return m_TypeDescription;
                 }
             }
 
@@ -161,7 +153,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_typeDescription.assembly;
+                    return m_TypeDescription.assembly;
                 }
             }
 
@@ -169,7 +161,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_typeDescription.name;
+                    return m_TypeDescription.name;
                 }
             }
 
@@ -177,42 +169,42 @@ namespace HeapExplorer
             {
                 get
                 {
-                    if (m_typeDescription.staticFieldBytes != null)
-                        return m_typeDescription.staticFieldBytes.Length;
+                    if (m_TypeDescription.staticFieldBytes != null)
+                        return m_TypeDescription.staticFieldBytes.Length;
 
                     return 0;
                 }
             }
 
-            int m_referencesCount = -1;
+            int m_ReferencesCount = -1;
             public int referencesCount
             {
                 get
                 {
-                    if (m_referencesCount == -1)
+                    if (m_ReferencesCount == -1)
                     {
-                        m_referencesCount = 0;
+                        m_ReferencesCount = 0;
 
                         var list = new List<int>();
-                        m_owner.m_snapshot.FindManagedStaticFieldsOfType(m_typeDescription, list);
+                        m_Owner.m_Snapshot.FindManagedStaticFieldsOfType(m_TypeDescription, list);
 
                         for (int n=0, nend = list.Count; n < nend; ++n)
                         {
                             int refCount, refByCount;
-                            m_owner.m_snapshot.GetConnectionsCount(PackedConnection.Kind.StaticField, list[n], out refCount, out refByCount);
+                            m_Owner.m_Snapshot.GetConnectionsCount(PackedConnection.Kind.StaticField, list[n], out refCount, out refByCount);
 
-                            m_referencesCount += refCount;
+                            m_ReferencesCount += refCount;
                         }
                     }
 
-                    return m_referencesCount;
+                    return m_ReferencesCount;
                 }
             }
 
             public void Initialize(StaticFieldsControl owner, PackedMemorySnapshot snapshot, PackedManagedType typeDescription)
             {
-                m_owner = owner;
-                m_typeDescription = typeDescription;
+                m_Owner = owner;
+                m_TypeDescription = typeDescription;
             }
 
             public override void GetItemSearchString(string[] target, out int count)

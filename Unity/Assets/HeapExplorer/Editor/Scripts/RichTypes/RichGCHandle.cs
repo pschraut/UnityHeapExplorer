@@ -6,26 +6,24 @@ namespace HeapExplorer
 {
     public struct RichGCHandle
     {
-        PackedMemorySnapshot m_snapshot;
-        int m_gcHandleArrayIndex;
-        bool m_isValid;
+        PackedMemorySnapshot m_Snapshot;
+        int m_GCHandleArrayIndex;
 
         public RichGCHandle(PackedMemorySnapshot snapshot, int gcHandlesArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_gcHandleArrayIndex = gcHandlesArrayIndex;
-            m_isValid = m_snapshot != null && m_gcHandleArrayIndex >= 0 && m_gcHandleArrayIndex < m_snapshot.gcHandles.Length;
+            m_Snapshot = snapshot;
+            m_GCHandleArrayIndex = gcHandlesArrayIndex;
         }
 
         public PackedGCHandle packed
         {
             get
             {
-                if (!m_isValid)
+                if (!isValid)
                     return new PackedGCHandle() { gcHandlesArrayIndex = -1, managedObjectsArrayIndex = -1 };
 
-                return m_snapshot.gcHandles[m_gcHandleArrayIndex];
+                return m_Snapshot.gcHandles[m_GCHandleArrayIndex];
             }
         }
 
@@ -33,7 +31,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -41,7 +39,8 @@ namespace HeapExplorer
         {
             get
             {
-                return m_isValid;
+                var value = m_Snapshot != null && m_GCHandleArrayIndex >= 0 && m_GCHandleArrayIndex < m_Snapshot.gcHandles.Length;
+                return value;
             }
         }
 
@@ -49,11 +48,11 @@ namespace HeapExplorer
         {
             get
             {
-                if (m_isValid)
+                if (isValid)
                 {
-                    var gcHandle = m_snapshot.gcHandles[m_gcHandleArrayIndex];
+                    var gcHandle = m_Snapshot.gcHandles[m_GCHandleArrayIndex];
                     if (gcHandle.managedObjectsArrayIndex >= 0)
-                        return new RichManagedObject(m_snapshot, gcHandle.managedObjectsArrayIndex);
+                        return new RichManagedObject(m_Snapshot, gcHandle.managedObjectsArrayIndex);
                 }
 
                 return RichManagedObject.invalid;
@@ -72,10 +71,10 @@ namespace HeapExplorer
         {
             get
             {
-                if (!m_isValid)
+                if (!isValid)
                     return 0;
 
-                return m_snapshot.gcHandles[m_gcHandleArrayIndex].target;
+                return m_Snapshot.gcHandles[m_GCHandleArrayIndex].target;
             }
         }
 
@@ -83,14 +82,14 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot.virtualMachineInformation.pointerSize;
+                return m_Snapshot.virtualMachineInformation.pointerSize;
             }
         }
 
         public static readonly RichGCHandle invalid = new RichGCHandle()
         {
-            m_snapshot = null,
-            m_gcHandleArrayIndex = -1
+            m_Snapshot = null,
+            m_GCHandleArrayIndex = -1
         };
     }
 }

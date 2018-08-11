@@ -14,8 +14,8 @@ namespace HeapExplorer
         public RichManagedType(PackedMemorySnapshot snapshot, int managedTypesArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_managedTypesArrayIndex = managedTypesArrayIndex;
+            m_Snapshot = snapshot;
+            m_ManagedTypesArrayIndex = managedTypesArrayIndex;
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return new PackedManagedType() { baseOrElementTypeIndex = -1, managedTypesArrayIndex = -1 };
 
-                return m_snapshot.managedTypes[m_managedTypesArrayIndex];
+                return m_Snapshot.managedTypes[m_ManagedTypesArrayIndex];
             }
         }
 
@@ -36,7 +36,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -47,7 +47,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot != null && m_managedTypesArrayIndex >= 0 && m_managedTypesArrayIndex < m_snapshot.managedTypes.Length;
+                return m_Snapshot != null && m_ManagedTypesArrayIndex >= 0 && m_ManagedTypesArrayIndex < m_Snapshot.managedTypes.Length;
             }
         }
 
@@ -61,7 +61,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return "<unknown type>";
 
-                return m_snapshot.managedTypes[m_managedTypesArrayIndex].name;
+                return m_Snapshot.managedTypes[m_ManagedTypesArrayIndex].name;
             }
         }
 
@@ -75,7 +75,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return "<unknown assembly>";
 
-                return m_snapshot.managedTypes[m_managedTypesArrayIndex].assembly;
+                return m_Snapshot.managedTypes[m_ManagedTypesArrayIndex].assembly;
             }
         }
 
@@ -86,7 +86,7 @@ namespace HeapExplorer
                 return false;
 
             var guard = 0;
-            var me = m_snapshot.managedTypes[m_managedTypesArrayIndex];
+            var me = m_Snapshot.managedTypes[m_ManagedTypesArrayIndex];
             while (me.managedTypesArrayIndex != -1)
             {
                 for (var n=0; n<me.fields.Length; ++n)
@@ -104,7 +104,7 @@ namespace HeapExplorer
                 if (me.baseOrElementTypeIndex == -1)
                     break;
 
-                me = m_snapshot.managedTypes[me.baseOrElementTypeIndex];
+                me = m_Snapshot.managedTypes[me.baseOrElementTypeIndex];
             }
             return false;
         }
@@ -117,7 +117,7 @@ namespace HeapExplorer
             if (!isValid || t.managedTypesArrayIndex == -1)
                 return false;
 
-            var me = m_snapshot.managedTypes[m_managedTypesArrayIndex];
+            var me = m_Snapshot.managedTypes[m_ManagedTypesArrayIndex];
             if (me.managedTypesArrayIndex == t.managedTypesArrayIndex)
                 return true;
 
@@ -130,7 +130,7 @@ namespace HeapExplorer
                 if (me.baseOrElementTypeIndex == t.managedTypesArrayIndex)
                     return true;
 
-                me = m_snapshot.managedTypes[me.baseOrElementTypeIndex];
+                me = m_Snapshot.managedTypes[me.baseOrElementTypeIndex];
             }
 
             return false;
@@ -141,11 +141,11 @@ namespace HeapExplorer
         /// </summary>
         public static readonly RichManagedType invalid = new RichManagedType()
         {
-            m_snapshot = null,
-            m_managedTypesArrayIndex = -1
+            m_Snapshot = null,
+            m_ManagedTypesArrayIndex = -1
         };
 
-        PackedMemorySnapshot m_snapshot;
-        int m_managedTypesArrayIndex;
+        PackedMemorySnapshot m_Snapshot;
+        int m_ManagedTypesArrayIndex;
     }
 }

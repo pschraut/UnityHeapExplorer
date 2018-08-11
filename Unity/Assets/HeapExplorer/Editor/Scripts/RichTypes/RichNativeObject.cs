@@ -9,8 +9,8 @@ namespace HeapExplorer
         public RichNativeObject(PackedMemorySnapshot snapshot, int nativeObjectsArrayIndex)
             : this()
         {
-            m_snapshot = snapshot;
-            m_nativeObjectArrayIndex = nativeObjectsArrayIndex;
+            m_Snapshot = snapshot;
+            m_NativeObjectArrayIndex = nativeObjectsArrayIndex;
         }
 
         public PackedNativeUnityEngineObject packed
@@ -20,7 +20,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return new PackedNativeUnityEngineObject() { nativeObjectsArrayIndex = -1, nativeTypesArrayIndex = -1, managedObjectsArrayIndex = -1 };
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex];
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
             }
         }
 
@@ -28,7 +28,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot;
+                return m_Snapshot;
             }
         }
 
@@ -36,7 +36,7 @@ namespace HeapExplorer
         {
             get
             {
-                return m_snapshot != null && m_nativeObjectArrayIndex >= 0 && m_nativeObjectArrayIndex < m_snapshot.nativeObjects.Length;
+                return m_Snapshot != null && m_NativeObjectArrayIndex >= 0 && m_NativeObjectArrayIndex < m_Snapshot.nativeObjects.Length;
             }
         }
         
@@ -47,8 +47,8 @@ namespace HeapExplorer
                 if (!isValid)
                     return RichNativeType.invalid;
 
-                var obj = m_snapshot.nativeObjects[m_nativeObjectArrayIndex];
-                return new RichNativeType(m_snapshot, obj.nativeTypesArrayIndex);
+                var obj = m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
+                return new RichNativeType(m_Snapshot, obj.nativeTypesArrayIndex);
             }
         }
 
@@ -59,11 +59,11 @@ namespace HeapExplorer
                 if (!isValid)
                     return RichManagedObject.invalid;
 
-                var native = m_snapshot.nativeObjects[m_nativeObjectArrayIndex];
+                var native = m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
                 if (native.managedObjectsArrayIndex < 0)
                     return RichManagedObject.invalid;
 
-                return new RichManagedObject(m_snapshot, native.managedObjectsArrayIndex);
+                return new RichManagedObject(m_Snapshot, native.managedObjectsArrayIndex);
             }
         }
 
@@ -82,7 +82,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return "<invalid>";
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].name;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].name;
             }
         }
 
@@ -93,7 +93,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return 0;
 
-                return (System.UInt64)m_snapshot.nativeObjects[m_nativeObjectArrayIndex].nativeObjectAddress;
+                return (System.UInt64)m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].nativeObjectAddress;
             }
         }
 
@@ -104,7 +104,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return HideFlags.None;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].hideFlags;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].hideFlags;
             }
         }
 
@@ -115,7 +115,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return 0;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].instanceId;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].instanceId;
             }
         }
 
@@ -126,7 +126,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return true;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].isDontDestroyOnLoad;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isDontDestroyOnLoad;
             }
         }
 
@@ -137,7 +137,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return false;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].isManager;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isManager;
             }
         }
 
@@ -148,7 +148,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return false;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].isPersistent;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isPersistent;
             }
         }
 
@@ -159,7 +159,7 @@ namespace HeapExplorer
                 if (!isValid)
                     return 0;
 
-                return m_snapshot.nativeObjects[m_nativeObjectArrayIndex].size;
+                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].size;
             }
         }
 
@@ -168,7 +168,7 @@ namespace HeapExplorer
             if (!isValid)
                 return;
 
-            m_snapshot.GetConnections(packed, references, referencedBy);
+            m_Snapshot.GetConnections(packed, references, referencedBy);
         }
 
         public void GetConnectionsCount(out int referencesCount, out int referencedByCount)
@@ -180,16 +180,16 @@ namespace HeapExplorer
                 return;
             }
 
-            m_snapshot.GetConnectionsCount(PackedConnection.Kind.Native, m_nativeObjectArrayIndex, out referencesCount, out referencedByCount);
+            m_Snapshot.GetConnectionsCount(PackedConnection.Kind.Native, m_NativeObjectArrayIndex, out referencesCount, out referencedByCount);
         }
 
         public static readonly RichNativeObject invalid = new RichNativeObject()
         {
-            m_snapshot = null,
-            m_nativeObjectArrayIndex = -1
+            m_Snapshot = null,
+            m_NativeObjectArrayIndex = -1
         };
 
-        PackedMemorySnapshot m_snapshot;
-        int m_nativeObjectArrayIndex;
+        PackedMemorySnapshot m_Snapshot;
+        int m_NativeObjectArrayIndex;
     }
 }

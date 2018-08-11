@@ -8,11 +8,10 @@ namespace HeapExplorer
 {
     public class GCHandlesControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedGCHandle?> onSelectionChange;
 
-        PackedMemorySnapshot m_snapshot;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        int m_UniqueId = 1;
 
         enum Column
         {
@@ -33,7 +32,6 @@ namespace HeapExplorer
                 })))
         {
             multiColumnHeader.canSort = true;
-            //multiColumnHeader.sortingChanged += OnSortingChanged;
 
             Reload();
         }
@@ -69,11 +67,6 @@ namespace HeapExplorer
             return null;
         }
 
-        //void OnSortingChanged(MultiColumnHeader multiColumnHeader)
-        //{
-        //    SetTree(BuildTree(m_snapshot));
-        //}
-
         protected override void OnSelectionChanged(TreeViewItem selectedItem)
         {
             base.OnSelectionChanged(selectedItem);
@@ -93,11 +86,11 @@ namespace HeapExplorer
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
@@ -106,12 +99,12 @@ namespace HeapExplorer
             // int=typeIndex
             var groupLookup = new Dictionary<int, GroupItem>();
 
-            for (int n = 0, nend = m_snapshot.gcHandles.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.gcHandles.Length; n < nend; ++n)
             {
-                var gcHandle = m_snapshot.gcHandles[n];
+                var gcHandle = m_Snapshot.gcHandles[n];
                 var managedTypeIndex = -1;
                 if (gcHandle.managedObjectsArrayIndex >= 0)
-                    managedTypeIndex = m_snapshot.managedObjects[gcHandle.managedObjectsArrayIndex].managedTypesArrayIndex;
+                    managedTypeIndex = m_Snapshot.managedObjects[gcHandle.managedObjectsArrayIndex].managedTypesArrayIndex;
 
                 var targetItem = root;
                 if (managedTypeIndex >= 0)
@@ -121,11 +114,11 @@ namespace HeapExplorer
                     {
                         group = new GroupItem
                         {
-                            id = m_uniqueId++,
+                            id = m_UniqueId++,
                             depth = 0,
                             displayName = ""
                         };
-                        group.Initialize(m_snapshot, managedTypeIndex);
+                        group.Initialize(m_Snapshot, managedTypeIndex);
 
                         groupLookup[managedTypeIndex] = group;
                         root.AddChild(group);
@@ -136,11 +129,11 @@ namespace HeapExplorer
 
                 var item = new GCHandleItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = targetItem.depth + 1,
                     displayName = ""
                 };
-                item.Initialize(this, m_snapshot, gcHandle.gcHandlesArrayIndex);
+                item.Initialize(this, m_Snapshot, gcHandle.gcHandlesArrayIndex);
 
                 targetItem.AddChild(item);
             }
@@ -215,14 +208,11 @@ namespace HeapExplorer
 
         class GCHandleItem : AbstractItem
         {
-            RichGCHandle m_gcHandle;
-            GCHandlesControl m_owner;
-
             public PackedGCHandle packed
             {
                 get
                 {
-                    return m_gcHandle.packed;
+                    return m_GCHandle.packed;
                 }
             }
 
@@ -230,7 +220,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_gcHandle.managedObject.type.name;
+                    return m_GCHandle.managedObject.type.name;
                 }
             }
 
@@ -238,7 +228,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_gcHandle.size;
+                    return m_GCHandle.size;
                 }
             }
 
@@ -254,14 +244,17 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_gcHandle.managedObjectAddress;
+                    return m_GCHandle.managedObjectAddress;
                 }
             }
 
+            RichGCHandle m_GCHandle;
+            GCHandlesControl m_Owner;
+
             public void Initialize(GCHandlesControl owner, PackedMemorySnapshot snapshot, int gcHandlesArrayIndex)
             {
-                m_owner = owner;
-                m_gcHandle = new RichGCHandle(snapshot, gcHandlesArrayIndex);
+                m_Owner = owner;
+                m_GCHandle = new RichGCHandle(snapshot, gcHandlesArrayIndex);
             }
 
             public override void GetItemSearchString(string[] target, out int count)
@@ -277,19 +270,19 @@ namespace HeapExplorer
                 {
                     GUI.Box(HeEditorGUI.SpaceL(ref position, position.height), HeEditorStyles.gcHandleImage, HeEditorStyles.iconStyle);
 
-                    if (m_gcHandle.nativeObject.isValid)
+                    if (m_GCHandle.nativeObject.isValid)
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.nativeObject));
                         }
                     }
 
-                    if (m_gcHandle.managedObject.isValid)
+                    if (m_GCHandle.managedObject.isValid)
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.window.OnGoto(new GotoCommand(m_gcHandle.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.managedObject));
                         }
                     }
                 }
@@ -316,14 +309,11 @@ namespace HeapExplorer
 
         class GroupItem : AbstractItem
         {
-            int m_size = -1;
-            RichManagedType m_type;           
-
             public override string typeName
             {
                 get
                 {
-                    return m_type.name;
+                    return m_Type.name;
                 }
             }
 
@@ -331,18 +321,18 @@ namespace HeapExplorer
             {
                 get
                 {
-                    if (m_size == -1)
+                    if (m_Size == -1)
                     {
-                        m_size = 0;
+                        m_Size = 0;
                         for (int n = 0, nend = children.Count; n < nend; ++n)
                         {
                             var child = children[n] as AbstractItem;
                             if (child != null)
-                                m_size += child.size;
+                                m_Size += child.size;
                         }
                     }
 
-                    return m_size;
+                    return m_Size;
                 }
             }
 
@@ -362,9 +352,12 @@ namespace HeapExplorer
                 }
             }
 
+            int m_Size = -1;
+            RichManagedType m_Type;
+
             public void Initialize(PackedMemorySnapshot snapshot, int managedTypesArrayIndex)
             {
-                m_type = new RichManagedType(snapshot, managedTypesArrayIndex);
+                m_Type = new RichManagedType(snapshot, managedTypesArrayIndex);
             }
             
             public override void OnGUI(Rect position, int column)

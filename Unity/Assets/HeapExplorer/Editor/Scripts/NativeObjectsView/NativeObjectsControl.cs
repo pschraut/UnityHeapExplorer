@@ -10,14 +10,13 @@ namespace HeapExplorer
 {
     public class NativeObjectsControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedNativeUnityEngineObject?> onSelectionChange;
 
         public long nativeObjectsCount
         {
             get
             {
-                return m_nativeObjectsCount;
+                return m_NativeObjectsCount;
             }
         }
 
@@ -25,15 +24,15 @@ namespace HeapExplorer
         {
             get
             {
-                return m_nativeObjectsSize;
+                return m_NativeObjectsSize;
             }
         }
 
-        protected long m_nativeObjectsCount;
-        protected long m_nativeObjectsSize;
+        protected long m_NativeObjectsCount;
+        protected long m_NativeObjectsSize;
 
-        PackedMemorySnapshot m_snapshot;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        int m_UniqueId = 1;
 
         enum Column
         {
@@ -149,13 +148,13 @@ namespace HeapExplorer
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, BuildArgs buildArgs)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
-            m_nativeObjectsCount = 0;
-            m_nativeObjectsSize = 0;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
+            m_NativeObjectsCount = 0;
+            m_NativeObjectsSize = 0;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
@@ -164,9 +163,9 @@ namespace HeapExplorer
             // int=typeIndex
             var groupLookup = new Dictionary<long, GroupItem>();
 
-            for (int n = 0, nend = m_snapshot.nativeObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.nativeObjects.Length; n < nend; ++n)
             {
-                var no = m_snapshot.nativeObjects[n];
+                var no = m_Snapshot.nativeObjects[n];
                 if (!buildArgs.CanAdd(no))
                     continue;
 
@@ -175,11 +174,11 @@ namespace HeapExplorer
                 {
                     group = new GroupItem
                     {
-                        id = m_uniqueId++,
+                        id = m_UniqueId++,
                         depth = root.depth + 1,
                         displayName = ""
                     };
-                    group.Initialize(m_snapshot, no.nativeTypesArrayIndex);
+                    group.Initialize(m_Snapshot, no.nativeTypesArrayIndex);
 
                     groupLookup[no.nativeTypesArrayIndex] = group;
                     root.AddChild(group);
@@ -190,12 +189,12 @@ namespace HeapExplorer
                 // This is not very informative. However, the actual name can be derived from the MonoScript of such MonoBehaviour instead.
                 // The following tries to find the corresponding MonoScript and uses the MonoScript name instead.
                 #region Add MonoBehaviour using name of MonoScript
-                if (no.nativeTypesArrayIndex == m_snapshot.coreTypes.nativeMonoBehaviour ||
-                    no.nativeTypesArrayIndex == m_snapshot.coreTypes.nativeScriptableObject)
+                if (no.nativeTypesArrayIndex == m_Snapshot.coreTypes.nativeMonoBehaviour ||
+                    no.nativeTypesArrayIndex == m_Snapshot.coreTypes.nativeScriptableObject)
                 {
                     string monoScriptName;
-                    var monoScriptIndex = m_snapshot.FindNativeMonoScriptType(no.nativeObjectsArrayIndex, out monoScriptName);
-                    if (monoScriptIndex != -1 && monoScriptIndex < m_snapshot.nativeTypes.Length)
+                    var monoScriptIndex = m_Snapshot.FindNativeMonoScriptType(no.nativeObjectsArrayIndex, out monoScriptName);
+                    if (monoScriptIndex != -1 && monoScriptIndex < m_Snapshot.nativeTypes.Length)
                     {
                         typeNameOverride = monoScriptName;
                         long key = (monoScriptName.GetHashCode() << 32) | monoScriptIndex;
@@ -205,12 +204,12 @@ namespace HeapExplorer
                         {
                             group2 = new GroupItem
                             {
-                                id = m_uniqueId++,
+                                id = m_UniqueId++,
                                 depth = group.depth + 1,
                                 //displayName = monoScriptName,
                                 typeNameOverride = monoScriptName,
                             };
-                            group2.Initialize(m_snapshot, no.nativeTypesArrayIndex);
+                            group2.Initialize(m_Snapshot, no.nativeTypesArrayIndex);
 
                             groupLookup[key] = group2;
                             group.AddChild(group2);
@@ -222,15 +221,15 @@ namespace HeapExplorer
 
                 var item = new NativeObjectItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = group.depth + 1,
                     displayName = "",
                     typeNameOverride = typeNameOverride
                 };
                 item.Initialize(this, no);
 
-                m_nativeObjectsCount++;
-                m_nativeObjectsSize += item.size;
+                m_NativeObjectsCount++;
+                m_NativeObjectsSize += item.size;
 
                 group.AddChild(item);
             }
@@ -260,13 +259,13 @@ namespace HeapExplorer
 
         public TreeViewItem BuildDuplicatesTree(PackedMemorySnapshot snapshot, BuildArgs buildArgs)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
-            m_nativeObjectsCount = 0;
-            m_nativeObjectsSize = 0;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
+            m_NativeObjectsCount = 0;
+            m_NativeObjectsSize = 0;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
@@ -274,9 +273,9 @@ namespace HeapExplorer
 
             var dupesLookup = new Dictionary<Hash128, List<int>>();
 
-            for (int n = 0, nend = m_snapshot.nativeObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.nativeObjects.Length; n < nend; ++n)
             {
-                var no = m_snapshot.nativeObjects[n];
+                var no = m_Snapshot.nativeObjects[n];
                 if (!no.isPersistent)
                     continue;
 
@@ -286,14 +285,14 @@ namespace HeapExplorer
                 if (no.nativeTypesArrayIndex == -1)
                     continue;
 
-                var nativeType = m_snapshot.nativeTypes[no.nativeTypesArrayIndex];
+                var nativeType = m_Snapshot.nativeTypes[no.nativeTypesArrayIndex];
                 if (nativeType.managedTypeArrayIndex == -1)
                     continue;
 
-                if (m_snapshot.IsSubclassOf(m_snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_snapshot.coreTypes.unityEngineComponent))
+                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineComponent))
                     continue;
 
-                if (m_snapshot.IsSubclassOf(m_snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_snapshot.coreTypes.unityEngineGameObject))
+                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineGameObject))
                     continue;
 
                 var hash = new Hash128((uint)no.nativeTypesArrayIndex, (uint)no.size, (uint)no.name.GetHashCode(), 0);
@@ -315,18 +314,18 @@ namespace HeapExplorer
                 if (list.Count <= 1)
                     continue;
 
-                var no = m_snapshot.nativeObjects[list[n]];
+                var no = m_Snapshot.nativeObjects[list[n]];
 
                 GroupItem group;
                 if (!groupLookup.TryGetValue(dupePair.Key, out group))
                 {
                     group = new GroupItem
                     {
-                        id = m_uniqueId++,
+                        id = m_UniqueId++,
                         depth = root.depth + 1,
                         displayName = no.name
                     };
-                    group.Initialize(m_snapshot, no.nativeTypesArrayIndex);
+                    group.Initialize(m_Snapshot, no.nativeTypesArrayIndex);
 
                     groupLookup[dupePair.Key] = group;
                     root.AddChild(group);
@@ -334,14 +333,14 @@ namespace HeapExplorer
                 
                 var item = new NativeObjectItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = group.depth + 1,
                     displayName = ""
                 };
                 item.Initialize(this, no);
 
-                m_nativeObjectsCount++;
-                m_nativeObjectsSize += item.size;
+                m_NativeObjectsCount++;
+                m_NativeObjectsSize += item.size;
 
                 group.AddChild(item);
             }
@@ -407,7 +406,7 @@ namespace HeapExplorer
 
             public abstract string typeName { get; }
             public abstract string name { get; }
-            public abstract int size { get; }
+            public abstract long size { get; }
             public abstract int count { get; }
             public abstract System.UInt64 address { get; }
             public abstract bool isDontDestroyOnLoad { get; }
@@ -425,18 +424,18 @@ namespace HeapExplorer
 
         class NativeObjectItem : AbstractItem
         {
-            NativeObjectsControl m_owner;
-            RichNativeObject m_object;
+            NativeObjectsControl m_Owner;
+            RichNativeObject m_Object;
 #if HEAPEXPLORER_DISPLAY_REFS
-            int m_referencesCount;
-            int m_referencedByCount;
+            int m_ReferencesCount;
+            int m_ReferencedByCount;
 #endif
 
             public PackedNativeUnityEngineObject packed
             {
                 get
                 {
-                    return m_object.packed;
+                    return m_Object.packed;
                 }
             }
 
@@ -445,7 +444,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_referencesCount;
+                    return m_ReferencesCount;
                 }
             }
 
@@ -453,7 +452,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_referencedByCount;
+                    return m_ReferencedByCount;
                 }
             }
 #endif
@@ -465,7 +464,7 @@ namespace HeapExplorer
                     if (typeNameOverride != null && typeNameOverride.Length > 0)
                         return typeNameOverride;
 
-                    return m_object.type.name;
+                    return m_Object.type.name;
                 }
             }
 
@@ -473,15 +472,15 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.name;
+                    return m_Object.name;
                 }
             }
 
-            public override int size
+            public override long size
             {
                 get
                 {
-                    return m_object.size;
+                    return m_Object.size;
                 }
             }
 
@@ -497,7 +496,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return (ulong)m_object.packed.nativeObjectAddress;
+                    return (ulong)m_Object.packed.nativeObjectAddress;
                 }
             }
 
@@ -505,7 +504,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.isDontDestroyOnLoad;
+                    return m_Object.isDontDestroyOnLoad;
                 }
             }
 
@@ -513,7 +512,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.isPersistent;
+                    return m_Object.isPersistent;
                 }
             }
 
@@ -521,24 +520,24 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_object.instanceId;
+                    return m_Object.instanceId;
                 }
             }
 
             public void Initialize(NativeObjectsControl owner, PackedNativeUnityEngineObject nativeObject)
             {
-                m_owner = owner;
-                m_object = new RichNativeObject(owner.m_snapshot, nativeObject.nativeObjectsArrayIndex);
+                m_Owner = owner;
+                m_Object = new RichNativeObject(owner.m_Snapshot, nativeObject.nativeObjectsArrayIndex);
 #if HEAPEXPLORER_DISPLAY_REFS
-                m_object.GetConnectionsCount(out m_referencesCount, out m_referencedByCount);
+                m_Object.GetConnectionsCount(out m_ReferencesCount, out m_ReferencedByCount);
 #endif
             }
 
             public override void GetItemSearchString(string[] target, out int count)
             {
                 count = 0;
-                target[count++] = m_object.name;
-                target[count++] = m_object.type.name;
+                target[count++] = m_Object.name;
+                target[count++] = m_Object.type.name;
                 target[count++] = string.Format(StringFormat.Address, address);
                 target[count++] = instanceId.ToString();
             }
@@ -547,13 +546,13 @@ namespace HeapExplorer
             {
                 if (column == 0)
                 {
-                    HeEditorGUI.NativeObjectIcon(HeEditorGUI.SpaceL(ref position, position.height), m_object.packed);
+                    HeEditorGUI.NativeObjectIcon(HeEditorGUI.SpaceL(ref position, position.height), m_Object.packed);
 
-                    if (m_object.managedObject.isValid)
+                    if (m_Object.managedObject.isValid)
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_owner.window.OnGoto(new GotoCommand(m_object.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(m_Object.managedObject));
                         }
                     }
                 }
@@ -604,11 +603,11 @@ namespace HeapExplorer
 
 #if HEAPEXPLORER_DISPLAY_REFS
                     case Column.ReferencesCount:
-                        GUI.Label(position, m_referencesCount.ToString());
+                        GUI.Label(position, m_ReferencesCount.ToString());
                         break;
 
                     case Column.ReferencedByCount:
-                        GUI.Label(position, m_referencedByCount.ToString());
+                        GUI.Label(position, m_ReferencedByCount.ToString());
                         break;
 #endif
                 }
@@ -616,13 +615,13 @@ namespace HeapExplorer
 
             void OnShowNameContextMenu(GenericMenu menu)
             {
-                if (!string.IsNullOrEmpty(m_object.name))
+                if (!string.IsNullOrEmpty(m_Object.name))
                 {
                     menu.AddItem(new GUIContent("Find in Project"), false, (GenericMenu.MenuFunction2)delegate (object userData)
                     {
                         var o = (RichNativeObject)userData;
                         HeEditorUtility.SearchProjectBrowser(string.Format("t:{0} {1}", o.type.name, o.name));
-                    }, m_object);
+                    }, m_Object);
                 }
             }
         }
@@ -633,16 +632,17 @@ namespace HeapExplorer
 
         class GroupItem : AbstractItem
         {
-            RichNativeType m_type;
+            RichNativeType m_Type;
 
 #if HEAPEXPLORER_DISPLAY_REFS
+            int m_ReferencesCount = -1;
             public override int referencesCount
             {
                 get
                 {
-                    if (m_referencesCount == -1)
+                    if (m_ReferencesCount == -1)
                     {
-                        m_referencesCount = 0;
+                        m_ReferencesCount = 0;
                         if (hasChildren)
                         {
                             for (int n = 0, nend = children.Count; n < nend; ++n)
@@ -651,25 +651,25 @@ namespace HeapExplorer
                                 if (child != null)
                                 {
                                     var count = child.referencesCount;
-                                    if (count > m_referencesCount)
-                                        m_referencesCount = count;
+                                    if (count > m_ReferencesCount)
+                                        m_ReferencesCount = count;
                                 }
                             }
                         }
                     }
 
-                    return m_referencesCount;
+                    return m_ReferencesCount;
                 }
             }
-            int m_referencesCount = -1;
 
+            int m_ReferencedByCount = -1;
             public override int referencedByCount
             {
                 get
                 {
-                    if (m_referencedByCount == -1)
+                    if (m_ReferencedByCount == -1)
                     {
-                        m_referencedByCount = 0;
+                        m_ReferencedByCount = 0;
                         if (hasChildren)
                         {
                             for (int n = 0, nend = children.Count; n < nend; ++n)
@@ -678,17 +678,16 @@ namespace HeapExplorer
                                 if (child != null)
                                 {
                                     var count = child.referencedByCount;
-                                    if (count > m_referencedByCount)
-                                        m_referencedByCount = count;
+                                    if (count > m_ReferencedByCount)
+                                        m_ReferencedByCount = count;
                                 }
                             }
                         }
                     }
 
-                    return m_referencedByCount;
+                    return m_ReferencedByCount;
                 }
             }
-            int m_referencedByCount = -1;
 #endif
 
             public override string typeName
@@ -698,7 +697,7 @@ namespace HeapExplorer
                     if (typeNameOverride != null && typeNameOverride.Length > 0)
                         return typeNameOverride;
 
-                    return m_type.name;
+                    return m_Type.name;
                 }
             }
 
@@ -710,52 +709,52 @@ namespace HeapExplorer
                 }
             }
 
-            public override int size
+            long m_Size = -1;
+            public override long size
             {
                 get
                 {
-                    if (m_size == -1)
+                    if (m_Size == -1)
                     {
-                        m_size = 0;
+                        m_Size = 0;
                         if (hasChildren)
                         {
                             for (int n = 0, nend = children.Count; n < nend; ++n)
                             {
                                 var child = children[n] as AbstractItem;
                                 if (child != null)
-                                    m_size += child.size;
+                                    m_Size += child.size;
                             }
                         }
                     }
 
-                    return m_size;
+                    return m_Size;
                 }
             }
-            int m_size = -1;
 
+            int m_Count = -1;
             public override int count
             {
                 get
                 {
-                    if (m_count == -1)
+                    if (m_Count == -1)
                     {
-                        m_count = 0;
+                        m_Count = 0;
                         if (hasChildren)
                         {
-                            m_count += children.Count;
+                            m_Count += children.Count;
                             for (int n = 0, nend = children.Count; n < nend; ++n)
                             {
                                 var child = children[n] as AbstractItem;
                                 if (child != null)
-                                    m_count += child.count;
+                                    m_Count += child.count;
                             }
                         }
                     }
 
-                    return m_count;
+                    return m_Count;
                 }
             }
-            int m_count = -1;
 
             public override System.UInt64 address
             {
@@ -791,7 +790,7 @@ namespace HeapExplorer
 
             public void Initialize(PackedMemorySnapshot snapshot, int managedTypeArrayIndex)
             {
-                m_type = new RichNativeType(snapshot, managedTypeArrayIndex);
+                m_Type = new RichNativeType(snapshot, managedTypeArrayIndex);
             }
             
             public override void OnGUI(Rect position, int column)

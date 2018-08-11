@@ -374,7 +374,6 @@ namespace HeapExplorer
 
     public class RootPathControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<RootPath> onSelectionChange;
 
         PackedMemorySnapshot m_Snapshot;

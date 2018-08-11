@@ -49,23 +49,23 @@ namespace HeapExplorer
             // This method builds a lookup table of objects that are
             // references by the m_target field of a System.Delegate object.
 
-            var reader = new MemoryReader(m_snapshot);
-            var systemDelegate = m_snapshot.managedTypes[m_snapshot.coreTypes.systemDelegate];
+            var reader = new MemoryReader(m_Snapshot);
+            var systemDelegate = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemDelegate];
 
             PackedManagedField field;
             if (!systemDelegate.TryGetField("m_target", out field))
                 return;
 
             // Build a table that contains indices of all objects that are the "Target" of a delegate
-            for (int n = 0, nend = m_snapshot.managedObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
-                var obj = m_snapshot.managedObjects[n];
+                var obj = m_Snapshot.managedObjects[n];
                 if (obj.address == 0)
                     continue;
 
                 // Is this a System.Delegate?
-                var type = m_snapshot.managedTypes[obj.managedTypesArrayIndex];
-                if (!m_snapshot.IsSubclassOf(type, m_snapshot.coreTypes.systemDelegate))
+                var type = m_Snapshot.managedTypes[obj.managedTypesArrayIndex];
+                if (!m_Snapshot.IsSubclassOf(type, m_Snapshot.coreTypes.systemDelegate))
                     continue;
 
                 // Read the delegate m_target pointer
@@ -74,7 +74,7 @@ namespace HeapExplorer
                     continue;
 
                 // Try to find the managed object where m_target points to
-                var target = m_snapshot.FindManagedObjectOfAddress(pointer);
+                var target = m_Snapshot.FindManagedObjectOfAddress(pointer);
                 if (target < 0)
                     continue;
 
@@ -130,8 +130,8 @@ namespace HeapExplorer
 
         protected override bool OnCanAddObject(PackedManagedObject mo)
         {
-            var type = m_snapshot.managedTypes[mo.managedTypesArrayIndex];
-            if (!m_snapshot.IsSubclassOf(type, m_snapshot.coreTypes.systemDelegate))
+            var type = m_Snapshot.managedTypes[mo.managedTypesArrayIndex];
+            if (!m_Snapshot.IsSubclassOf(type, m_Snapshot.coreTypes.systemDelegate))
                 return false;
 
             return true;

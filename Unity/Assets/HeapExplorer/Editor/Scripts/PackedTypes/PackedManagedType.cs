@@ -81,7 +81,7 @@ namespace HeapExplorer
         {
             get
             {
-                if (m_instanceFields == null)
+                if (m_InstanceFields == null)
                 {
                     // Find how many instance fields there are
                     var count = 0;
@@ -92,7 +92,7 @@ namespace HeapExplorer
                     }
 
                     // Allocate an array to hold just the instance fields
-                    m_instanceFields = new PackedManagedField[count];
+                    m_InstanceFields = new PackedManagedField[count];
                     count = 0;
 
                     // Copy instance field descriptions
@@ -100,28 +100,27 @@ namespace HeapExplorer
                     {
                         if (!fields[n].isStatic)
                         {
-                            m_instanceFields[count] = fields[n];
+                            m_InstanceFields[count] = fields[n];
                             count++;
                         }
                     }
                 }
 
-                return m_instanceFields;
+                return m_InstanceFields;
             }
         }
-        [NonSerialized]
-        private PackedManagedField[] m_instanceFields;
+        [NonSerialized] PackedManagedField[] m_InstanceFields;
 
         // An array containing descriptions of all static fields of this type, NOT including static fields of base type.
         public PackedManagedField[] staticFields
         {
             get
             {
-                if (m_staticFields == null)
+                if (m_StaticFields == null)
                 {
                     if (staticFieldBytes == null || staticFieldBytes.Length == 0)
                     {
-                        m_staticFields = new PackedManagedField[0];
+                        m_StaticFields = new PackedManagedField[0];
                     }
                     else
                     {
@@ -134,7 +133,7 @@ namespace HeapExplorer
                         }
 
                         // Allocate an array to hold just the static fields
-                        m_staticFields = new PackedManagedField[count];
+                        m_StaticFields = new PackedManagedField[count];
                         count = 0;
 
                         // Copy static field descriptions
@@ -142,18 +141,17 @@ namespace HeapExplorer
                         {
                             if (fields[n].isStatic)
                             {
-                                m_staticFields[count] = fields[n];
+                                m_StaticFields[count] = fields[n];
                                 count++;
                             }
                         }
                     }
                 }
 
-                return m_staticFields;
+                return m_StaticFields;
             }
         }
-        [NonSerialized]
-        private PackedManagedField[] m_staticFields;
+        [NonSerialized] PackedManagedField[] m_StaticFields;
 
         /// <summary>
         /// Gets whether this is a common language runtime primitive type. 

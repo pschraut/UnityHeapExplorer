@@ -6,7 +6,6 @@ namespace HeapExplorer
 {
     public class ManagedHeapSectionsControl : AbstractTreeView
     {
-        //public System.Action<GotoCommand> gotoCB;
         public System.Action<PackedMemorySection?> onSelectionChange;
 
         public int count
@@ -20,8 +19,8 @@ namespace HeapExplorer
             }
         }
 
-        PackedMemorySnapshot m_snapshot;
-        int m_uniqueId = 1;
+        PackedMemorySnapshot m_Snapshot;
+        int m_UniqueId = 1;
 
         enum Column
         {
@@ -52,7 +51,7 @@ namespace HeapExplorer
         
         public void Clear()
         {
-            m_snapshot = null;
+            m_Snapshot = null;
 
             Reload();
         }
@@ -71,31 +70,31 @@ namespace HeapExplorer
                 return;
             }
 
-            var section = m_snapshot.managedHeapSections[item.m_arrayIndex];
+            var section = m_Snapshot.managedHeapSections[item.arrayIndex];
             onSelectionChange.Invoke(section);
         }
         
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
         {
-            m_snapshot = snapshot;
-            m_uniqueId = 1;
+            m_Snapshot = snapshot;
+            m_UniqueId = 1;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_snapshot == null)
+            if (m_Snapshot == null)
             {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
             }
             
-            for (int n = 0, nend = m_snapshot.managedHeapSections.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.managedHeapSections.Length; n < nend; ++n)
             {
                 var item = new HeapSectionItem()
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = root.depth + 1,
                 };
 
-                item.Initialize(this, m_snapshot, n);
+                item.Initialize(this, m_Snapshot, n);
                 root.AddChild(item);
             }
 
@@ -115,14 +114,14 @@ namespace HeapExplorer
             switch ((Column)sortingColumn)
             {
                 case Column.Size:
-                    return itemA.m_size.CompareTo(itemB.m_size);
+                    return itemA.size.CompareTo(itemB.size);
 
                 case Column.Address:
-                    return itemA.m_address.CompareTo(itemB.m_address);
+                    return itemA.address.CompareTo(itemB.address);
 
 #if HEAPEXPLORER_DISPLAY_REFS
                 case Column.Refs:
-                    return itemA.m_refs.CompareTo(itemB.m_refs);
+                    return itemA.refs.CompareTo(itemB.refs);
 #endif
             }
 
@@ -135,18 +134,18 @@ namespace HeapExplorer
 
         class AbstractItem : AbstractTreeViewItem
         {
-            protected ManagedHeapSectionsControl m_owner;
-            public System.UInt64 m_address;
-            public ulong m_size;
+            public System.UInt64 address;
+            public ulong size;
 #if HEAPEXPLORER_DISPLAY_REFS
-            public int m_refs;
+            public int refs;
 #endif
+            protected ManagedHeapSectionsControl m_Owner;
 
             public override void GetItemSearchString(string[] target, out int count)
             {
                 count = 0;
                 target[count++] = displayName;
-                target[count++] = string.Format(StringFormat.Address, m_address);
+                target[count++] = string.Format(StringFormat.Address, address);
             }
 
             public override void OnGUI(Rect position, int column)
@@ -154,16 +153,16 @@ namespace HeapExplorer
                 switch ((Column)column)
                 {
                     case Column.Address:
-                        HeEditorGUI.Address(position, m_address);
+                        HeEditorGUI.Address(position, address);
                         break;
 
                     case Column.Size:
-                        HeEditorGUI.Size(position, (long)m_size);
+                        HeEditorGUI.Size(position, (long)size);
                         break;
 
 #if HEAPEXPLORER_DISPLAY_REFS
                     case Column.Refs:
-                        GUI.Label(position, m_refs.ToString());
+                        GUI.Label(position, refs.ToString());
                         break;
 #endif
                 }
@@ -174,23 +173,23 @@ namespace HeapExplorer
 
         class HeapSectionItem : AbstractItem
         {
-            PackedMemorySnapshot m_snapshot;
-            public int m_arrayIndex;
+            public int arrayIndex;
+            PackedMemorySnapshot m_Snapshot;
 
             public void Initialize(ManagedHeapSectionsControl owner, PackedMemorySnapshot snapshot, int memorySegmentIndex)
             {
-                m_owner = owner;
-                m_snapshot = snapshot;
-                m_arrayIndex = memorySegmentIndex;
+                m_Owner = owner;
+                m_Snapshot = snapshot;
+                arrayIndex = memorySegmentIndex;
 
                 displayName = "MemorySection";
-                m_address = m_snapshot.managedHeapSections[m_arrayIndex].startAddress;
-                if (m_snapshot.managedHeapSections[m_arrayIndex].bytes != null)
+                address = m_Snapshot.managedHeapSections[arrayIndex].startAddress;
+                if (m_Snapshot.managedHeapSections[arrayIndex].bytes != null)
                 {
-                    m_size = (ulong)m_snapshot.managedHeapSections[m_arrayIndex].bytes.LongLength;
+                    size = (ulong)m_Snapshot.managedHeapSections[arrayIndex].bytes.LongLength;
 
 #if HEAPEXPLORER_DISPLAY_REFS
-                    m_snapshot.GetConnectionsCount(m_snapshot.managedHeapSections[m_arrayIndex], out m_refs);
+                    m_Snapshot.GetConnectionsCount(m_Snapshot.managedHeapSections[arrayIndex], out refs);
 #endif
                 }
             }
@@ -201,7 +200,7 @@ namespace HeapExplorer
                 {
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
-                        MemoryWindow.Inspect(m_snapshot, m_address, m_size);
+                        MemoryWindow.Inspect(m_Snapshot, address, size);
                     }
                 }
 

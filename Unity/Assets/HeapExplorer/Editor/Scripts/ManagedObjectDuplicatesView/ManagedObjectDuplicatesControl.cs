@@ -25,17 +25,17 @@ namespace HeapExplorer
             progress.value = 0;
 
             var lookup = new Dictionary<Hash128, AbstractItem>();
-            var memoryReader = new MemoryReader(m_snapshot);
+            var memoryReader = new MemoryReader(m_Snapshot);
 
-            for (int n = 0, nend = m_snapshot.managedObjects.Length; n < nend; ++n)
+            for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
                 progress.value = (n + 1.0f) / nend;
 
-                var obj = m_snapshot.managedObjects[n];
+                var obj = m_Snapshot.managedObjects[n];
                 if (obj.address == 0)
                     continue;
 
-                var type = m_snapshot.managedTypes[obj.managedTypesArrayIndex];
+                var type = m_Snapshot.managedTypes[obj.managedTypesArrayIndex];
                 if (type.isPrimitive && !type.isPointer)
                     continue;
 
@@ -49,11 +49,11 @@ namespace HeapExplorer
                 {
                     var group = new GroupItem()
                     {
-                        id = m_uniqueId++,
+                        id = m_UniqueId++,
                         depth = root.depth + 1,
                         displayName = ""
                     };
-                    group.Initialize(m_snapshot, type);
+                    group.Initialize(m_Snapshot, type);
 
                     lookup[hash] = parent = group;
                     root.AddChild(group);
@@ -61,11 +61,11 @@ namespace HeapExplorer
 
                 var item = new ManagedObjectItem
                 {
-                    id = m_uniqueId++,
+                    id = m_UniqueId++,
                     depth = parent.depth + 1,
                     displayName = ""
                 };
-                item.Initialize(this, m_snapshot, obj);
+                item.Initialize(this, m_Snapshot, obj);
                 parent.AddChild(item);
             }
 
@@ -86,8 +86,8 @@ namespace HeapExplorer
                     }
 
                     var item = root.children[n] as AbstractItem;
-                    m_managedObjectCount += item.count;
-                    m_managedObjectSize += item.size;
+                    m_ManagedObjectCount += item.count;
+                    m_ManagedObjectSize += item.size;
                 }
             }
 

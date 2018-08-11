@@ -396,4 +396,18 @@ namespace HeapExplorer
         
         public abstract void OnGUI(Rect position, int column);
     }
+
+    public static class TreeViewUtility
+    {
+        public static Rect IndentByDepth(TreeViewItem item, Rect rect)
+        {
+            var foldoutWidth = 14;
+            var indent = item.depth + 1;
+
+            rect.x += indent * foldoutWidth;
+            rect.width -= indent * foldoutWidth;
+
+            return rect;
+        }
+    }
 }
