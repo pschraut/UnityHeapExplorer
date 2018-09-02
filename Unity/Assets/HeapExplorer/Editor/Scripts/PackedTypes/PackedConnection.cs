@@ -73,7 +73,17 @@ namespace HeapExplorer
 
         public static PackedConnection[] FromMemoryProfiler(UnityEditor.MemoryProfiler.Connection[] source)
         {
-            var value = new PackedConnection[source.Length];
+            PackedConnection[] value = null;
+            try
+            {
+                value = new PackedConnection[source.Length];
+            }
+            catch
+            {
+                Debug.LogErrorFormat("HeapExplorer: Failed to allocate 'new PackedConnection[{0}]'.", source.Length);
+                throw;
+            }
+
             for (int n = 0, nend = source.Length; n < nend; ++n)
             {
                 value[n] = new PackedConnection
