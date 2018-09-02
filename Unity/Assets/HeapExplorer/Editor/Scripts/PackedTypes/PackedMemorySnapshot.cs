@@ -37,8 +37,10 @@ namespace HeapExplorer
         /// <summary>
         /// Converts an Unity PackedMemorySnapshot to our own format.
         /// </summary>
-        public static PackedMemorySnapshot FromMemoryProfiler(UnityEditor.MemoryProfiler.PackedMemorySnapshot source)
+        public static PackedMemorySnapshot FromMemoryProfiler(MemorySnapshotProcessingArgs args)
         {
+            var source = args.source;
+
             var value = new PackedMemorySnapshot();
             try
             {
@@ -55,7 +57,10 @@ namespace HeapExplorer
                 value.gcHandles = PackedGCHandle.FromMemoryProfiler(source.gcHandles);
 
                 value.busyString = string.Format("Loading {0} Object Connections", source.connections.Length);
-                value.connections = PackedConnection.FromMemoryProfiler(source.connections);
+                if (args.excludeNativeFromConnections)
+                    value.connections = ConnectionsFromMemoryProfilerWithoutNativeHACK(value, source);
+                else
+                    value.connections = PackedConnection.FromMemoryProfiler(source.connections);
 
                 value.busyString = string.Format("Loading {0} Managed Heap Sections", source.managedHeapSections.Length);
                 value.managedHeapSections = PackedMemorySection.FromMemoryProfiler(source.managedHeapSections);
@@ -72,6 +77,53 @@ namespace HeapExplorer
                 value = null;
             }
             return value;
+        }
+
+        // this method is a hack that excludes native object connections to workaround an unity bug.
+        // https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3615223
+        static PackedConnection[] ConnectionsFromMemoryProfilerWithoutNativeHACK(PackedMemorySnapshot snapshot, UnityEditor.MemoryProfiler.PackedMemorySnapshot source)
+        {
+            var managedStart = 0;
+            var managedEnd = managedStart + source.gcHandles.Length;
+            var nativeStart = managedStart + managedEnd;
+            var nativeEnd = nativeStart + source.nativeObjects.Length;
+            var output = new List<PackedConnection>(1024 * 1024);
+
+            for (int n = 0, nend = source.connections.Length; n < nend; ++n)
+            {
+                if ((n % (nend / 100)) == 0)
+                {
+                    var progress = ((n + 1.0f) / nend) * 100;
+                    snapshot.busyString = string.Format("Analyzing GCHandle Connections\n{0}/{1}, {2:F0}% done", n + 1, source.connections.Length, progress);
+                }
+
+                var connection = new PackedConnection
+                {
+                    from = source.connections[n].from,
+                    to = source.connections[n].to,
+                };
+
+                connection.fromKind = PackedConnection.Kind.GCHandle;
+                if (connection.from >= nativeStart && connection.from < nativeEnd)
+                {
+                    connection.from -= nativeStart;
+                    connection.fromKind = PackedConnection.Kind.Native;
+                }
+
+                connection.toKind = PackedConnection.Kind.GCHandle;
+                if (connection.to >= nativeStart && connection.to < nativeEnd)
+                {
+                    connection.to -= nativeStart;
+                    connection.toKind = PackedConnection.Kind.Native;
+                }
+
+                if (connection.fromKind != PackedConnection.Kind.Native)
+                    output.Add(connection);
+            }
+
+            snapshot.header.nativeObjectFromConnectionsExcluded = true;
+            Debug.LogWarning("HeapExplorer: Native object 'from' connections are excluded due workaround an Unity bug. Thus the object connections in Heap Explorer show fewer connections than actually exist.\nhttps://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3615223");
+            return output.ToArray();
         }
 
         /// <summary>
@@ -141,5 +193,12 @@ namespace HeapExplorer
                 }
             }
         }
+    }
+
+    // Specifies how an Unity MemorySnapshot must be converted to HeapExplorer format.
+    public class MemorySnapshotProcessingArgs
+    {
+        public UnityEditor.MemoryProfiler.PackedMemorySnapshot source;
+        public bool excludeNativeFromConnections;
     }
 }

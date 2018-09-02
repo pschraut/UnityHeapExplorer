@@ -163,7 +163,12 @@ namespace HeapExplorer
         void OnSnapshotReceived(UnityEditor.MemoryProfiler.PackedMemorySnapshot snapshot)
         {
             UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnSnapshotReceived;
-            m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
+
+            var args = new MemorySnapshotProcessingArgs();
+            args.source = snapshot;
+            args.excludeNativeFromConnections = false;
+
+            m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(args);
         }
 
 #pragma warning disable 0414

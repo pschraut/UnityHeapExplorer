@@ -88,6 +88,7 @@ namespace HeapExplorer
 
             m_ConnectionsView = CreateView<ConnectionsView>();
             m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
+            m_ConnectionsView.showReferencesAsExcluded = snapshot.header.nativeObjectFromConnectionsExcluded;
 
             m_RootPathView = CreateView<RootPathView>();
             m_RootPathView.editorPrefsKey = GetPrefsKey(() => m_RootPathView);

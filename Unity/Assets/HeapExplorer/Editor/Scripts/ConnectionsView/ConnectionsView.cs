@@ -20,7 +20,19 @@ namespace HeapExplorer
             set;
         }
 
+        public bool showReferencesAsExcluded
+        {
+            get;
+            set;
+        }
+
         public bool showReferencedBy
+        {
+            get;
+            set;
+        }
+
+        public bool showReferencedByAsExcluded
         {
             get;
             set;
@@ -131,17 +143,25 @@ namespace HeapExplorer
 
             if (showReferences)
             {
-                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
+                using (new EditorGUI.DisabledGroupScope(showReferencesAsExcluded))
                 {
-                    using (new EditorGUILayout.HorizontalScope())
+                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        EditorGUILayout.LabelField(string.Format("References to {0} object(s)", m_ReferencesControl.count), EditorStyles.boldLabel);
-                        if (m_ReferencesSearchField.OnToolbarGUI())
-                            m_ReferencesControl.Search(m_ReferencesSearchField.text);
-                    }
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            EditorGUILayout.LabelField(string.Format("References to {0} object(s)", m_ReferencesControl.count), EditorStyles.boldLabel);
+                            if (m_ReferencesSearchField.OnToolbarGUI())
+                                m_ReferencesControl.Search(m_ReferencesSearchField.text);
+                        }
 
-                    GUILayout.Space(2);
-                    m_ReferencesControl.OnGUI();
+                        GUILayout.Space(2);
+                        m_ReferencesControl.OnGUI();
+                    }
+                }
+
+                if (showReferencesAsExcluded)
+                {
+                    GUI.Label(GUILayoutUtility.GetLastRect(), "This information was excluded from the memory snapshot.", HeEditorStyles.centeredBoldLabel);
                 }
             }
 
@@ -154,16 +174,24 @@ namespace HeapExplorer
 
             if (showReferencedBy)
             {
-                using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, options))
+                using (new EditorGUI.DisabledGroupScope(showReferencedByAsExcluded))
                 {
-                    using (new EditorGUILayout.HorizontalScope())
+                    using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel, options))
                     {
-                        EditorGUILayout.LabelField(string.Format("Referenced by {0} object(s)", m_ReferencedByControl.count), EditorStyles.boldLabel);
-                        if (m_ReferencedBySearchField.OnToolbarGUI())
-                            m_ReferencedByControl.Search(m_ReferencedBySearchField.text);
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            EditorGUILayout.LabelField(string.Format("Referenced by {0} object(s)", m_ReferencedByControl.count), EditorStyles.boldLabel);
+                            if (m_ReferencedBySearchField.OnToolbarGUI())
+                                m_ReferencedByControl.Search(m_ReferencedBySearchField.text);
+                        }
+                        GUILayout.Space(2);
+                        m_ReferencedByControl.OnGUI();
                     }
-                    GUILayout.Space(2);
-                    m_ReferencedByControl.OnGUI();
+                }
+
+                if (showReferencedByAsExcluded)
+                {
+                    GUI.Label(GUILayoutUtility.GetLastRect(), "This information was excluded from the memory snapshot.", HeEditorStyles.centeredBoldLabel);
                 }
             }
         }

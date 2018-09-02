@@ -92,6 +92,26 @@ namespace HeapExplorer
             }
         }
 
+        int m_ExcludeNativeFromConnections = -1;
+        bool excludeNativeFromConnections
+        {
+            get
+            {
+                if (m_ExcludeNativeFromConnections == -1)
+                {
+                    var value = EditorPrefs.GetBool("HeapExplorerWindow.excludeNativeFromConnections", false);
+                    m_ExcludeNativeFromConnections = value ? 1 : 0;
+                }
+
+                return m_ExcludeNativeFromConnections > 0;
+            }
+            set
+            {
+                m_ExcludeNativeFromConnections = value ? 1 : 0;
+                EditorPrefs.SetBool("HeapExplorerWindow.excludeNativeFromConnections", value);
+            }
+        }
+
         HeapExplorerView welcomeView
         {
             get
@@ -131,7 +151,7 @@ namespace HeapExplorer
 
             if (!supported)
             {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.4 or newer. I tested the tool with Unity 2017.4.6f1, not sure if newer Unity versions work too.", HeGlobals.k_Title), "Forum", "Close"))
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.4 or newer. I tested the tool with Unity 2017.4.6f1.", HeGlobals.k_Title), "Forum", "Close"))
                     Application.OpenURL(HeGlobals.k_ForumUrl);
                 return;
             }
@@ -151,6 +171,7 @@ namespace HeapExplorer
             titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
+            excludeNativeFromConnections = excludeNativeFromConnections;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
             m_Thread = new System.Threading.Thread(ThreadLoop);
@@ -489,6 +510,10 @@ namespace HeapExplorer
                     {
                         debugViewMenu = !debugViewMenu;
                     });
+                    menu.AddItem(new GUIContent("Settings/Exclude NativeObject connections when capturing a snapshot (experimental)"), excludeNativeFromConnections, delegate ()
+                    {
+                        excludeNativeFromConnections = !excludeNativeFromConnections;
+                    });
 
                     menu.DropDown(m_FileToolbarButtonRect);
                 }
@@ -792,7 +817,11 @@ namespace HeapExplorer
             EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Saving memory...", 0.5f);
             try
             {
-                var heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
+                var args = new MemorySnapshotProcessingArgs();
+                args.source = snapshot;
+                args.excludeNativeFromConnections = excludeNativeFromConnections;
+
+                var heap = PackedMemorySnapshot.FromMemoryProfiler(args);
                 heap.SaveToFile(autoSavePath);
                 HeMruFiles.AddPath(autoSavePath);
                 ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", autoSavePath)));
@@ -860,8 +889,11 @@ namespace HeapExplorer
 
         void ReceiveHeapThreaded(object userData)
         {
-            var snapshot = userData as UnityEditor.MemoryProfiler.PackedMemorySnapshot;
-            m_Heap = PackedMemorySnapshot.FromMemoryProfiler(snapshot);
+            var args = new MemorySnapshotProcessingArgs();
+            args.source = userData as UnityEditor.MemoryProfiler.PackedMemorySnapshot;
+            args.excludeNativeFromConnections = excludeNativeFromConnections;
+
+            m_Heap = PackedMemorySnapshot.FromMemoryProfiler(args);
             m_Heap.Initialize();
         }
 

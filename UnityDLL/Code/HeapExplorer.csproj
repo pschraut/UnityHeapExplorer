@@ -19,7 +19,7 @@
     <Optimize>true</Optimize>
     <OutputPath>bin</OutputPath>
     <BaseIntermediateOutputPath>obj\Debug</BaseIntermediateOutputPath>
-    <DefineConstants>TRACE;DEBUG;UNITY_2017_3_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_5_6_OR_NEWER;HEAPEXPLORER_WRITE_HEADER;HEAPEXPLORER_READ_HEADER</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;UNITY_2017_3_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_5_6_OR_NEWER;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>

@@ -65,7 +65,7 @@ namespace HeapExplorer
             {
                 //GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
                 GUILayout.Label("Beta Notice", HeEditorStyles.heading2);
-                GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.\nI don't know if it works with newer Unity versions.");
+                GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.");
             }
         }
 

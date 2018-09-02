@@ -7,7 +7,7 @@ namespace HeapExplorer
     public class PackedMemorySnapshotHeader
     {
         const System.Int32 k_Magic = 'p' << 24 | 'a' << 16 | 'e' << 8 | 'h';
-        const int k_Version = 1;
+        const int k_Version = 2;
         static string s_EditorVersion="";
         static string s_EditorPlatform="";
 
@@ -16,6 +16,8 @@ namespace HeapExplorer
         public System.String editorVersion = "";
         public System.String editorPlatform = "";
         public System.String comment = "";
+
+        public bool nativeObjectFromConnectionsExcluded;
 
         public bool isValid
         {
@@ -38,7 +40,7 @@ namespace HeapExplorer
         {
             var value = new PackedMemorySnapshotHeader();
             value.snapshotMagic = k_Magic;
-            value.snapshotVersion = 1;
+            value.snapshotVersion = k_Version;
             value.editorVersion = s_EditorVersion;
             value.editorPlatform = s_EditorPlatform;
             value.comment = "";
@@ -48,7 +50,7 @@ namespace HeapExplorer
         public static void Write(System.IO.BinaryWriter writer, PackedMemorySnapshotHeader value)
         {
             value.snapshotMagic = k_Magic;
-            value.snapshotVersion = 1;
+            value.snapshotVersion = k_Version;
             value.editorVersion = s_EditorVersion;
             value.editorPlatform = s_EditorPlatform;
 
@@ -57,6 +59,7 @@ namespace HeapExplorer
             writer.Write(value.editorVersion);
             writer.Write(value.editorPlatform);
             writer.Write(value.comment);
+            writer.Write(value.nativeObjectFromConnectionsExcluded);
         }
 
         public static void Read(System.IO.BinaryReader reader, out PackedMemorySnapshotHeader value, out string stateString)
@@ -72,6 +75,9 @@ namespace HeapExplorer
             value.editorVersion = reader.ReadString();
             value.editorPlatform = reader.ReadString();
             value.comment = reader.ReadString();
+
+            if (value.snapshotVersion >= 2)
+                value.nativeObjectFromConnectionsExcluded = reader.ReadBoolean();
         }
     }
 }
