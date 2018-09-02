@@ -16,15 +16,5 @@ namespace HeapExplorer
 
         // The index into the PackedMemorySnapshot.staticFields array
         public System.Int32 staticFieldsArrayIndex;
-
-        public static PackedManagedStaticField New()
-        {
-            return new PackedManagedStaticField()
-            {
-                managedTypesArrayIndex = -1,
-                fieldIndex = -1,
-                staticFieldsArrayIndex = -1,
-            };
-        }
     }
 }

@@ -5,9 +5,13 @@ using System;
 
 namespace HeapExplorer
 {
-    // Type descriptions of CLR primitive types
+    /// <summary>
+    /// The PackedCoreTypes class contains indexes for various types to their
+    /// type definition as found in the memory snapshot.
+    /// </summary>
     public class PackedCoreTypes
     {
+        // Indexes in PackedMemorySnapshot.managedTypes array
         public int systemEnum = -1;
         public int systemByte = -1;
         public int systemSByte = -1;
@@ -31,6 +35,7 @@ namespace HeapExplorer
         public int systemDelegate = -1;
         public int systemMulticastDelegate = -1;
 
+        // Indexes in PackedMemorySnapshot.managedTypes array
         public int unityEngineObject = -1;
         public int unityEngineGameObject = -1;
         public int unityEngineTransform = -1;
@@ -41,6 +46,7 @@ namespace HeapExplorer
         public int unityEngineScriptableObject = -1;
         public int unityEngineAssetBundle = -1;
 
+        // Indexes in PackedMemorySnapshot.nativeTypes array
         public int nativeObject = -1;
         public int nativeGameObject = -1;
         public int nativeMonoBehaviour = -1;
@@ -50,6 +56,7 @@ namespace HeapExplorer
         public int nativeComponent = -1;
         public int nativeAssetBundle = -1;
 
+        // Indexes in PackedMemorySnapshot.nativeTypes array
         public int nativeTexture2D = -1;
         public int nativeTexture3D = -1;
         public int nativeTextureArray = -1;

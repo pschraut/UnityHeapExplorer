@@ -70,7 +70,7 @@ namespace HeapExplorer
                 position.width += 4;
                 EditorGUIUtility.AddCursorRect(position, MouseCursor.SplitResizeLeftRight);
             }
-            
+
 
 
             switch (Event.current.type)
@@ -126,9 +126,9 @@ namespace HeapExplorer
 
     public class HeSearchField : SearchField
     {
-        EditorWindow m_editorWindow;
-        float m_finishTime;
-        string m_searchString="";
+        EditorWindow m_EditorWindow;
+        float m_FinishTime;
+        string m_SearchString = "";
 
         public float delay
         {
@@ -146,8 +146,8 @@ namespace HeapExplorer
         {
             autoSetFocusOnFindCommand = false;
             delay = 1.0f;
-            text = m_searchString;
-            m_editorWindow = editorWindow;
+            text = m_SearchString;
+            m_EditorWindow = editorWindow;
         }
 
         public bool OnToolbarGUI()
@@ -155,26 +155,26 @@ namespace HeapExplorer
             var isEnter = HasFocus() && Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
             var isESC = HasFocus() && Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape;
 
-            var newString = OnToolbarGUI(m_searchString);
-            if (newString != m_searchString)
+            var newString = OnToolbarGUI(m_SearchString);
+            if (newString != m_SearchString)
             {
-                m_searchString = newString;
-                m_finishTime = Time.realtimeSinceStartup + delay;
+                m_SearchString = newString;
+                m_FinishTime = Time.realtimeSinceStartup + delay;
             }
 
             if (isEnter || isESC)
-                m_finishTime = 0;
+                m_FinishTime = 0;
 
-            if (m_finishTime > Time.realtimeSinceStartup)
+            if (m_FinishTime > Time.realtimeSinceStartup)
             {
-                m_editorWindow.Repaint();
+                m_EditorWindow.Repaint();
                 return false;
             }
 
-            if (m_searchString != text)
+            if (m_SearchString != text)
             {
-                text = m_searchString;
-                m_editorWindow.Repaint();
+                text = m_SearchString;
+                m_EditorWindow.Repaint();
                 return true;
             }
 
@@ -184,7 +184,7 @@ namespace HeapExplorer
 
     public static class HeEditorGUI
     {
-        static System.Text.StringBuilder s_stringBuilder = new System.Text.StringBuilder(256);
+        static System.Text.StringBuilder s_StringBuilder = new System.Text.StringBuilder(256);
 
         static string SignString(long value)
         {
@@ -227,7 +227,7 @@ namespace HeapExplorer
             if (e.type == EventType.ContextClick && position.Contains(e.mousePosition))
             {
                 var menu = new GenericMenu();
-                menu.AddItem(new GUIContent("Copy address"), false, (GenericMenu.MenuFunction2)delegate(object userData)
+                menu.AddItem(new GUIContent("Copy address"), false, (GenericMenu.MenuFunction2)delegate (object userData)
                 {
                     EditorGUIUtility.systemCopyBuffer = userData as string;
                 }, stringAddress);
@@ -239,7 +239,7 @@ namespace HeapExplorer
         public static void TypeName(Rect position, string text, string tooltip = "")
         {
             var orgtext = text;
-            
+
             var trycount = 0;
             while (trycount++ < 5 && EditorStyles.label.CalcSize(new GUIContent(text)).x > position.width)
             {
@@ -253,7 +253,7 @@ namespace HeapExplorer
 
         static string ShortenTypeName(string typeName)
         {
-            s_stringBuilder.Length = 0;
+            s_StringBuilder.Length = 0;
 
             for (int n = 0; n < typeName.Length; ++n)
             {
@@ -274,17 +274,17 @@ namespace HeapExplorer
                 // Copy chars over to dest
                 while (n < typeName.Length)
                 {
-                    s_stringBuilder.Append(typeName[n]);
+                    s_StringBuilder.Append(typeName[n]);
                     ++n;
                 }
 
-                s_stringBuilder.Insert(0, "...");
-                return s_stringBuilder.ToString();
+                s_StringBuilder.Insert(0, "...");
+                return s_StringBuilder.ToString();
             }
 
             // We are here if the string could not be shortened
-            s_stringBuilder.Append(typeName);
-            return s_stringBuilder.ToString();
+            s_StringBuilder.Append(typeName);
+            return s_StringBuilder.ToString();
         }
 
         public static bool Link(Rect position, GUIContent content)

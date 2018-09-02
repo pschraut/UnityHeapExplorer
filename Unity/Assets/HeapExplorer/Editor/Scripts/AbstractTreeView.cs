@@ -29,7 +29,8 @@ namespace HeapExplorer
         int m_FirstVisibleRow;
         IList<int> m_Expanded = new List<int>(32);
         TreeViewItem m_Tree;
-
+        string[] m_SearchCache = new string[32];
+        System.Text.StringBuilder m_SearchBuilder = new System.Text.StringBuilder();
 
         public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(state)
@@ -232,26 +233,23 @@ namespace HeapExplorer
             SetSelection(new[] { item.id }, TreeViewSelectionOptions.RevealAndFrame | TreeViewSelectionOptions.FireSelectionChanged);
         }
 
-        string[] m_searchCache = new string[32];
-        System.Text.StringBuilder m_searchBuilder = new System.Text.StringBuilder();
-
         protected override bool DoesItemMatchSearch(TreeViewItem item, string search)
         {
             var i = item as AbstractTreeViewItem;
             if (i != null)
             {
                 int searchCount;
-                i.GetItemSearchString(m_searchCache, out searchCount);
+                i.GetItemSearchString(m_SearchCache, out searchCount);
 
-                m_searchBuilder.Length = 0;
+                m_SearchBuilder.Length = 0;
                 for (var n=0; n < searchCount; ++n)
                 {
-                    m_searchBuilder.Append(m_searchCache[n]);
-                    m_searchBuilder.Append(" ");
+                    m_SearchBuilder.Append(m_SearchCache[n]);
+                    m_SearchBuilder.Append(" ");
                 }
-                m_searchBuilder.Append("\0");
+                m_SearchBuilder.Append("\0");
 
-                if (m_Search.IsNameMatch(m_searchBuilder.ToString()))
+                if (m_Search.IsNameMatch(m_SearchBuilder.ToString()))
                     return true;
 
                 return false;
@@ -275,9 +273,6 @@ namespace HeapExplorer
             UnityEngine.Profiling.Profiler.BeginSample(GetType().Name + ".RowGUI");
 
             var item = args.item as AbstractTreeViewItem;
-            //if (item == null)
-            //    return;
-
             if (item != null && !item.enabled)
                 EditorGUI.BeginDisabledGroup(true);
 

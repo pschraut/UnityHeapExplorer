@@ -18,7 +18,14 @@ namespace HeapExplorer
             get
             {
                 if (!isValid)
-                    return PackedManagedStaticField.New();
+                {
+                    return new PackedManagedStaticField()
+                    {
+                        managedTypesArrayIndex = -1,
+                        fieldIndex = -1,
+                        staticFieldsArrayIndex = -1,
+                    };
+                }
 
                 return m_Snapshot.managedStaticFields[m_ManagedStaticFieldsArrayIndex];
             }
