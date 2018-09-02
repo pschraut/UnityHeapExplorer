@@ -52,13 +52,11 @@ namespace HeapExplorer
             value.editorVersion = s_EditorVersion;
             value.editorPlatform = s_EditorPlatform;
 
-#if HEAPEXPLORER_WRITE_HEADER
             writer.Write(value.snapshotMagic);
             writer.Write(value.snapshotVersion);
             writer.Write(value.editorVersion);
             writer.Write(value.editorPlatform);
             writer.Write(value.comment);
-#endif
         }
 
         public static void Read(System.IO.BinaryReader reader, out PackedMemorySnapshotHeader value, out string stateString)
@@ -66,7 +64,6 @@ namespace HeapExplorer
             value = new PackedMemorySnapshotHeader();
             stateString = "Loading Header";
 
-#if HEAPEXPLORER_READ_HEADER
             value.snapshotMagic = reader.ReadInt32();
             if (!value.isValid)
                 return;
@@ -75,10 +72,6 @@ namespace HeapExplorer
             value.editorVersion = reader.ReadString();
             value.editorPlatform = reader.ReadString();
             value.comment = reader.ReadString();
-#else
-            value.snapshotMagic = k_Magic;
-            value.snapshotVersion = k_Version;
-#endif
         }
     }
 }

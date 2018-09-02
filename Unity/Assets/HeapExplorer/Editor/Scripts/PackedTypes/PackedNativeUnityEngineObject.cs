@@ -49,10 +49,7 @@ namespace HeapExplorer
 
         public static void Write(System.IO.BinaryWriter writer, PackedNativeUnityEngineObject[] value)
         {
-#if HEAPEXPLORER_WRITE_HEADER
             writer.Write(k_Version);
-#endif
-
             writer.Write(value.Length);
 
             for (int n = 0, nend = value.Length; n < nend; ++n)
@@ -74,10 +71,8 @@ namespace HeapExplorer
             value = new PackedNativeUnityEngineObject[0];
             stateString = "";
 
-#if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
             if (version >= 1)
-#endif
             {
                 var length = reader.ReadInt32();
                 stateString = string.Format("Loading {0} Native Objects", length);

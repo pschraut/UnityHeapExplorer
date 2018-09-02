@@ -35,10 +35,7 @@ namespace HeapExplorer
 
         public static void Write(System.IO.BinaryWriter writer, PackedVirtualMachineInformation value)
         {
-#if HEAPEXPLORER_WRITE_HEADER
             writer.Write(k_Version);
-#endif
-
             writer.Write(value.pointerSize);
             writer.Write(value.objectHeaderSize);
             writer.Write(value.arrayHeaderSize);
@@ -53,10 +50,8 @@ namespace HeapExplorer
             value = new PackedVirtualMachineInformation();
             stateString = "Loading VM Information";
 
-#if HEAPEXPLORER_READ_HEADER
             var version = reader.ReadInt32();
             if (version >= 1)
-#endif
             {
                 value.pointerSize = reader.ReadInt32();
                 value.objectHeaderSize = reader.ReadInt32();
