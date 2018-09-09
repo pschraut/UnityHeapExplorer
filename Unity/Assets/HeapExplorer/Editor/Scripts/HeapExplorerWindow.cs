@@ -52,6 +52,7 @@ namespace HeapExplorer
         [NonSerialized] string m_BusyString = "";
         [NonSerialized] int m_BusyDraws;
         [NonSerialized] List<Exception> m_Exceptions = new List<Exception>(); // If exception occur in threaded jobs, these are collected and logged on the main thread
+        [NonSerialized] bool m_CloseDueToError; // If set to true, will close the editor during the next Update
 
         static List<System.Type> s_ViewTypes = new List<Type>();
 #pragma warning restore 0414
@@ -199,6 +200,12 @@ namespace HeapExplorer
             {
                 m_Repaint = false;
                 Repaint();
+            }
+
+            if (m_CloseDueToError)
+            {
+                EditorUtility.DisplayDialog("Heap Explorer - ERROR", "An error occured. Please check Unity's Debug Console for more information.", "OK");
+                Close();
             }
         }
 
@@ -826,6 +833,11 @@ namespace HeapExplorer
                 HeMruFiles.AddPath(autoSavePath);
                 ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", autoSavePath)));
             }
+            catch
+            {
+                m_CloseDueToError = true;
+                throw;
+            }
             finally
             {
                 m_IsCapturing = false;
@@ -886,15 +898,23 @@ namespace HeapExplorer
                 EditorUtility.ClearProgressBar();
             }
         }
-
+        
         void ReceiveHeapThreaded(object userData)
         {
             var args = new MemorySnapshotProcessingArgs();
             args.source = userData as UnityEditor.MemoryProfiler.PackedMemorySnapshot;
             args.excludeNativeFromConnections = excludeNativeFromConnections;
 
-            m_Heap = PackedMemorySnapshot.FromMemoryProfiler(args);
-            m_Heap.Initialize();
+            try
+            {
+                m_Heap = PackedMemorySnapshot.FromMemoryProfiler(args);
+                m_Heap.Initialize();
+            }
+            catch
+            {
+                m_CloseDueToError = true;
+                throw;
+            }
         }
 
         public void ScheduleJob(AbstractThreadJob job)

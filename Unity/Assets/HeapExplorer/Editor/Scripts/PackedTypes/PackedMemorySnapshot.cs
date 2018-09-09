@@ -44,6 +44,8 @@ namespace HeapExplorer
             var value = new PackedMemorySnapshot();
             try
             {
+                VerifyMemoryProfilerSnapshot(source);
+
                 value.busyString = "Loading Header";
                 value.header = PackedMemorySnapshotHeader.FromMemoryProfiler();
 
@@ -75,8 +77,33 @@ namespace HeapExplorer
             {
                 Debug.LogException(e);
                 value = null;
+                throw;
             }
             return value;
+        }
+
+        static void VerifyMemoryProfilerSnapshot(UnityEditor.MemoryProfiler.PackedMemorySnapshot snapshot)
+        {
+            if (snapshot == null)
+                throw new Exception("No snapshot was found.");
+
+            if (snapshot.typeDescriptions == null || snapshot.typeDescriptions.Length == 0)
+                throw new Exception("The snapshot does not contain any 'typeDescriptions'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
+
+            if (snapshot.managedHeapSections == null || snapshot.managedHeapSections.Length == 0)
+                throw new Exception("The snapshot does not contain any 'managedHeapSections'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
+
+            if (snapshot.gcHandles == null || snapshot.gcHandles.Length == 0)
+                throw new Exception("The snapshot does not contain any 'gcHandles'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
+
+            if (snapshot.nativeTypes == null || snapshot.nativeTypes.Length == 0)
+                throw new Exception("The snapshot does not contain any 'nativeTypes'.");
+
+            if (snapshot.nativeObjects == null || snapshot.nativeObjects.Length == 0)
+                throw new Exception("The snapshot does not contain any 'nativeObjects'.");
+
+            if (snapshot.connections == null || snapshot.connections.Length == 0)
+                throw new Exception("The snapshot does not contain any 'connections'.");
         }
 
         // this method is a hack that excludes native object connections to workaround an unity bug.
@@ -145,21 +172,11 @@ namespace HeapExplorer
                             throw new Exception("Invalid header.");
 
                         PackedNativeType.Read(reader, out nativeTypes, out busyString);
-                        if (nativeTypes == null || nativeTypes.Length == 0)
-                            throw new Exception("snapshot.nativeTypes array mus not be empty.");
-
                         PackedNativeUnityEngineObject.Read(reader, out nativeObjects, out busyString);
                         PackedGCHandle.Read(reader, out gcHandles, out busyString);
                         PackedConnection.Read(reader, out connections, out busyString);
-
                         PackedMemorySection.Read(reader, out managedHeapSections, out busyString);
-                        if (managedHeapSections == null || managedHeapSections.Length == 0)
-                            throw new Exception("snapshot.managedHeapSections array mus not be empty.");    
-
                         PackedManagedType.Read(reader, out managedTypes, out busyString);
-                        if (managedTypes == null || managedTypes.Length == 0)
-                            throw new Exception("snapshot.managedTypes array mus not be empty.");
-
                         PackedVirtualMachineInformation.Read(reader, out virtualMachineInformation, out busyString);
                     }
                     catch (System.Exception e)
