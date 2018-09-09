@@ -43,7 +43,13 @@ namespace HeapExplorer
             {
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    DrawAlphaNote();
+                    if (PlayerSettings.scriptingRuntimeVersion == ScriptingRuntimeVersion.Latest)
+                    {
+                        EditorGUILayout.HelpBox("The MemoryProfiling API does not work with .NET 4.x Scripting Runtime, which your project makes use of.", MessageType.Warning);
+                        GUILayout.Space(8);
+                    }
+
+                    DrawBetaNote();
                     GUILayout.Space(8);
 
                     DrawMRU();
@@ -59,13 +65,17 @@ namespace HeapExplorer
             }
         }
 
-        void DrawAlphaNote()
+        void DrawBetaNote()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 //GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
                 GUILayout.Label("Beta Notice", HeEditorStyles.heading2);
-                GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.");
+                //GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.");
+                GUILayout.Label(@"Unity 2017.4.6f1 and later 2017.4.x releases work with Scripting Runtime.NET 3.5.
+Unity 2018.2.6f1 works with Scripting Runtime .NET 3.5.
+
+Scripting Runtime.NET 4.x causes memory profiling issues in Unity 2017.4 to 2018.2.");
             }
         }
 
