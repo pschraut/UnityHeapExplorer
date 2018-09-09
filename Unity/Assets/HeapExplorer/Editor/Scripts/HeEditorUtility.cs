@@ -15,8 +15,11 @@ namespace HeapExplorer
         static HeEditorUtility()
         {
             var splits = Application.version.Split(new[] { '.' });
-            int.TryParse(splits[0], out s_Major);
-            int.TryParse(splits[1], out s_Minor);
+            if (splits.Length >= 1) int.TryParse(splits[0], out s_Major);
+            if (splits.Length >= 2) int.TryParse(splits[1], out s_Minor);
+
+            if (splits.Length < 2)
+                Debug.LogErrorFormat("HeapExplorer was unable to parse the editor version '{0}'. Could you please post this message in the Heap Explorer forum thread, so I can look at the issue: {1}", Application.version, "https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/");
         }
 
         /// <summary>
