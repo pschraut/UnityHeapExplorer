@@ -57,7 +57,7 @@ namespace HeapExplorer
             if (m_HeapFragTexture != null) Texture2D.DestroyImmediate(m_HeapFragTexture);
             m_HeapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
             m_HeapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
-            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture });
+            //ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture });
 
             m_NativeMemory = null;
             m_ManagedMemory = null;
@@ -286,47 +286,47 @@ namespace HeapExplorer
                 }
             }
 
-            DrawHeapFragmentation();
+            //DrawHeapFragmentation();
         }
 
-        void DrawHeapFragmentation()
-        {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
-                GUILayout.Label(text, EditorStyles.boldLabel);
+        //void DrawHeapFragmentation()
+        //{
+        //    using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        //    {
+        //        var text = string.Format("{0} managed heap sections, making a total of {1}, fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
+        //        GUILayout.Label(text, EditorStyles.boldLabel);
 
-                GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
+        //        GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
 
-                if (HeEditorGUILayout.LinkButton(new GUIContent("Understanding the managed heap", "https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html"), HeEditorStyles.miniHyperlink))
-                    EditorUtility.OpenWithDefaultApp("https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html");
+        //        if (HeEditorGUILayout.LinkButton(new GUIContent("Understanding the managed heap", "https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html"), HeEditorStyles.miniHyperlink))
+        //            EditorUtility.OpenWithDefaultApp("https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity4-1.html");
 
-                GUILayout.Label(string.Format("Red represents the {0} address space allocated from the operating system. Green repesents the {1} allocated managed heap sections within this address space.",
-                    EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()),
-                    snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
-            }
-        }
+        //        GUILayout.Label(string.Format("Red represents the {0} address space allocated from the operating system. Green repesents the {1} allocated managed heap sections within this address space.",
+        //            EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()),
+        //            snapshot.managedHeapSections.LongLength), EditorStyles.miniLabel);
+        //    }
+        //}
 
-        class HeapFragmentationJob : AbstractThreadJob
-        {
-            public Texture2D texture;
-            public PackedMemorySnapshot snapshot;
+        //class HeapFragmentationJob : AbstractThreadJob
+        //{
+        //    public Texture2D texture;
+        //    public PackedMemorySnapshot snapshot;
 
-            Color32[] m_data;
+        //    Color32[] m_data;
 
-            public override void ThreadFunc()
-            {
-                m_data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(snapshot);
-            }
+        //    public override void ThreadFunc()
+        //    {
+        //        m_data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(snapshot);
+        //    }
 
-            public override void IntegrateFunc()
-            {
-                if (texture != null && m_data != null)
-                {
-                    texture.SetPixels32(m_data);
-                    texture.Apply(false);
-                }
-            }
-        }
+        //    public override void IntegrateFunc()
+        //    {
+        //        if (texture != null && m_data != null)
+        //        {
+        //            texture.SetPixels32(m_data);
+        //            texture.Apply(false);
+        //        }
+        //    }
+        //}
     }
 }

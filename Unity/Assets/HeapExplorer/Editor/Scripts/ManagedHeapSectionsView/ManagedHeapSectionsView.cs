@@ -165,7 +165,7 @@ namespace HeapExplorer
                     // Managed heap fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        var text = string.Format("{0} managed heap sections ({1}) fragmented across {2} from the operating system", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
+                        var text = string.Format("{0} managed heap sections ({1}) within an {2} address space", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
                         GUILayout.Label(text, EditorStyles.boldLabel);
                         GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
                     }
