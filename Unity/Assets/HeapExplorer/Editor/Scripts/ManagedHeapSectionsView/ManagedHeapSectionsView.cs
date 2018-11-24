@@ -15,6 +15,8 @@ namespace HeapExplorer
         Texture2D m_HeapFragTexture;
         Texture2D m_SectionFragTexture;
         Rect m_ToolbarButtonRect;
+        HexView m_HexView;
+        bool m_ShowAsHex;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -96,6 +98,9 @@ namespace HeapExplorer
 
             ReleaseTextures();
 
+            m_HexView = CreateView<HexView>();
+            m_ShowAsHex = EditorPrefs.GetBool(GetPrefsKey(() => m_ShowAsHex), false);
+
             m_SectionFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
             m_SectionFragTexture.name = "HeapExplorer-MemorySectionFragmentation-Texture";
 
@@ -106,6 +111,7 @@ namespace HeapExplorer
             m_ConnectionsView = CreateView<ConnectionsView>();
             m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
             m_ConnectionsView.showReferencedBy = false;
+            m_ConnectionsView.afterReferencesToolbarGUI += OnToggleHexViewGUI;
 
             m_SectionsControl = new ManagedHeapSectionsControl(window, GetPrefsKey(() => m_SectionsControl), new TreeViewState());
             m_SectionsControl.SetTree(m_SectionsControl.BuildTree(snapshot));
@@ -116,6 +122,19 @@ namespace HeapExplorer
             m_SectionsControl.findPressed += m_SectionsSearchField.SetFocus;
 
             m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+        }
+
+        void OnToggleHexViewGUI()
+        {
+            m_ShowAsHex = GUILayout.Toggle(m_ShowAsHex, new GUIContent(HeEditorStyles.eyeImage, "Show Memory"), EditorStyles.miniButton, GUILayout.Width(30), GUILayout.Height(17));
+
+            if (m_ShowAsHex != m_HexView.isVisible)
+            {
+                if (m_ShowAsHex)
+                    m_HexView.Show(snapshot);
+                else
+                    m_HexView.Hide();
+            }
         }
 
         void ReleaseTextures()
@@ -139,6 +158,7 @@ namespace HeapExplorer
 
             m_SectionsControl.SaveLayout();
             EditorPrefs.SetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+            EditorPrefs.SetBool(GetPrefsKey(() => m_ShowAsHex), m_ShowAsHex);
         }
 
         public override void OnGUI()
@@ -157,8 +177,8 @@ namespace HeapExplorer
                             if (m_SectionsSearchField.OnToolbarGUI())
                                 m_SectionsControl.Search(m_SectionsSearchField.text);
                         }
-                        GUILayout.Space(2);
 
+                        GUILayout.Space(2);
                         m_SectionsControl.OnGUI();
                     }
 
@@ -175,7 +195,22 @@ namespace HeapExplorer
 
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(window.position.width * m_SplitterHorz)))
                 {
-                    m_ConnectionsView.OnGUI();
+                    if (m_ShowAsHex)
+                    {
+                        using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
+                        {
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                GUILayout.FlexibleSpace();
+                                OnToggleHexViewGUI();
+                            }
+
+                            //GUILayout.Space(2);
+                            m_HexView.OnGUI();
+                        }
+                    }
+                    else
+                        m_ConnectionsView.OnGUI();
 
                     // Managed heap section fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
@@ -202,6 +237,7 @@ namespace HeapExplorer
             ScheduleJob(job);
 
             m_ConnectionsView.Inspect(mo.Value);
+            m_HexView.Inspect(snapshot, mo.Value.startAddress, mo.Value.size);
         }
 
         class HeapFragmentationJob : AbstractThreadJob

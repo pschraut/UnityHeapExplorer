@@ -38,6 +38,9 @@ namespace HeapExplorer
             set;
         }
 
+        public System.Action afterReferencesToolbarGUI;
+        public System.Action afterReferencedByToolbarGUI;
+
         public override void Awake()
         {
             base.Awake();
@@ -152,6 +155,8 @@ namespace HeapExplorer
                             EditorGUILayout.LabelField(string.Format("References to {0} object(s)", m_ReferencesControl.count), EditorStyles.boldLabel);
                             if (m_ReferencesSearchField.OnToolbarGUI())
                                 m_ReferencesControl.Search(m_ReferencesSearchField.text);
+                            if (afterReferencesToolbarGUI != null)
+                                afterReferencesToolbarGUI();
                         }
 
                         GUILayout.Space(2);
@@ -183,6 +188,9 @@ namespace HeapExplorer
                             EditorGUILayout.LabelField(string.Format("Referenced by {0} object(s)", m_ReferencedByControl.count), EditorStyles.boldLabel);
                             if (m_ReferencedBySearchField.OnToolbarGUI())
                                 m_ReferencedByControl.Search(m_ReferencedBySearchField.text);
+
+                            if (afterReferencedByToolbarGUI != null)
+                                afterReferencedByToolbarGUI();
                         }
                         GUILayout.Space(2);
                         m_ReferencedByControl.OnGUI();
