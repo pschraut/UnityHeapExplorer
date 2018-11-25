@@ -56,6 +56,18 @@ namespace HeapExplorer
             private set;
         }
 
+        public bool isProcessing
+        {
+            get;
+            private set;
+        }
+
+        public bool abortActiveStepRequested
+        {
+            get;
+            set;
+        }
+
         [NonSerialized] ulong m_ManagedHeapSize = ~0ul;
         [NonSerialized] ulong m_ManagedHeapAddressSpace = ~0ul;
         [NonSerialized] Dictionary<UInt64, int> m_FindManagedObjectOfNativeObjectLUT;
@@ -616,6 +628,9 @@ namespace HeapExplorer
                 {
                     var progress = ((n + 1.0f) / nend) * 100;
                     busyString = string.Format("Analyzing Object Connections\n{0}/{1}, {2:F0}% done", n + 1, connections.Length, progress);
+
+                    if (abortActiveStepRequested)
+                        break;
                 }
 
                 var connection = connections[n];
@@ -989,46 +1004,60 @@ namespace HeapExplorer
         {
             try
             {
+                isProcessing = true;
+
                 BeginProfilerSample("InitializeCoreTypes");
                 InitializeCoreTypes();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeManagedTypes");
                 InitializeManagedTypes();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeManagedFields");
                 InitializeManagedFields();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeManagedHeapSections");
                 InitializeManagedHeapSections();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeConnections");
                 InitializeConnections();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeConnectionsToMonoScripts");
                 InitializeConnectionsToMonoScripts();
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeManagedObjects");
                 busyString = "Analyzing ManagedObjects";
                 var crawler = new PackedManagedObjectCrawler();
                 crawler.Crawl(this);
+                abortActiveStepRequested = false;
                 EndProfilerSample();
 
                 InitializeNativeTypes();
+                abortActiveStepRequested = false;
 
                 busyString = "Finalizing";
                 System.Threading.Thread.Sleep(30);
-                isBusy = false;
             }
             catch (System.Exception e)
             {
                 Error(e.ToString());
                 throw;
+            }
+            finally
+            {
+                isProcessing = false;
+                isBusy = false;
             }
         }
 

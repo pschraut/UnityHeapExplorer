@@ -335,6 +335,8 @@ namespace HeapExplorer
                 }
             }
 
+            var abortButton = false;
+
             using (new EditorGUILayout.VerticalScope(GUILayout.MaxWidth(position.width), GUILayout.MaxHeight(position.height)))
             {
                 using (new EditorGUI.DisabledGroupScope(m_IsCapturing || (m_Heap != null && m_Heap.isBusy) || (m_BusyDraws > 0)))
@@ -348,7 +350,10 @@ namespace HeapExplorer
                     if (m_Heap != null)
                     {
                         if (m_Heap.isBusy)
+                        {
                             SetBusy(m_Heap.busyString);
+                            abortButton = true;
+                        }
 
                         if (!m_Heap.isBusy && m_ActiveView == null && Event.current.type == EventType.Layout)
                             RestoreView();
@@ -363,7 +368,7 @@ namespace HeapExplorer
             if (!string.IsNullOrEmpty(m_BusyString))
             {
                 m_Repaint = true;
-                DrawBusy();
+                DrawBusy(abortButton);
             }
         }
 
@@ -378,7 +383,7 @@ namespace HeapExplorer
             m_StatusBarString = text;
         }
 
-        void DrawBusy()
+        void DrawBusy(bool drawAbortButton)
         {
             var oldColor = GUI.color;
             var oldMatrix = GUI.matrix;
@@ -396,6 +401,23 @@ namespace HeapExplorer
 
             r = new Rect(new Vector2(0, pivotPoint.y - iconSize), new Vector2(position.width, iconSize * 0.5f));
             GUI.Label(r, m_BusyString, HeEditorStyles.loadingLabel);
+
+            r.x = pivotPoint.x - iconSize * 0.5f;
+            r.y += iconSize * 1.5f;
+            r.width = iconSize;
+            r.height = 32;
+
+            if (m_Heap != null && m_Heap.isProcessing)
+            {
+                using (new EditorGUI.DisabledGroupScope(m_Heap.abortActiveStepRequested))
+                {
+                    if (GUI.Button(r, "Stop..."))
+                    {
+                        if (EditorUtility.DisplayDialog(HeGlobals.k_Title, "If you stop the current processing step, the tool most likely shows incorrect or incomplete data.\n\nOnly the current step is being stopped, the tool then continues to move on to the next step.\n\nStopping might not take place immediately.", "Stop", "Keep going"))
+                            m_Heap.abortActiveStepRequested = true;
+                    }
+                }
+            }
         }
 
         void FreeMem()

@@ -121,7 +121,11 @@ namespace HeapExplorer
                 //    break;
                 //}
                 if ((m_TotalCrawled % 1000) == 0)
+                {
                     UpdateProgress();
+                    if (m_Snapshot.abortActiveStepRequested)
+                        break;
+                }
 
                 var mo = m_Crawl[m_Crawl.Count - 1];
                 m_Crawl.RemoveAt(m_Crawl.Count - 1);
@@ -384,7 +388,11 @@ namespace HeapExplorer
 
                 m_TotalCrawled++;
                 if ((m_TotalCrawled % 1000) == 0)
+                {
                     UpdateProgress();
+                    if (m_Snapshot.abortActiveStepRequested)
+                        break;
+                }
 
                 var staticField = m_StaticFields[crawlStatic[crawlStatic.Count - 1]];
                 crawlStatic.RemoveAt(crawlStatic.Count - 1);
