@@ -51,6 +51,9 @@
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\CompareSnapshotsView\CompareSnapshotsView.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ConnectionsView\ConnectionsControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\ConnectionsView\ConnectionsView.cs" />
+    <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\CsvExport\CsvExportView.cs">
+      <Link>CsvExportView.cs</Link>
+    </Compile>
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\DataVisualizer\DataVisualizer.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesControl.cs" />
     <Compile Include="..\..\Unity\Assets\HeapExplorer\Editor\Scripts\GCHandlesView\GCHandlesView.cs" />
