@@ -411,9 +411,9 @@ namespace HeapExplorer
             {
                 using (new EditorGUI.DisabledGroupScope(m_Heap.abortActiveStepRequested))
                 {
-                    if (GUI.Button(r, "Stop..."))
+                    if (GUI.Button(r, "Cancel..."))
                     {
-                        if (EditorUtility.DisplayDialog(HeGlobals.k_Title, "If you stop the current processing step, the tool most likely shows incorrect or incomplete data.\n\nOnly the current step is being stopped, the tool then continues to move on to the next step.\n\nStopping might not take place immediately.", "Stop", "Keep going"))
+                        if (EditorUtility.DisplayDialog(HeGlobals.k_Title, "If you cancel the current processing step, the tool most likely shows incorrect or incomplete data.\n\nOnly the current step is being canceled, the tool then continues to move on to the next step.\n\nStopping might not take place immediately.", "Stop", "Keep going"))
                             m_Heap.abortActiveStepRequested = true;
                     }
                 }
