@@ -90,6 +90,13 @@ namespace HeapExplorer
             Debug.LogError(text);
         }
 
+        public void Warning(string format, params object[] args)
+        {
+            var text = string.Format(format, args);
+            //errors.Add(text);
+            Debug.LogWarning(text);
+        }
+
         /// <summary>
         /// Gets the size of all managed heap sections combined.
         /// </summary>

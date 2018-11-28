@@ -30,7 +30,7 @@ namespace HeapExplorer
             var heapIndex = m_Snapshot.FindHeapOfAddress(address);
             if (heapIndex == -1)
             {
-                Debug.LogWarningFormat("heap {0:X} not found", address);
+                Debug.LogWarningFormat("HeapExplorer: Heap at {0:X} not found. Haven't figured out why this happens yet. Perhaps related to .NET4 ScriptingRuntime?", address);
                 return -1;
             }
 

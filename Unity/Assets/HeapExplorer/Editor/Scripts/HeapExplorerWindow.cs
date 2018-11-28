@@ -113,6 +113,19 @@ namespace HeapExplorer
             }
         }
 
+        bool ignoreNestedStructs
+        {
+            get
+            {
+                return EditorPrefs.GetBool("HeapExplorerWindow.ignoreNestedStructs", true);
+            }
+            set
+            {
+                PackedManagedObjectCrawler.s_IgnoreNestedStructs = value;
+                EditorPrefs.SetBool("HeapExplorerWindow.ignoreNestedStructs", value);
+            }
+        }
+
         HeapExplorerView welcomeView
         {
             get
@@ -173,6 +186,7 @@ namespace HeapExplorer
             minSize = new Vector2(800, 600);
             snapshotPath = "";
             excludeNativeFromConnections = excludeNativeFromConnections;
+            ignoreNestedStructs = ignoreNestedStructs;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
             m_Thread = new System.Threading.Thread(ThreadLoop);
@@ -543,7 +557,11 @@ namespace HeapExplorer
                     {
                         excludeNativeFromConnections = !excludeNativeFromConnections;
                     });
-
+                    menu.AddItem(new GUIContent("Settings/Ignore nested structs (workaround for bug Case 1104590)"), ignoreNestedStructs, delegate ()
+                    {
+                        ignoreNestedStructs = !ignoreNestedStructs;
+                        PackedManagedObjectCrawler.s_IgnoreNestedStructs = ignoreNestedStructs;
+                    });
                     menu.DropDown(m_FileToolbarButtonRect);
                 }
                 if (Event.current.type == EventType.Repaint)

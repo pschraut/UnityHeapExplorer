@@ -11,6 +11,8 @@ namespace HeapExplorer
 {
     public class PackedManagedObjectCrawler
     {
+        public static bool s_IgnoreNestedStructs = true;
+
         long m_TotalCrawled;
         List<PackedManagedObject> m_Crawl = new List<PackedManagedObject>(1024 * 1024);
         Dictionary<ulong, int> m_Seen = new Dictionary<ulong, int>(1024 * 1024);
@@ -111,6 +113,7 @@ namespace HeapExplorer
         void CrawlManagedObjects()
         {
             var virtualMachineInformation = m_Snapshot.virtualMachineInformation;
+            var nestedStructsIgnored = 0;
 
             //var guard = 0;
             while (m_Crawl.Count > 0)
@@ -261,7 +264,13 @@ namespace HeapExplorer
                         {
                             if (fieldType.isPrimitive)
                                 continue;
-                            
+
+                            if (s_IgnoreNestedStructs && mo.managedTypesArrayIndex == fieldType.managedTypesArrayIndex)
+                            {
+                                nestedStructsIgnored++;
+                                continue;
+                            }
+
                             var newObj = PackedManagedObject.New();
 
                             if (mo.staticBytes == null)
@@ -332,6 +341,9 @@ namespace HeapExplorer
                     typeIndex = baseType.baseOrElementTypeIndex;
                 }
             }
+
+            if (nestedStructsIgnored > 0)
+                m_Snapshot.Warning("HeapExplorer: {0} nested structs ignored (Workaround for Unity bug Case 1104590).", nestedStructsIgnored);
         }
 
         void CrawlStatic()
@@ -483,7 +495,7 @@ namespace HeapExplorer
             {
                 if (gcHandles[n].target == 0)
                 {
-                    m_Snapshot.Error("GCHandle: Cannot find target '{0:X}'", gcHandles[n].target);
+                    m_Snapshot.Warning("HeapExplorer: Cannot find GCHandle target '{0:X}' (Unity bug Case 977003).", gcHandles[n].target);
                     continue;
                 }
 
@@ -508,8 +520,9 @@ namespace HeapExplorer
                     // as they have no affect on the captured snapshot.
                     // [/quote]
 #endregion
-                    m_Snapshot.Error("GCHandle: Cannot find target '{0:X}'", gcHandles[n].target);
-                EndProfilerSample();
+                    //m_Snapshot.Error("GCHandle: Cannot find target '{0:X}'", gcHandles[n].target);
+                    m_Snapshot.Warning("HeapExplorer: Cannot find GCHandle target '{0:X}' (Unity bug Case 977003).", gcHandles[n].target);
+                    EndProfilerSample();
                     continue;
                 }
                 EndProfilerSample();
