@@ -278,10 +278,10 @@ namespace HeapExplorer
 
             m_Selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
             m_ConnectionsView.Inspect(m_Selected.packed);
-            m_RootPathView.Inspect(m_Selected.packed);
             m_PropertyGridView.Inspect(m_Selected.packed);
+            m_RootPathView.Inspect(m_Selected.packed);
         }
-        
+
         public override void OnGUI()
         {
             base.OnGUI();

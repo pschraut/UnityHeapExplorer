@@ -168,7 +168,34 @@ namespace HeapExplorer
     public class RootPathUtility
     {
         List<RootPath> m_Items = new List<RootPath>();
+        bool m_Abort;
+        bool m_IsBusy;
+        int m_ScanCount;
 
+        static int s_IterationLoopGuard = 300000;
+
+        public bool isBusy
+        {
+            get
+            {
+                return m_IsBusy;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of scanned objects. Updates as the RootPathUtility is busy.
+        /// </summary>
+        public int scanned
+        {
+            get
+            {
+                return m_ScanCount;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of root paths that were found.
+        /// </summary>
         public int count
         {
             get
@@ -185,6 +212,9 @@ namespace HeapExplorer
             }
         }
 
+        /// <summary>
+        /// Gets the shortest root path.
+        /// </summary>
         public RootPath shortestPath
         {
             get
@@ -218,8 +248,14 @@ namespace HeapExplorer
             }
         }
 
+        public void Abort()
+        {
+            m_Abort = true;
+        }
+
         public void Find(ObjectProxy obj)
         {
+            m_IsBusy = true;
             m_Items = new List<RootPath>();
             var seen = new HashSet<long>();
 
@@ -229,10 +265,13 @@ namespace HeapExplorer
             int guard = 0;
             while (queue.Any())
             {
-                if (++guard > 100000)
+                if (m_Abort)
+                    break;
+
+                if (++guard > s_IterationLoopGuard)
                 {
-                    Debug.LogWarning("guard kicked in");
-                    m_Items = new List<RootPath>();
+                    Debug.LogWarning("RootPath iteration loop guard kicked in.");
+                    //m_Items = new List<RootPath>();
                     break;
                 }
 
@@ -255,10 +294,13 @@ namespace HeapExplorer
 
                     var dupe = new List<ObjectProxy>(pop) { next };
                     queue.Enqueue(dupe);
+
+                    m_ScanCount++;
                 }
             }
 
             m_Items.Sort();
+            m_IsBusy = false;
         }
 
         List<ObjectProxy> GetReferencedBy(ObjectProxy obj)

@@ -38,6 +38,12 @@ namespace HeapExplorer
             private set;
         }
 
+        public static GUIStyle centeredWordWrapLabel
+        {
+            get;
+            private set;
+        }
+
         public static GUIStyle hyperlink
         {
             get;
@@ -317,6 +323,10 @@ namespace HeapExplorer
             centeredBoldLabel = new GUIStyle(EditorStyles.boldLabel);
             centeredBoldLabel.alignment = TextAnchor.MiddleCenter;
             centeredBoldLabel.wordWrap = true;
+
+            centeredWordWrapLabel = new GUIStyle(EditorStyles.label);
+            centeredWordWrapLabel.alignment = TextAnchor.MiddleCenter;
+            centeredWordWrapLabel.wordWrap = true;
 
             gotoStyle = new GUIStyle(EditorStyles.miniButton);
             gotoStyle.fixedWidth = 18;

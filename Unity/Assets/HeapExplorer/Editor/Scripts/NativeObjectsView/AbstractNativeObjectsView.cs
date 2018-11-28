@@ -269,10 +269,10 @@ namespace HeapExplorer
                 return;
             }
 
-            m_RootPathView.Inspect(m_Selected.Value);
             m_ConnectionsView.Inspect(m_Selected.Value);
             m_NativeObjectControl.Inspect(snapshot, m_Selected.Value);
             m_PreviewView.Inspect(m_Selected.Value);
+            m_RootPathView.Inspect(m_Selected.Value);
         }
 
         // The 'Filer' menu displays this content
