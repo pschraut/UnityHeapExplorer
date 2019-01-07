@@ -8,7 +8,7 @@ using HeapExplorer;
 
 public class Test_DI_120_Scene_Changes
 {
-    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\Empty_120SceneChanges.heap";
+    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\Empty_120SceneChanges.heap";
     PackedMemorySnapshot m_snapshot;
 
     PackedMemorySnapshot snapshot
@@ -94,7 +94,7 @@ public class Test_DI_120_Scene_Changes
     [Test]
     public void CompareManagedObjectsWithMemoryProfiler()
     {
-        TestUtility.CompareManagedObjectsWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\Empty_120SceneChanges_managedobjects.csv");
+        TestUtility.CompareManagedObjectsWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\Empty_120SceneChanges_managedobjects.csv");
     }
 
     [Test]

@@ -9,7 +9,7 @@ using HeapExplorer;
 public class Test_Wolf4
 {
     //const string kSnapshotPath = "C:\\Users\\crash\\Documents\\HeapExplorer\\Unity\\Build\\wolf4.heap";
-    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\wolf4.heap";
+    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\wolf4.heap";
     PackedMemorySnapshot m_snapshot;
 
     PackedMemorySnapshot snapshot
@@ -29,7 +29,7 @@ public class Test_Wolf4
     [Test]
     public void CompareStaticFieldsWithMemoryProfiler()
     {
-        TestUtility.CompareManagedStaticTypesWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\wolf4_staticfields.csv");
+        TestUtility.CompareManagedStaticTypesWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\wolf4_staticfields.csv");
     }
 
     [Test]
@@ -202,7 +202,7 @@ public class Test_Wolf4
     [Test]
     public void ManagedObjectsCompareWithMemoryProfiler_Wolf4()
     {
-        TestUtility.CompareManagedObjectsWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\wolf4_managedobjects.csv");
+        TestUtility.CompareManagedObjectsWithMemoryProfiler(snapshot, "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\wolf4_managedobjects.csv");
     }
 
     [Test]

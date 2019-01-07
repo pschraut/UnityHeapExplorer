@@ -8,7 +8,7 @@ using HeapExplorer;
 
 public class Test_Wolf4_2018_IL2Cpp
 {
-    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\HeapExplorer\\HeapDumps\\wolf4_2018_il2cpp.heap";
+    const string kSnapshotPath = "C:\\Users\\crash\\Documents\\unityheapexplorer\\Backup\\HeapDumps\\wolf4_2018_il2cpp.heap";
     PackedMemorySnapshot m_snapshot;
 
     PackedMemorySnapshot snapshot
