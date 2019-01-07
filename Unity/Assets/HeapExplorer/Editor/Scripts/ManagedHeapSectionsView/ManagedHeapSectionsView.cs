@@ -17,6 +17,11 @@ namespace HeapExplorer
         Rect m_ToolbarButtonRect;
         HexView m_HexView;
         bool m_ShowAsHex;
+        ulong m_ManagedHeapSize = ~0ul;
+        ulong m_ManagedHeapAddressSpace = ~0ul;
+        bool m_ShowInternalSections;
+
+        public static bool s_ShowInternalSections;
 
         [InitializeOnLoadMethod]
         static void Register()
@@ -66,19 +71,20 @@ namespace HeapExplorer
 
                 using (var fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.OpenOrCreate))
                 {
-                    for (int n = 0; n < snapshot.managedHeapSections.Length; ++n)
+                    var sections = GetMemorySections();
+                    for (int n = 0; n < sections.Length; ++n)
                     {
                         if (progressUpdate < Time.realtimeSinceStartup)
                         {
                             progressUpdate = Time.realtimeSinceStartup + 0.1f;
                             if (EditorUtility.DisplayCancelableProgressBar(
                                 "Saving...", 
-                                string.Format("Memory Section {0} / {1}", n+1, snapshot.managedHeapSections.Length),
-                                (n + 1.0f) / snapshot.managedHeapSections.Length))
+                                string.Format("Memory Section {0} / {1}", n+1, sections.Length),
+                                (n + 1.0f) / sections.Length))
                                 break;
                         }
 
-                        var section = snapshot.managedHeapSections[n];
+                        var section = sections[n];
                         if (section.bytes == null || section.bytes.Length == 0)
                             continue;
 
@@ -90,6 +96,14 @@ namespace HeapExplorer
             {
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        PackedMemorySection[] GetMemorySections()
+        {
+            if (m_ShowInternalSections)
+                return snapshot.managedHeapSections;
+
+            return snapshot.alignedManagedHeapSections;
         }
 
         protected override void OnCreate()
@@ -106,7 +120,7 @@ namespace HeapExplorer
 
             m_HeapFragTexture = new Texture2D(ManagedHeapSectionsUtility.k_TextureWidth, ManagedHeapSectionsUtility.k_TextureHeight, TextureFormat.ARGB32, false);
             m_HeapFragTexture.name = "HeapExplorer-HeapFragmentation-Texture";
-            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture });
+            ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture, sections = GetMemorySections(), addressSpace = GetHeapAddressSpace() });
 
             m_ConnectionsView = CreateView<ConnectionsView>();
             m_ConnectionsView.editorPrefsKey = GetPrefsKey(() => m_ConnectionsView);
@@ -114,7 +128,7 @@ namespace HeapExplorer
             m_ConnectionsView.afterReferencesToolbarGUI += OnToggleHexViewGUI;
 
             m_SectionsControl = new ManagedHeapSectionsControl(window, GetPrefsKey(() => m_SectionsControl), new TreeViewState());
-            m_SectionsControl.SetTree(m_SectionsControl.BuildTree(snapshot));
+            m_SectionsControl.SetTree(m_SectionsControl.BuildTree(snapshot, GetMemorySections()));
             m_SectionsControl.onSelectionChange += OnListViewSelectionChange;
 
             m_SectionsSearchField = new HeSearchField(window);
@@ -122,6 +136,8 @@ namespace HeapExplorer
             m_SectionsControl.findPressed += m_SectionsSearchField.SetFocus;
 
             m_SplitterHorz = EditorPrefs.GetFloat(GetPrefsKey(() => m_SplitterHorz), m_SplitterHorz);
+
+            m_ShowInternalSections = s_ShowInternalSections;
         }
 
         void OnToggleHexViewGUI()
@@ -165,6 +181,15 @@ namespace HeapExplorer
         {
             base.OnGUI();
 
+            if (m_ShowInternalSections != s_ShowInternalSections)
+            {
+                m_ManagedHeapAddressSpace = ~0ul;
+                m_ManagedHeapSize = ~0ul;
+                m_ShowInternalSections = s_ShowInternalSections;
+                m_SectionsControl.SetTree(m_SectionsControl.BuildTree(snapshot, GetMemorySections()));
+                ScheduleJob(new HeapFragmentationJob() { snapshot = snapshot, texture = m_HeapFragTexture, sections = GetMemorySections(), addressSpace = GetHeapAddressSpace() });
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUILayout.VerticalScope())
@@ -185,7 +210,7 @@ namespace HeapExplorer
                     // Managed heap fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        var text = string.Format("{0} managed heap sections ({1}) within an {2} address space", snapshot.managedHeapSections.Length, EditorUtility.FormatBytes((long)snapshot.GetTotalManagedHeapSize()), EditorUtility.FormatBytes((long)snapshot.GetManagedHeapAddressSpace()));
+                        var text = string.Format("{0} managed heap sections ({1}) within an {2} address space", GetMemorySections().Length, EditorUtility.FormatBytes((long)GetTotalHeapSize()), EditorUtility.FormatBytes((long)GetHeapAddressSpace()));
                         GUILayout.Label(text, EditorStyles.boldLabel);
                         GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
                     }
@@ -240,16 +265,52 @@ namespace HeapExplorer
             m_HexView.Inspect(snapshot, mo.Value.startAddress, mo.Value.size);
         }
 
+
+        /// <summary>
+        /// Gets the size of all managed heap sections combined.
+        /// </summary>
+        ulong GetTotalHeapSize()
+        {
+            if (m_ManagedHeapSize != ~0ul)
+                return m_ManagedHeapSize;
+
+            var sections = GetMemorySections();
+            for (int n = 0, nend = sections.Length; n < nend; ++n)
+                m_ManagedHeapSize += sections[n].size;
+
+            return m_ManagedHeapSize;
+        }
+
+        /// <summary>
+        /// The address space from the operating system in which the managed heap sections are located.
+        /// </summary>
+        ulong GetHeapAddressSpace()
+        {
+            if (m_ManagedHeapAddressSpace != ~0ul)
+                return m_ManagedHeapAddressSpace;
+
+            var sections = GetMemorySections();
+            if (sections.Length == 0)
+                return m_ManagedHeapAddressSpace = 0;
+
+            var first = sections[0].startAddress;
+            var last = sections[sections.Length - 1].startAddress + sections[sections.Length - 1].size;
+            m_ManagedHeapAddressSpace = last - first;
+            return m_ManagedHeapAddressSpace;
+        }
+
         class HeapFragmentationJob : AbstractThreadJob
         {
             public Texture2D texture;
             public PackedMemorySnapshot snapshot;
+            public PackedMemorySection[] sections;
+            public ulong addressSpace;
 
             Color32[] m_Data;
 
             public override void ThreadFunc()
             {
-                m_Data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(snapshot);
+                m_Data = ManagedHeapSectionsUtility.GetManagedHeapUsageAsTextureData(sections, addressSpace);
             }
 
             public override void IntegrateFunc()
@@ -343,7 +404,7 @@ namespace HeapExplorer
             return pixels;
         }
 
-        public static Color32[] GetManagedHeapUsageAsTextureData(PackedMemorySnapshot snapshot)
+        public static Color32[] GetManagedHeapUsageAsTextureData(PackedMemorySection[] sections, ulong addressSpace)
         {
             var total = new Rect(0, 0, k_TextureWidth, k_TextureHeight);
             var pixels = new Color32[k_TextureWidth * k_TextureHeight];
@@ -351,14 +412,14 @@ namespace HeapExplorer
             for (int n = 0, nend = pixels.Length; n < nend; ++n)
                 pixels[n] = k_NativeMemoryColor;
 
-            for (int n = 0; n < snapshot.managedHeapSections.Length; ++n)
+            for (int n = 0; n < sections.Length; ++n)
             {
-                var section = snapshot.managedHeapSections[n];
-                var offset = section.startAddress - snapshot.managedHeapSections[0].startAddress;
+                var section = sections[n];
+                var offset = section.startAddress - sections[0].startAddress;
                 var size = section.bytes == null ? 0 : section.bytes.LongLength;
 
-                var left = (int)((total.width / snapshot.GetManagedHeapAddressSpace()) * offset);
-                var width = (int)Mathf.Max(1, (total.width / snapshot.GetManagedHeapAddressSpace()) * size);
+                var left = (int)((total.width / addressSpace) * offset);
+                var width = (int)Mathf.Max(1, (total.width / addressSpace) * size);
 
                 for (int y = 0; y < k_TextureHeight; ++y)
                 {

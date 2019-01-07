@@ -17,6 +17,10 @@ namespace HeapExplorer
         // The start address of this piece of memory.
         public System.UInt64 startAddress;
 
+        // The index into the snapshot.managedHeapSections array
+        [System.NonSerialized]
+        public int arrayIndex;
+
         public ulong size
         {
             get
@@ -62,6 +66,7 @@ namespace HeapExplorer
                     var count = reader.ReadInt32();
                     value[n].bytes = reader.ReadBytes(count);
                     value[n].startAddress = reader.ReadUInt64();
+                    value[n].arrayIndex = -1;
                 }
             }
         }
@@ -75,7 +80,8 @@ namespace HeapExplorer
                 value[n] = new PackedMemorySection
                 {
                     bytes = source[n].bytes,
-                    startAddress = source[n].startAddress
+                    startAddress = source[n].startAddress,
+                    arrayIndex = -1
                 };
             }
             return value;

@@ -74,7 +74,8 @@ namespace HeapExplorer
             onSelectionChange.Invoke(section);
         }
         
-        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
+        //public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, bool removeUnalignedSections = false)
+        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, PackedMemorySection[] sections)
         {
             m_Snapshot = snapshot;
             m_UniqueId = 1;
@@ -86,15 +87,17 @@ namespace HeapExplorer
                 return root;
             }
             
-            for (int n = 0, nend = m_Snapshot.managedHeapSections.Length; n < nend; ++n)
+            for (int n = 0, nend = sections.Length; n < nend; ++n)
             {
+                var section = sections[n];
+
                 var item = new HeapSectionItem()
                 {
                     id = m_UniqueId++,
                     depth = root.depth + 1,
                 };
 
-                item.Initialize(this, m_Snapshot, n);
+                item.Initialize(this, m_Snapshot, section.arrayIndex);
                 root.AddChild(item);
             }
 

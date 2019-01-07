@@ -134,8 +134,7 @@ namespace HeapExplorer
 
                 foreach (var section in snapshot.managedHeapSections)
                 {
-                    if (section.bytes != null)
-                        parent.size[k] += section.bytes.LongLength;
+                    parent.size[k] += (long)section.size;
                 }
 
                 parent.count[k] += snapshot.managedHeapSections.Length;

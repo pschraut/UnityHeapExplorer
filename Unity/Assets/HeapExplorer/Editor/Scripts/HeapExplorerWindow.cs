@@ -126,6 +126,19 @@ namespace HeapExplorer
             }
         }
 
+        bool showInternalMemorySections
+        {
+            get
+            {
+                return EditorPrefs.GetBool("HeapExplorerWindow.showInternalMemorySections", true);
+            }
+            set
+            {
+                ManagedHeapSectionsView.s_ShowInternalSections = value;
+                EditorPrefs.SetBool("HeapExplorerWindow.showInternalMemorySections", value);
+            }
+        }
+
         HeapExplorerView welcomeView
         {
             get
@@ -187,6 +200,7 @@ namespace HeapExplorer
             snapshotPath = "";
             excludeNativeFromConnections = excludeNativeFromConnections;
             ignoreNestedStructs = ignoreNestedStructs;
+            showInternalMemorySections = showInternalMemorySections;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
             m_Thread = new System.Threading.Thread(ThreadLoop);
@@ -560,7 +574,10 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent("Settings/Ignore nested structs (workaround for bug Case 1104590)"), ignoreNestedStructs, delegate ()
                     {
                         ignoreNestedStructs = !ignoreNestedStructs;
-                        PackedManagedObjectCrawler.s_IgnoreNestedStructs = ignoreNestedStructs;
+                    });
+                    menu.AddItem(new GUIContent("Settings/Show unaligned memory sections (removes MonoMemPool sections)"), showInternalMemorySections, delegate ()
+                    {
+                        showInternalMemorySections = !showInternalMemorySections;
                     });
                     menu.DropDown(m_FileToolbarButtonRect);
                 }

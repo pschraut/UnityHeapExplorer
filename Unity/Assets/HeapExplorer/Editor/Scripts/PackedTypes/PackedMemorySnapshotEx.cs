@@ -11,6 +11,13 @@ namespace HeapExplorer
     public partial class PackedMemorySnapshot
     {
         /// <summary>
+        /// An array of 4096bytes aligned memory sections. These appear to me the actual managed memory sections.
+        /// non-aligned sections seem to be internal / MonoMemPool sections.
+        /// </summary>
+        /// <see cref="https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3902371"/>
+        public PackedMemorySection[] alignedManagedHeapSections = new PackedMemorySection[0];
+
+        /// <summary>
         /// An array of extracted managed objects from the managed heap memory.
         /// </summary>
         [NonSerialized]
@@ -68,8 +75,6 @@ namespace HeapExplorer
             set;
         }
 
-        [NonSerialized] ulong m_ManagedHeapSize = ~0ul;
-        [NonSerialized] ulong m_ManagedHeapAddressSpace = ~0ul;
         [NonSerialized] Dictionary<UInt64, int> m_FindManagedObjectOfNativeObjectLUT;
         [NonSerialized] Dictionary<UInt64, int> m_FindManagedTypeOfTypeInfoAddressLUT;
         [NonSerialized] Dictionary<UInt64, int> m_FindNativeObjectOfAddressLUT;
@@ -96,38 +101,7 @@ namespace HeapExplorer
             //errors.Add(text);
             Debug.LogWarning(text);
         }
-
-        /// <summary>
-        /// Gets the size of all managed heap sections combined.
-        /// </summary>
-        public ulong GetTotalManagedHeapSize()
-        {
-            if (m_ManagedHeapSize != ~0ul)
-                return m_ManagedHeapSize;
-
-            for (int n = 0, nend = managedHeapSections.Length; n < nend; ++n)
-                m_ManagedHeapSize += managedHeapSections[n].size;
-
-            return m_ManagedHeapSize;
-        }
-
-        /// <summary>
-        /// The address space from the operating system in which the managed heap sections are located.
-        /// </summary>
-        public ulong GetManagedHeapAddressSpace()
-        {
-            if (m_ManagedHeapAddressSpace != ~0ul)
-                return m_ManagedHeapAddressSpace;
-
-            if (managedHeapSections.Length == 0)
-                return m_ManagedHeapAddressSpace = 0;
-
-            var first = managedHeapSections[0].startAddress;
-            var last = managedHeapSections[managedHeapSections.Length - 1].startAddress + managedHeapSections[managedHeapSections.Length - 1].size;
-            m_ManagedHeapAddressSpace = last - first;
-            return m_ManagedHeapAddressSpace;
-        }
-
+        
         public void FindManagedStaticFieldsOfType(PackedManagedType type, List<int> target)
         {
             if (target == null)
@@ -676,6 +650,19 @@ namespace HeapExplorer
             {
                 return x.startAddress.CompareTo(y.startAddress);
             });
+
+            for (var n = 0; n < managedHeapSections.Length; ++n)
+                managedHeapSections[n].arrayIndex = n;
+
+            // get the aligned memory sections
+            var list = new List<PackedMemorySection>(managedHeapSections.Length);
+            for (var n=0; n<managedHeapSections.Length; ++n)
+            {
+                var section = managedHeapSections[n];
+                if ((section.startAddress & 4095) == 0)
+                    list.Add(section);
+            }
+            alignedManagedHeapSections = list.ToArray();
         }
 
         void InitializeManagedFields()
