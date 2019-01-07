@@ -23,7 +23,7 @@ namespace HeapExplorer
         MemoryReader m_MemoryReader;
 
 #if DEBUG_BREAK_ON_ADDRESS
-        ulong DebugBreakOnAddress = 0x1100010C0;
+        ulong DebugBreakOnAddress = 0x2604C8AFEE0;
 #endif
 
         [System.Diagnostics.Conditional("ENABLE_PROFILER")]
@@ -42,7 +42,7 @@ namespace HeapExplorer
 #endif
         }
 
-        public void Crawl(PackedMemorySnapshot snapshot)
+        public void Crawl(PackedMemorySnapshot snapshot, List<ulong> substitudeAddresses)
         {
             m_TotalCrawled = 0;
             m_Snapshot = snapshot;
@@ -53,6 +53,16 @@ namespace HeapExplorer
             CrawlGCHandles();
             EndProfilerSample();
 
+            BeginProfilerSample("substitudeAddresses");
+            for (var n = 0; n < substitudeAddresses.Count; ++n)
+            {
+                var addr = substitudeAddresses[n];
+                if (m_Seen.ContainsKey(addr))
+                    continue;
+                TryAddManagedObject(addr);
+            }
+            EndProfilerSample();
+
             BeginProfilerSample("CrawlStatic");
             CrawlStatic();
             m_Snapshot.managedStaticFields = m_StaticFields.ToArray();
@@ -60,6 +70,7 @@ namespace HeapExplorer
 
             BeginProfilerSample("CrawlManagedObjects");
             CrawlManagedObjects();
+
             m_Snapshot.managedObjects = m_ManagedObjects.ToArray();
             UpdateProgress();
             EndProfilerSample();
@@ -487,6 +498,45 @@ namespace HeapExplorer
             }
         }
 
+        int TryAddManagedObject(ulong address)
+        {
+            // Try to find the ManagedObject of the current GCHandle
+            var typeIndex = m_Snapshot.FindManagedObjectTypeOfAddress(address);
+            if (typeIndex == -1)
+            {
+                #region Unity Bug
+                // Unity BUG: (Case 977003) PackedMemorySnapshot: Unable to resolve typeDescription of GCHandle.target
+                // https://issuetracker.unity3d.com/issues/packedmemorysnapshot-unable-to-resolve-typedescription-of-gchandle-dot-target
+                // [quote=Unity]
+                // This is a bug in Mono where it has a few GC handles that point to invalid objects and they should
+                // removed from the list of GC handles. The the invalid GC handles can be ignored for now,
+                // as they have no affect on the captured snapshot.
+                // [/quote]
+                #endregion
+                m_Snapshot.Warning("HeapExplorer: Cannot find GCHandle target '{0:X}' (Unity bug Case 977003).", address);
+                return -1;
+            }
+
+            var managedObj = new PackedManagedObject
+            {
+                address = address,
+                managedTypesArrayIndex = typeIndex,
+                managedObjectsArrayIndex = m_ManagedObjects.Count,
+                gcHandlesArrayIndex = -1,
+                nativeObjectsArrayIndex = -1
+            };
+            
+            // If the ManagedObject is the representation of a NativeObject, connect the two
+            TryConnectNativeObject(ref managedObj);
+            SetObjectSize(ref managedObj, m_Snapshot.managedTypes[managedObj.managedTypesArrayIndex]);
+
+            m_Seen[managedObj.address] = managedObj.managedObjectsArrayIndex;
+            m_ManagedObjects.Add(managedObj);
+            m_Crawl.Add(managedObj);
+
+            return managedObj.managedObjectsArrayIndex;
+        }
+
         void CrawlGCHandles()
         {
             var gcHandles = m_Snapshot.gcHandles;
@@ -505,56 +555,22 @@ namespace HeapExplorer
                     int a = 0;
                 }
 #endif
-                BeginProfilerSample("FindManagedObjectTypeOfAddress");
 
-                // Try to find the ManagedObject of the current GCHandle
-                var typeIndex = m_Snapshot.FindManagedObjectTypeOfAddress(gcHandles[n].target);
-                if (typeIndex == -1)
-                {
-#region Unity Bug
-                    // Unity BUG: (Case 977003) PackedMemorySnapshot: Unable to resolve typeDescription of GCHandle.target
-                    // https://issuetracker.unity3d.com/issues/packedmemorysnapshot-unable-to-resolve-typedescription-of-gchandle-dot-target
-                    // [quote=Unity]
-                    // This is a bug in Mono where it has a few GC handles that point to invalid objects and they should
-                    // removed from the list of GC handles. The the invalid GC handles can be ignored for now,
-                    // as they have no affect on the captured snapshot.
-                    // [/quote]
-#endregion
-                    //m_Snapshot.Error("GCHandle: Cannot find target '{0:X}'", gcHandles[n].target);
-                    m_Snapshot.Warning("HeapExplorer: Cannot find GCHandle target '{0:X}' (Unity bug Case 977003).", gcHandles[n].target);
-                    EndProfilerSample();
+                var managedObjectIndex = TryAddManagedObject(gcHandles[n].target);
+                if (managedObjectIndex == -1)
                     continue;
-                }
-                EndProfilerSample();
 
-                BeginProfilerSample("AddConnection");
+                var managedObj = m_ManagedObjects[managedObjectIndex];
+                managedObj.gcHandlesArrayIndex = gcHandles[n].gcHandlesArrayIndex;
+                m_ManagedObjects[managedObjectIndex] = managedObj;
 
-                var managedObj = new PackedManagedObject
-                {
-                    address = gcHandles[n].target,
-                    managedTypesArrayIndex = typeIndex,
-                    managedObjectsArrayIndex = m_ManagedObjects.Count,
-                    gcHandlesArrayIndex = gcHandles[n].gcHandlesArrayIndex,
-                    nativeObjectsArrayIndex = -1
-                };
+                // Connect GCHandle to ManagedObject
+                m_Snapshot.AddConnection(PackedConnection.Kind.GCHandle, gcHandles[n].gcHandlesArrayIndex, PackedConnection.Kind.Managed, managedObj.managedObjectsArrayIndex);
 
                 // Update the GCHandle with the index to its managed object
                 gcHandles[n].managedObjectsArrayIndex = managedObj.managedObjectsArrayIndex;
 
-                // Connect GCHandle to ManagedObject
-                m_Snapshot.AddConnection(PackedConnection.Kind.GCHandle, gcHandles[n].gcHandlesArrayIndex, PackedConnection.Kind.Managed, managedObj.managedObjectsArrayIndex);
-                EndProfilerSample();
-
-                BeginProfilerSample("TryConnectNativeObject");
-                // If the ManagedObject is the representation of a NativeObject, connect the two
-                TryConnectNativeObject(ref managedObj);
-                SetObjectSize(ref managedObj, m_Snapshot.managedTypes[managedObj.managedTypesArrayIndex]);
-
-                m_Seen[managedObj.address] = managedObj.managedObjectsArrayIndex;
-                m_ManagedObjects.Add(managedObj);
-                m_Crawl.Add(managedObj);
                 m_TotalCrawled++;
-                EndProfilerSample();
 
                 if ((m_TotalCrawled % 1000) == 0)
                     UpdateProgress();

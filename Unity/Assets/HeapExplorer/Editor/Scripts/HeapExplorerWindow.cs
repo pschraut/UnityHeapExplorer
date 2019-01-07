@@ -800,7 +800,7 @@ namespace HeapExplorer
                 return;
             }
 
-            m_Heap.Initialize();
+            m_Heap.Initialize(filePath);
         }
 
         void SaveView()

@@ -994,7 +994,50 @@ namespace HeapExplorer
             }
         }
 
-        public void Initialize()
+        List<ulong> InitializeManagedObjectSubstitudes(string snapshotPath)
+        {
+            busyString = "Substitude ManagedObjects";
+
+            var substitudeManagedObjects = new List<ulong>();
+            if (!string.IsNullOrEmpty(snapshotPath) && System.IO.File.Exists(snapshotPath))
+            {
+                var p = snapshotPath + ".ManagedObjects.txt";
+                if (System.IO.File.Exists(p))
+                {
+                    var lines = System.IO.File.ReadAllLines(p);
+                    for (var n = 0; n < lines.Length; ++n)
+                    {
+                        var line = lines[n].Trim();
+                        if (string.IsNullOrEmpty(line))
+                            continue;
+
+                        if (line.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                        {
+                            line = line.Substring("0x".Length);
+                            ulong value;
+                            ulong.TryParse(line, System.Globalization.NumberStyles.HexNumber, null, out value);
+                            if (value != 0)
+                                substitudeManagedObjects.Add(value);
+                            else
+                                Error("Could not parse '{0}' as hex number.", line);
+                        }
+                        else
+                        {
+                            ulong value;
+                            ulong.TryParse(line, System.Globalization.NumberStyles.Number, null, out value);
+                            if (value != 0)
+                                substitudeManagedObjects.Add(value);
+                            else
+                                Error("Could not parse '{0}' as integer number. If this is a Hex number, prefix it with '0x'.", line);
+                        }
+                    }
+                }
+            }
+
+            return substitudeManagedObjects;
+        }
+
+        public void Initialize(string snapshotPath = null)
         {
             try
             {
@@ -1030,10 +1073,14 @@ namespace HeapExplorer
                 abortActiveStepRequested = false;
                 EndProfilerSample();
 
+                BeginProfilerSample("substitudeManagedObjects");
+                var substitudeManagedObjects = InitializeManagedObjectSubstitudes(snapshotPath);
+                EndProfilerSample();
+
                 BeginProfilerSample("InitializeManagedObjects");
                 busyString = "Analyzing ManagedObjects";
                 var crawler = new PackedManagedObjectCrawler();
-                crawler.Crawl(this);
+                crawler.Crawl(this, substitudeManagedObjects);
                 abortActiveStepRequested = false;
                 EndProfilerSample();
 
