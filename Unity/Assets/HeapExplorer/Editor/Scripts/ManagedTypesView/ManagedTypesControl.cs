@@ -16,6 +16,7 @@ namespace HeapExplorer
         enum Column
         {
             Name,
+            Size,
             ValueType,
             AssemblyName,
         }
@@ -25,6 +26,7 @@ namespace HeapExplorer
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("C# Type"), width = 350, autoResize = true },
+                new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Size"), width = 80, autoResize = true },
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("ValueType", "Is this type a ValueType?"), width = 40, autoResize = true },
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Assembly"), width = 150, autoResize = true },
                 })))
@@ -165,6 +167,11 @@ namespace HeapExplorer
                 get;
             }
 
+            public abstract long size
+            {
+                get;
+            }
+
             public abstract bool isValueType
             {
                 get;
@@ -188,6 +195,14 @@ namespace HeapExplorer
                 get
                 {
                     return m_Type.name;
+                }
+            }
+
+            public override long size
+            {
+                get
+                {
+                    return m_Type.packed.size;
                 }
             }
 
@@ -226,14 +241,17 @@ namespace HeapExplorer
             {
                 if (column == 0)
                 {
-                    var icon = m_Type.packed.isValueType ? HeEditorStyles.csValueTypeImage : HeEditorStyles.csReferenceTypeImage;
-                    GUI.Box(HeEditorGUI.SpaceL(ref position, position.height), icon, HeEditorStyles.iconStyle);
+                    HeEditorGUI.ManagedTypeIcon(HeEditorGUI.SpaceL(ref position, position.height), m_Type.packed);
                 }
 
                 switch ((Column)column)
                 {
                     case Column.Name:
                         HeEditorGUI.TypeName(position, typeName);
+                        break;
+
+                    case Column.Size:
+                        HeEditorGUI.Size(position, size);
                         break;
 
                     case Column.ValueType:

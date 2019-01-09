@@ -25,7 +25,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("C# Types", "");
-            viewMenuOrder = 750;
+            viewMenuOrder = 345;
         }
 
         protected override void OnCreate()

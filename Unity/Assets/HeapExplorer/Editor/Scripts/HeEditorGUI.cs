@@ -326,6 +326,14 @@ namespace HeapExplorer
             return false;
         }
 
+        public static void ManagedTypeIcon(Rect position, PackedManagedType type)
+        {
+            var isValueType = type.isValueType;
+            var icon = isValueType ? HeEditorStyles.csValueTypeImage : HeEditorStyles.csReferenceTypeImage;
+            var content = new GUIContent(icon, isValueType ? "ValueType" : "ReferenceType");
+            GUI.Box(HeEditorGUI.SpaceL(ref position, position.height), content, HeEditorStyles.iconStyle);
+        }
+
         public static void NativeObjectIcon(Rect position, PackedNativeUnityEngineObject obj)
         {
             var warningMsg = "";
