@@ -251,6 +251,11 @@ namespace HeapExplorer
             GUI.Label(position, content);
         }
 
+        public static void AssemblyName(Rect position, string text, string tooltip = "")
+        {
+            TypeName(position, text, tooltip);
+        }
+
         static string ShortenTypeName(string typeName)
         {
             s_StringBuilder.Length = 0;
