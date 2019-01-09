@@ -15,8 +15,11 @@ Unity/Assets/StreamingAssets/Commandline.txt
 #################################################
 # Unity generated files
 #################################################
-Unity/Temp/*
-Unity/Library/*
+Unity/Temp/
+Unity/Library/
+Unity/Logs/
+Unity/obj/
+Unity/bin/
 Unity/*.csproj
 Unity/*.sln
 #Unity/.vs
