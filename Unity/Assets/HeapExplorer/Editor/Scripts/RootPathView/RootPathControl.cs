@@ -172,7 +172,7 @@ namespace HeapExplorer
         bool m_IsBusy;
         int m_ScanCount;
 
-        static int s_IterationLoopGuard = 300000;
+        static int s_IterationLoopGuard = 1000000;
 
         public bool isBusy
         {
