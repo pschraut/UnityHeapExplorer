@@ -94,10 +94,10 @@ Scripting Runtime.NET 4.x causes memory profiling issues in Unity 2017.4 to 2018
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
 
-                GUILayout.Label("My Asset Store Publisher page", EditorStyles.boldLabel);
-                //GUILayout.Label("Is Heap Explorer useful to you? Consider buying one of my products in the Unity Asset Store.");
-                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_PublisherUrl))) Application.OpenURL(HeGlobals.k_PublisherUrl);
-                GUILayout.Space(8);
+                //GUILayout.Label("My Asset Store Publisher page", EditorStyles.boldLabel);
+                ////GUILayout.Label("Is Heap Explorer useful to you? Consider buying one of my products in the Unity Asset Store.");
+                //if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_PublisherUrl))) Application.OpenURL(HeGlobals.k_PublisherUrl);
+                //GUILayout.Space(8);
 
                 //GUILayout.Label("Contact", EditorStyles.boldLabel);
                 //GUILayout.Label("If you want to send me an email, please use the email from my Asset Store Publisher page (the link above this text).");
