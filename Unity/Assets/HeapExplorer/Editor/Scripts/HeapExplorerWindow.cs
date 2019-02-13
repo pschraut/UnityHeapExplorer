@@ -482,15 +482,26 @@ namespace HeapExplorer
 
         void DrawStatusBar()
         {
-            var r = GUILayoutUtility.GetRect(10, 20, GUILayout.ExpandWidth(true));
-            var oldcolor = GUI.color;
-            GUI.color = new Color(0, 0, 0, 0.1f);
-            GUI.DrawTexture(r, EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill);
-            GUI.color = oldcolor;
+            using (new GUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
+            {
+                //GUILayout.Label(m_StatusBarString, EditorStyles.boldLabel);
+                GUILayout.Label(m_StatusBarString);
 
-            r.x += 4;
-            r.y += 2;
-            GUI.Label(r, m_StatusBarString, EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+                if (!string.IsNullOrEmpty(snapshotPath))
+                    GUILayout.Label(snapshotPath);
+            }
+
+            // Darken the status area a little
+            if (Event.current.type == EventType.Repaint)
+            {
+                var r = GUILayoutUtility.GetLastRect();
+                r.height += 2; r.x -= 4; r.width += 8;
+                var oldcolor = GUI.color;
+                GUI.color = new Color(0, 0, 0, 0.1f);
+                GUI.DrawTexture(r, EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill);
+                GUI.color = oldcolor;
+            }
         }
 
         void DrawToolbar()
