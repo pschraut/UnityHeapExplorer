@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin</OutputPath>
+    <OutputPath>..\Assets\HeapExplorer\Editor\</OutputPath>
     <BaseIntermediateOutputPath>obj\Debug</BaseIntermediateOutputPath>
     <DefineConstants>TRACE;DEBUG;UNITY_2017_3_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_5_6_OR_NEWER;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -131,8 +131,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>@if exist "$(SolutionDir)..\deploy.cmd" ( @call  "$(SolutionDir)..\deploy.cmd"  $(TargetName) "$(TargetDir)"  "$(SolutionPath)" )
-@if exist "$(SolutionDir)deploy.cmd" ( @call  "$(SolutionDir)deploy.cmd"  $(TargetName) "$(TargetDir)"  "$(SolutionPath)" )</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>
