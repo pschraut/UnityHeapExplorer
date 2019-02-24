@@ -5,9 +5,11 @@ I tested Heap Explorer with Unity 2017.4 LTS. Earlier versions are not supported
 
 ## Video
 
-[https://www.youtube.com/watch?v=tcTl_7y8JBA]https://www.youtube.com/watch?v=tcTl_7y8JBA
+[https://www.youtube.com/watch?v=tcTl_7y8JBA](https://www.youtube.com/watch?v=tcTl_7y8JBA)
 
 ## Forum discussion
 
 [https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/)
 
+## Documentation
+[http://www.console-dev.de/bin/HeapExplorer.pdf](http://www.console-dev.de/bin/HeapExplorer.pdf)
