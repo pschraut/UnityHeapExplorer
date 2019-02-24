@@ -1,8 +1,7 @@
-﻿//---------------------------------------
-// Copyright (c) 2012-2014 Peter Schraut
-// http://console-dev.de
-//---------------------------------------
-
+﻿//
+// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://bitbucket.org/pschraut/unityheapexplorer/
+//
 using System;
 using System.Collections.Generic;
 

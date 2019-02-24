@@ -1,4 +1,8 @@
-﻿using System;
+﻿//
+// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://bitbucket.org/pschraut/unityheapexplorer/
+//
+using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.TestTools;
@@ -8,6 +12,11 @@ using System.Collections.Generic;
 
 namespace HeapExplorer
 {
+    interface ITestInterface
+    {
+        void HelloWorld();
+    }
+
     public class Test_Editor
     {
         PackedMemorySnapshot m_snapshot;
@@ -16,6 +25,10 @@ namespace HeapExplorer
         int[] m_myReferenceType = new int[0];
         ByteEnum m_myEnum;
         Action m_myDelegate;
+        ITestInterface m_myITestInterface;
+        ITestInterface[] m_myITestInterfaceArray = new ITestInterface[0];
+        List<ITestInterface> m_myITestInterfaceList = new List<ITestInterface>();
+        Dictionary<byte, ITestInterface> m_myITestInterfaceDictionary = new Dictionary<byte, ITestInterface>();
 
         public Test_Editor()
         {

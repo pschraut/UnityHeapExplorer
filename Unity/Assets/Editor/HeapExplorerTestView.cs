@@ -1,9 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿//
+// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://bitbucket.org/pschraut/unityheapexplorer/
+//
 using UnityEngine;
 using UnityEditor;
 using HeapExplorer;
 
+// The HeapExplorerTestView class shows how to implement a new view in Heap Explorer. It shows...
+// * How to register a view, or window, in Heap Explorer
+// * How to iterate over memory snapshot content
+// * How to use the high-level object API named "Rich" such as RichManagedObject
 public class HeapExplorerTestView : HeapExplorerView
 {
     RichManagedObject m_BiggestManagedObject;

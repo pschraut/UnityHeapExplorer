@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿//
+// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://bitbucket.org/pschraut/unityheapexplorer/
+//
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -35,7 +39,7 @@ namespace HeapExplorer
             base.OnGUI();
 
             GUILayout.Space(4);
-            GUILayout.Label(string.Format("{0} {1}", HeGlobals.k_Title, HeGlobals.k_Version), HeEditorStyles.heading1);
+            GUILayout.Label(string.Format("{0} {1} for Unity", HeGlobals.k_Title, HeGlobals.k_Version), HeEditorStyles.heading1);
             GUILayout.Label("Created by Peter Schraut");
             GUILayout.Space(16);
 
@@ -69,9 +73,7 @@ namespace HeapExplorer
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                //GUILayout.Label(HeGlobals.k_Version, HeEditorStyles.heading2);
                 GUILayout.Label("Beta Notice", HeEditorStyles.heading2);
-                //GUILayout.Label("I tested Heap Explorer with Unity 2017.4.6f1, earlier versions are not supported on purpose.");
                 GUILayout.Label(@"Unity 2017.4.6f1 and later 2017.4.x releases work with Scripting Runtime.NET 3.5.
 Unity 2018.2.6f1 works with Scripting Runtime .NET 3.5.
 
@@ -94,13 +96,9 @@ Scripting Runtime.NET 4.x causes memory profiling issues in Unity 2017.4 to 2018
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
 
-                //GUILayout.Label("My Asset Store Publisher page", EditorStyles.boldLabel);
-                ////GUILayout.Label("Is Heap Explorer useful to you? Consider buying one of my products in the Unity Asset Store.");
-                //if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_PublisherUrl))) Application.OpenURL(HeGlobals.k_PublisherUrl);
-                //GUILayout.Space(8);
-
-                //GUILayout.Label("Contact", EditorStyles.boldLabel);
-                //GUILayout.Label("If you want to send me an email, please use the email from my Asset Store Publisher page (the link above this text).");
+                GUILayout.Label("Source Code", EditorStyles.boldLabel);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_RepositoryUrl))) Application.OpenURL(HeGlobals.k_RepositoryUrl);
+                GUILayout.Space(8);
             }
         }
 

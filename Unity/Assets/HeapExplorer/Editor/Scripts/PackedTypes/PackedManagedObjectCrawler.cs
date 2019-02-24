@@ -1,4 +1,9 @@
-﻿//#define DEBUG_BREAK_ON_ADDRESS
+﻿//
+// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://bitbucket.org/pschraut/unityheapexplorer/
+//
+
+//#define DEBUG_BREAK_ON_ADDRESS
 //#define ENABLE_PROFILING
 //#define ENABLE_PROFILER
 using System.Collections;
