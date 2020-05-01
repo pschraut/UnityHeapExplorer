@@ -2,10 +2,17 @@
 
 Heap Explorer is a Memory Profiler, Debugger and Analyzer for Unity. This repository hosts Heap Explorer for Unity 2019.3 and newer. For older versions, please visit the now obsolete repository on Bitbucket instead ([link](https://bitbucket.org/pschraut/unityheapexplorer/)).
 
-I spent a significant amount of time identifying and fixing memory leaks, as well as looking for memory optimization opportunities in Unity applications in the past. During this time, I often used Unity's [old Memory Profiler](https://bitbucket.org/Unity-Technologies/memoryprofiler) and while it's an useful tool, I never was entirely happy with it.
+I spent a significant amount of time identifying and fixing memory leaks, as well as looking for memory optimization opportunities in Unity applications in the past. During this time, I often used Unity's [old Memory Profiler](https://bitbucket.org/Unity-Technologies/memoryprofiler) and while it's an useful tool, I was never entirely happy with it.
 
-This lead me to write my own memory profiler where I have the opportunity to make all the things I didn't like about Unity's Memory Profiler better.
+This lead me to write my own memory profiler, where I have the opportunity to make all the things I didn't like about Unity's Memory Profiler better™.
 
+Fast-forward about a year, Unity Technologies announced they're working on a Memory Profiler too. This crushed my plans with what I had in mind for Heap Explorer. It was no longer a legit option for me to put a lot of time in the tool, as Unity Technologies tool is at least as good as what I'm able to come up with.
+
+After a lot of back-and-forth what to do with Heap Explorer, I came to the conclusion that the best option is to provide the source code and (mentally) move on. You can read more about this [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-4250698). 
+
+I've provided occasional updates since then, because several people still prefer Heap Explorer over Unity's Memory Profiler, due to its easier to understand UI/UX.
+
+I've also updated Heap Explorer to work with Unity 2019.3 and converted it into a Package, which means you should be able to use Heap Explorer for the entire 2019 LTS cycle, which ends in 2022.
 
 
 # Installation
@@ -14,19 +21,12 @@ In order to use the Heap Explorer, you have to add the package to your project. 
 
 In Unity's Package Manager, choose "Add package from git URL" and insert one of the Package URL's you can find below. Once Heap Explorer is installed, you can open it from Unity's main menu under "Window > Analysis > Heap Explorer".
 
+
 ## Package URL's
 
 | Version  |     Link      |
 |----------|---------------|
 | 3.2.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.2.0 |
-
-
-
-# Target audience
-
-Heap Explorer is a tool for programmers and people with a strong technical background, who are looking for a tool that helps them identifying memory issues and memory optimization opportunities in Unity applications.
-
-Heap Explorer is not fixing memory leaks, nor optimizing content for you automatically. Heap Explorer is a tool where you have to understand the presented data and draw your own conclusions from.
 
 
 
@@ -42,14 +42,13 @@ http://www.console-dev.de
 
 
 
-
 # Can I use this tool when I work on a commercial project?
 
 Yes. You can use Heap Explorer to debug, profile and analyze your hobby-, Indie- and commercial applications for free. You do not have to pay me anything.
 
-If, however, Heap Explorer helped you, I would appreciate a mentioning in your credits screen.
+If, however, Heap Explorer is useful to you, I would appreciate if you mention my name in your credits screen.
 
-Something like "Heap Explorer by Peter Schraut" would be very much appreciated from my side, but is not required. You can use Heap Explorer for free, without having to give me credit or mention you used the tool at all.
+Something like "Heap Explorer by Peter Schraut" would be very much appreciated from my side. You can, however, use Heap Explorer for free without having to give me credit at all.
 
 
 
@@ -303,12 +302,10 @@ The idea is, if you have two assets of the same type and name, but with differen
 
 The assumption falls apart as soon as the project contains more than one asset with the same name of the same type. For example, if you follow a project structure like shown below, Heap Explorer shows incorrect results.
 
-
-Asset Duplicate Detection Limitation:
-Heap Explorer incorrectly detects these textures as duplicates, because they have the same name:
+Heap Explorer incorrectly detects the following textures as duplicates, because they have the same name:
 * Assets/Characters/Alien_01/Texture.tga
 * Assets/Characters/Alien_02/Texture.tga
-* Assets/Characters/Alien_02/Texture.tga
+* Assets/Characters/Alien_03/Texture.tga
 
 
 ## Message to Unity Technologies
