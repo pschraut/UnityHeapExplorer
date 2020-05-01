@@ -14,6 +14,8 @@ I've provided occasional updates since then, because several people still prefer
 
 I've also updated Heap Explorer to work with Unity 2019.3 and converted it into a Package, which means you should be able to use Heap Explorer for the entire 2019 LTS cycle, which ends in 2022.
 
+[![](http://img.youtube.com/vi/tcTl_7y8JBA/0.jpg)](https://www.youtube.com/watch?v=tcTl_7y8JBA "")
+
 
 # Installation
 
