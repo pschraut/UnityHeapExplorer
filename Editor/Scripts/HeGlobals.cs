@@ -12,7 +12,7 @@ namespace HeapExplorer
     {
         public const string k_Title = "Heap Explorer";
         public const string k_Version = "3.2";
-        public const string k_DocuUrl = "http://www.console-dev.de/bin/HeapExplorer.pdf";
+        public const string k_DocuUrl = "https://github.com/pschraut/UnityHeapExplorer";
         public const string k_ForumUrl = "https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/";
         public const string k_RepositoryUrl = "https://github.com/pschraut/UnityHeapExplorer/";
     }
