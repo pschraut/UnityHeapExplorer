@@ -221,10 +221,12 @@ The C# Static Fields view displays managed types that contain at least one stati
 
 ![alt text](Documentation~/images/cs_static_fields_01.png "C# Static Fields")
 
+| Question  | Answer      |
+|----------|---------------|
 | Why is a static type missing? | According to my tests, static field memory is initialized when you first access a static type. If you have a static class in your code, but it is missing in the memory snapshot, it’s likely that your application did not access this class yet. |
-| Why does it not display an “Address” column? | Unity’s MemorySnapshot API does not provide at which memory address static field data is located. |
+| Why does it not display an "Address" column? | Unity’s MemorySnapshot API does not provide at which memory address static field data is located. |
 | Where is the Root Path view? | Static fields itself represent a root. There is no need for the Root Path view, because every static type is a root object. |
-| Where is the “Referenced By” view? | You can’t reference a static field. However, static fields can reference other objects, that’s why it shows the “References” view. |
+| Where is the "Referenced By" view? | You can’t reference a static field. However, static fields can reference other objects, that’s why it shows the “References” view. |
 
 
 
