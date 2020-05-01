@@ -121,7 +121,7 @@ You can switch the connected application in Unity's Profiler (Window > Profiler)
 
                             GUILayout.Label(string.Format("{0,2:##}", n + 1), GUILayout.Width(20));
 
-                            if (GUILayout.Button(new GUIContent("", "Remove entry from list"), HeEditorStyles.roundCloseButton, GUILayout.Width(16), GUILayout.Height(16)))
+                            if (GUILayout.Button(new GUIContent(HeEditorStyles.deleteImage, "Remove entry from list"), HeEditorStyles.iconStyle, GUILayout.Width(16), GUILayout.Height(16)))
                             {
                                 HeMruFiles.RemovePath(path);
                                 break;

@@ -209,6 +209,12 @@ namespace HeapExplorer
             private set;
         }
 
+        public static Texture2D deleteImage
+        {
+            get;
+            private set;
+        }
+
         public static GUIStyle dataVisualizer
         {
             get;
@@ -216,12 +222,6 @@ namespace HeapExplorer
         }
 
         static public GUIStyle monoSpaceLabel
-        {
-            get;
-            private set;
-        }
-
-        static public GUIStyle roundCloseButton
         {
             get;
             private set;
@@ -282,6 +282,7 @@ namespace HeapExplorer
             csReferenceTypeImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("3d3a16fb87d92f947b45e325db6a5d5b"));
             csEnumTypeImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("2aa66c73037d20f4ca0ca7ea063ed5ef"));
             csDelegateTypeImage = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath("eaab7ccc755b01c40be3d71543df1394"));
+            deleteImage = FindBuiltinTexture("sv_icon_none");
             searchImage = FindBuiltinTexture("Search Icon");
             gearImage = FindBuiltinTexture("EditorSettings Icon");
             unityImage = FindBuiltinTexture("SceneAsset Icon");
@@ -343,12 +344,6 @@ namespace HeapExplorer
             iconStyle.fixedHeight = 18;
             iconStyle.padding = new RectOffset();
             iconStyle.contentOffset = new Vector2(0, 0);
-
-            roundCloseButton = new GUIStyle((GUIStyle)"TL SelectionBarCloseButton");
-            roundCloseButton.fixedWidth = 0;
-            roundCloseButton.fixedHeight = 0;
-            roundCloseButton.stretchWidth = true;
-            roundCloseButton.stretchHeight = true;
 
             previewToolbar = new GUIStyle("preToolbar");
             previewBackground = new GUIStyle("preBackground");
