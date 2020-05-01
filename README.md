@@ -239,6 +239,105 @@ This view shows how many of those memory sections exist, which gives you an idea
 ![alt text](Documentation~/images/cs_memory_sections_01.png "C# Memory Sections")
 
 
+# C++ Objects
+
+The C++ Objects view displays native UnityEngine objects found in a memory snapshot.
+
+Unity offers little information of native objects, unfortunately. While it does provide the size of objects, a lot of data that would be interesting is missing, such as the width/height of a texture for example.
+
+The view has pretty much the same features as the C# Objects view, but it does not provide functionality to inspect native object properties, beside the few ones Unity provides.
+
+The view features the main list that contains all native UnityEngine objects (top-left), the limited information about the selected object in the top-right panel, root paths (bottom-right) and which objects it references and is referenced by.
+
+![alt text](Documentation~/images/cpp_view_01.png "C++ Objects")
+
+Here is what the C++ objects view displays.
+
+| Column  | Desscription      |
+|----------|---------------|
+| Type | The native object type. |
+| Name | The native object name. This what you can read using [UnityEngine.Object.name](https://docs.unity3d.com/ScriptReference/Object-name.html) |
+| Size | The size of a native UnityEngine object that it consumes in memory. |
+| Count | The number of native objects of the same type. |
+| DDoL | Has this object has been marked as [DontDestroyOnLoad](https://docs.unity3d.com/ScriptReference/Object.DontDestroyOnLoad.html)? |
+| Persistent | Is this object persistent? (Assets are persistent, objects stored in scenes are persistent, dynamically created objects are not) |
+| Address | The memory address of the native C++ object. This matches the "m_CachedPtr" field of UnityEngine.Object. |
+| InstanceID | The UnityEngine.Object.GetInstanceID() value. From my observations, positive id’s indicate persistent objects, while negative id’s indicate objects created during runtime. |
+| IsManager | Is this native object an internal Unity manager object? |
+| HideFlags | The [UnityEngine.Object.hideFlags](https://docs.unity3d.com/ScriptReference/Object-hideFlags.html) this native object has. |
+
+
+> Major Unity bug?!
+> Native objects often contain hundreds of millions of references to thousands of completely unrelated objects.
+> I’m pretty sure this a bug in the Unity editor or engine and reported it as Case 987839:
+> https://issuetracker.unity3d.com/issues/packedmemorysnapshot-unexpected-connections-between-native-objects
+> 
+> The following forum post, shows an actual real example of the problem. Unity creates a connection array of 509.117.918  elements.
+> https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3617188
+> 
+> Here is another post in the Profiler forum, which sounds pretty much like the same issue.
+> https://forum.unity.com/threads/case-1115073-references-to-native-objects-that-do-not-make-sense.608905/
+
+
+
+## Exclude NativeObject connections
+
+In order to workaround the major connections bug I described in the text above, where Unity provides more than five hundred million connections, I implemented a feature in Heap Explorer to exclude processing of native object connections.
+
+Unity still captures those connections, but Heap Explorer will not process most of them. While this means Heap Explorer isn't able to show which native object are connected, it's perhaps still better than not being able to capture a snapshot at all.
+You can activate this option from Heap Explorer's "File > Settings" menu. The option is called "Exclude NativeObject connections".
+
+Only activate this option if you see Heap Explorer running in this error:
+HeapExplorer: Failed to allocate 'new PackedConnection[]'.
+
+
+
+# C++ Asset Duplicates (guessed)
+
+The "C++ Asset Duplicates" view is guessing which asset might be duplicates. Unity Technologies explains how to guess if two assets are duplicates on this page:
+https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity2.html
+
+![alt text](Documentation~/images/cpp_asset_duplicates_01.png "C++ Asset Duplicates (guessed)")
+
+The idea is, if you have two assets of the same type and name, but with different instanceID's, these could be duplicates. This approach is of course everything else than reliable, but perhaps better than nothing. Therefore, I implemented this view in Heap Explorer.
+
+The assumption falls apart as soon as the project contains more than one asset with the same name of the same type. For example, if you follow a project structure like shown below, Heap Explorer shows incorrect results.
+
+
+Asset Duplicate Detection Limitation:
+Heap Explorer incorrectly detects these textures as duplicates, because they have the same name:
+* Assets/Characters/Alien_01/Texture.tga
+* Assets/Characters/Alien_02/Texture.tga
+* Assets/Characters/Alien_02/Texture.tga
+
+
+## Message to Unity Technologies
+It would be very useful if you store additional information in a “development mode” build, to be able to map a native UnityEngine object in a MemorySnapshot to its asset guid in the project for example. This would allow tools such Heap Explorer to implement some powerful functionality. This additional information should be stripped in non-development builds.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
