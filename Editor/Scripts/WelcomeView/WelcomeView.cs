@@ -47,9 +47,6 @@ namespace HeapExplorer
             {
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    DrawBetaNote();
-                    GUILayout.Space(8);
-
                     DrawMRU();
                     GUILayout.Space(8);
 
@@ -60,18 +57,6 @@ namespace HeapExplorer
                 }
 
                 GUILayout.FlexibleSpace();
-            }
-        }
-
-        void DrawBetaNote()
-        {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                GUILayout.Label("Beta Notice", HeEditorStyles.heading2);
-                GUILayout.Label(@"Unity 2017.4.6f1 and later 2017.4.x releases work with Scripting Runtime.NET 3.5.
-Unity 2018.2.6f1 works with Scripting Runtime .NET 3.5.
-
-Scripting Runtime.NET 4.x causes memory profiling issues in Unity 2017.4 to 2018.2.");
             }
         }
 
