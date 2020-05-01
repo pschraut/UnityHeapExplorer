@@ -69,13 +69,13 @@ namespace HeapExplorer
 
             var headerRect = rect;
             headerRect.height = 25;
-            GUI.DrawTexture(headerRect, TreeView.DefaultStyles.backgroundOdd.normal.background);
+            //GUI.DrawTexture(headerRect, TreeView.DefaultStyles.backgroundOdd.normal.background);
             headerRect.y += 10;
             GUI.Label(headerRect, "Address           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F", HeEditorStyles.monoSpaceLabel);
 
             rect.y += headerRect.height + 2;
             rect.height -= headerRect.height + 2;
-            GUI.DrawTexture(rect, TreeView.DefaultStyles.backgroundEven.normal.background);
+            //GUI.DrawTexture(rect, TreeView.DefaultStyles.backgroundEven.normal.background);
 
             headerRect.y += 15;
             headerRect.height = 1;
