@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 
 //#define DEBUG_BREAK_ON_ADDRESS
@@ -350,7 +350,7 @@ namespace HeapExplorer
                             continue;
                         }
                     }
-                    
+
                     if (typeIndex == baseType.baseOrElementTypeIndex || baseType.isArray)
                         break;
 
@@ -383,7 +383,7 @@ namespace HeapExplorer
                 {
                     if (!type.fields[j].isStatic)
                         continue;
-                    
+
                     //var field = type.fields[j];
                     //var fieldType = managedTypes[field.managedTypesArrayIndex];
                     //hasStaticField = true;
@@ -442,7 +442,7 @@ namespace HeapExplorer
                     newObj.managedTypesArrayIndex = fieldType.managedTypesArrayIndex;
                     newObj.staticBytes = staticClass.staticFieldBytes;
                     SetObjectSize(ref newObj, fieldType);
-                    
+
                     m_Crawl.Add(newObj);
                     m_TotalCrawled++;
                     continue;
@@ -530,7 +530,7 @@ namespace HeapExplorer
                 gcHandlesArrayIndex = -1,
                 nativeObjectsArrayIndex = -1
             };
-            
+
             // If the ManagedObject is the representation of a NativeObject, connect the two
             TryConnectNativeObject(ref managedObj);
             SetObjectSize(ref managedObj, m_Snapshot.managedTypes[managedObj.managedTypesArrayIndex]);
@@ -590,7 +590,7 @@ namespace HeapExplorer
         void SetObjectSize(ref PackedManagedObject managedObj, PackedManagedType type)
         {
             if (managedObj.size > 0)
-                return; // size is set already 
+                return; // size is set already
 
             managedObj.size = m_MemoryReader.ReadObjectSize(managedObj.address, type);
         }

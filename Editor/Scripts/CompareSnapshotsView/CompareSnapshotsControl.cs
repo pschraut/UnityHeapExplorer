@@ -1,6 +1,6 @@
 //
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -115,7 +115,7 @@ namespace HeapExplorer
             BuildManagedTree(snapshots, ref uniqueId, root);
             BuildMemoryTree(snapshots, ref uniqueId, root);
             BuildGCHandleTree(snapshots, ref uniqueId, root);
-            
+
             SortItemsRecursive(root, OnSortItem);
 
             return root;

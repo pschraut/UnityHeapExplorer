@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 //#define HEAPEXPLORER_DISPLAY_REFS
 using UnityEngine;
@@ -52,7 +52,7 @@ namespace HeapExplorer
 
             Reload();
         }
-        
+
         public void Clear()
         {
             m_Snapshot = null;
@@ -77,7 +77,7 @@ namespace HeapExplorer
             var section = m_Snapshot.managedHeapSections[item.arrayIndex];
             onSelectionChange.Invoke(section);
         }
-        
+
         //public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, bool removeUnalignedSections = false)
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, PackedMemorySection[] sections)
         {
@@ -90,7 +90,7 @@ namespace HeapExplorer
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
             }
-            
+
             for (int n = 0, nend = sections.Length; n < nend; ++n)
             {
                 var section = sections[n];

@@ -1,6 +1,6 @@
 //
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -66,8 +66,8 @@ namespace HeapExplorer
 
             OnInitialize();
 
-            var text = string.Format("{0} {1} = {2}\n\n{3}", 
-                displayType, 
+            var text = string.Format("{0} {1} = {2}\n\n{3}",
+                displayType,
                 displayName,
                 displayValue,
                 PackedManagedTypeUtility.GetInheritanceAsString(m_Snapshot, type.managedTypesArrayIndex));

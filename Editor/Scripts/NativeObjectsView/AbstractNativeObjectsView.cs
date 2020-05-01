@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -136,7 +136,7 @@ namespace HeapExplorer
             // Derived classes overwrite this method to trigger their
             // individual tree rebuild jobs
         }
-        
+
         protected void DrawFilterToolbarButton()
         {
             var hasFilter = false;
@@ -201,7 +201,7 @@ namespace HeapExplorer
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             OnDrawHeader();
-                            
+
                             if (m_SearchField.OnToolbarGUI())
                                 m_NativeObjectsControl.Search(m_SearchField.text);
                         }

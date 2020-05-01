@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -225,7 +225,7 @@ namespace HeapExplorer
 
             m_Search = new SearchTextParser.Result();
             base.searchString = "";
-            
+
             // If the same item is selected already, nothing to do
             var currentSelection = GetSelection();
             if (currentSelection != null && currentSelection.Count > 0 && currentSelection[0] == item.id)
@@ -392,7 +392,7 @@ namespace HeapExplorer
         {
             count = 0;
         }
-        
+
         public abstract void OnGUI(Rect position, int column);
     }
 

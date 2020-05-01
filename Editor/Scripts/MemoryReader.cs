@@ -1,6 +1,6 @@
 //
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -212,7 +212,7 @@ namespace HeapExplorer
             // and finally bit 31 indicates the sign of the Decimal value, 0 meaning
             // positive and 1 meaning negative.
             //
-            // struct Decimal 
+            // struct Decimal
             // {
             //     private int flags;
             //     private int hi;
@@ -604,11 +604,11 @@ namespace HeapExplorer
                 var pointer = ReadPointer(address);
                 if (pointer == 0)
                     return "null";
-                
+
                 var value = string.Format(StringFormat.Address, pointer);
                 return value;
             }
-           
+
             ///////////////////////////////////////////////////////////////////
             // VALUE TYPES
             //

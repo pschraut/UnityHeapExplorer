@@ -1,6 +1,6 @@
 //
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace HeapExplorer
             var pointer = m_MemoryReader.ReadPointer(address);
             var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex];
             var dim0Length = address > 0 ? m_MemoryReader.ReadArrayLength(address, type, 0) : 0;
-            
+
             displayType = type.name;
             displayValue = "null";
             isExpandable = dim0Length > 0;

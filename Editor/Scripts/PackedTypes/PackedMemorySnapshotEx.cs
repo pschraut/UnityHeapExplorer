@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 
 //#define ENABLE_PROFILING
@@ -106,7 +106,7 @@ namespace HeapExplorer
             //errors.Add(text);
             Debug.LogWarning(text);
         }
-        
+
         public void FindManagedStaticFieldsOfType(PackedManagedType type, List<int> target)
         {
             if (target == null)
@@ -162,7 +162,7 @@ namespace HeapExplorer
 
             return typeIndex;
         }
-        
+
         /// <summary>
         /// Find the managed object counter-part of a native object.
         /// </summary>

@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System;
 using UnityEngine;
@@ -117,7 +117,7 @@ namespace HeapExplorer
         void AssertInt(string fieldName, int value, RichManagedObject managedObject)
         {
             var memory = new MemoryReader(m_snapshot);
-            
+
             var field = GetField(fieldName, managedObject);
             Assert.AreEqual(value, memory.ReadInt32((uint)field.offset + managedObject.address));
         }

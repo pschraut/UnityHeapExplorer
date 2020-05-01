@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -82,7 +82,7 @@ namespace HeapExplorer
                         {
                             progressUpdate = Time.realtimeSinceStartup + 0.1f;
                             if (EditorUtility.DisplayCancelableProgressBar(
-                                "Saving...", 
+                                "Saving...",
                                 string.Format("Memory Section {0} / {1}", n+1, sections.Length),
                                 (n + 1.0f) / sections.Length))
                                 break;

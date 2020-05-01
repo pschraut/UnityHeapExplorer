@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace HeapExplorer
     /// <remarks>
     /// A GCHandle is a struct that contains a handle to an object.
     /// It's mainly used for holding onto a managed object that gets passed to the unmanaged world to prevent the GC from collecting the object.
-    /// You can also create a Pinned GCHandle to a managed object and retrieve the object's address in memory. 
+    /// You can also create a Pinned GCHandle to a managed object and retrieve the object's address in memory.
     /// https://blogs.msdn.microsoft.com/clyon/2005/03/18/the-truth-about-gchandles/
     /// </remarks>
     [Serializable]
@@ -25,7 +25,7 @@ namespace HeapExplorer
     {
         // The address of the managed object that the GC handle is referencing.
         public System.UInt64 target;
-        
+
         [NonSerialized] public System.Int32 gcHandlesArrayIndex;
         [NonSerialized] public System.Int32 managedObjectsArrayIndex;
 

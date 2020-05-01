@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ namespace HeapExplorer
 
             Reload();
         }
-        
+
         public void Select(PackedGCHandle obj)
         {
             var item = FindItemByAddressRecursive(rootItem, (ulong)(obj.target));
@@ -158,7 +158,7 @@ namespace HeapExplorer
 
             return root;
         }
-        
+
         protected override int OnSortItem(TreeViewItem aa, TreeViewItem bb)
         {
             var sortingColumn = multiColumnHeader.sortedColumnIndex;
@@ -267,7 +267,7 @@ namespace HeapExplorer
                 target[count++] = typeName;
                 target[count++] = string.Format(StringFormat.Address, address);
             }
-            
+
             public override void OnGUI(Rect position, int column)
             {
                 if (column == 0)
@@ -363,7 +363,7 @@ namespace HeapExplorer
             {
                 m_Type = new RichManagedType(snapshot, managedTypesArrayIndex);
             }
-            
+
             public override void OnGUI(Rect position, int column)
             {
                 switch ((Column)column)

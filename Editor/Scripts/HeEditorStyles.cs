@@ -1,6 +1,6 @@
 //
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -289,7 +289,7 @@ namespace HeapExplorer
             //eyeImage = FindBuiltinTexture("ViewToolOrbit On");
             eyeImage = FindBuiltinTexture(EditorGUIUtility.isProSkin ? "ViewToolOrbit On" : "ViewToolOrbit");
             loadingImageBig = FindBuiltinTexture("EditorSettings Icon");
-            
+
             splitterImage = FindBuiltinTexture("MenuItemHover");
             warnImage = FindBuiltinTexture("console.warnicon");
             assetImage = FindBuiltinTexture("ScriptableObject Icon");
@@ -387,7 +387,7 @@ namespace HeapExplorer
             //gotoObject = "Icon.ExtrapolationContinue"; // right arrow
             //gotoObject = "Icon.ExtrapolationLoop"; // arrow in cycle
             //gotoObject = (GUIStyle)"Icon.ExtrapolationHold"; // infinity
-            //gotoObject = (GUIStyle)"Icon.ExtrapolationPingPong"; 
+            //gotoObject = (GUIStyle)"Icon.ExtrapolationPingPong";
             //gotoObject = (GUIStyle)"U2D.dragDot";
             //gotoObject = (GUIStyle)"flow node hex 2";
             //gotoObject = (GUIStyle)"GridToggle";
@@ -417,7 +417,7 @@ namespace HeapExplorer
                 if (snapshot.IsSubclassOf(type, snapshot.coreTypes.systemEnum))
                     return new GUIContent(csEnumTypeImage, valueTypeLabel);
 
-                return new GUIContent(csValueTypeImage, valueTypeLabel); 
+                return new GUIContent(csValueTypeImage, valueTypeLabel);
             }
 
             return new GUIContent(csReferenceTypeImage, referenceTypeLabel);

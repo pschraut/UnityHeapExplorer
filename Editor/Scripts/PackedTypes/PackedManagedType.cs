@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -158,7 +158,7 @@ namespace HeapExplorer
         [NonSerialized] PackedManagedField[] m_StaticFields;
 
         /// <summary>
-        /// Gets whether this is a common language runtime primitive type. 
+        /// Gets whether this is a common language runtime primitive type.
         /// </summary>
         public bool isPrimitive
         {
@@ -248,7 +248,7 @@ namespace HeapExplorer
                 return true;
             }
         }
-        
+
         public bool TryGetField(string name, out PackedManagedField field)
         {
             for (int n=0, nend = fields.Length; n < nend; ++n)
@@ -455,7 +455,7 @@ namespace HeapExplorer
             fieldType.managedTypesArrayIndex = -1;
             fieldType.nativeTypeArrayIndex = -1;
             fieldType.baseOrElementTypeIndex = -1;
-            
+
             var loopguard = 0;
             do
             {

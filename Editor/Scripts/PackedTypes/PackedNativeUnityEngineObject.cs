@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -48,7 +48,7 @@ namespace HeapExplorer
 
         // Is this native object an internal Unity manager object?
         public System.Boolean isManager;
-        
+
         const System.Int32 k_Version = 1;
 
         public static void Write(System.IO.BinaryWriter writer, PackedNativeUnityEngineObject[] value)

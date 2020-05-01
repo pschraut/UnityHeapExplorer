@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +14,6 @@ namespace HeapExplorer
         public const string k_Version = "beta 3.1";
         public const string k_DocuUrl = "http://www.console-dev.de/bin/HeapExplorer.pdf";
         public const string k_ForumUrl = "https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/";
-        public const string k_RepositoryUrl = "https://bitbucket.org/pschraut/unityheapexplorer/";
+        public const string k_RepositoryUrl = "https://github.com/pschraut/UnityHeapExplorer/";
     }
 }

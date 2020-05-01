@@ -1,6 +1,6 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019 Peter Schraut (www.console-dev.de). See LICENSE.md
-// https://bitbucket.org/pschraut/unityheapexplorer/
+// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
 using System.Collections.Generic;
@@ -41,7 +41,7 @@ namespace HeapExplorer
         protected GenericMenu m_Menu;
 
         static Dictionary<string, System.Type> s_Visualizers = new Dictionary<string, System.Type>();
-        
+
         public void Initialize(PackedMemorySnapshot snapshot, AbstractMemoryReader memoryReader, System.UInt64 address, PackedManagedType type)
         {
             m_Snapshot = snapshot;
