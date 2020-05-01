@@ -18,7 +18,7 @@ namespace HeapExplorer
 
         static HeEditorUtility()
         {
-            var splits = Application.version.Split(new[] { '.' });
+            var splits = Application.unityVersion.Split(new[] { '.' });
             if (splits.Length >= 1) int.TryParse(splits[0], out s_Major);
             if (splits.Length >= 2) int.TryParse(splits[1], out s_Minor);
 
@@ -41,7 +41,9 @@ namespace HeapExplorer
         /// </summary>
         public static void OpenProfiler()
         {
-            if (IsVersionOrNewer(2018, 2))
+            if (IsVersionOrNewer(2018, 3))
+                EditorApplication.ExecuteMenuItem("Window/Analysis/Profiler");
+            else if (IsVersionOrNewer(2018, 2))
                 EditorApplication.ExecuteMenuItem("Window/Debug/Profiler");
             else
                 EditorApplication.ExecuteMenuItem("Window/Profiler");
