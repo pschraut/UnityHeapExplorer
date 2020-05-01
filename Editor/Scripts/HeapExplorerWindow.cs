@@ -164,7 +164,11 @@ namespace HeapExplorer
             s_ViewTypes.Add(type);
         }
 
+#if UNITY_2018_3_OR_NEWER
+        [MenuItem("Window/Analysis/Heap Explorer", priority = 5)]
+#else
         [MenuItem("Window/Heap Explorer")]
+#endif
         static void Create()
         {
             var supported = true;
