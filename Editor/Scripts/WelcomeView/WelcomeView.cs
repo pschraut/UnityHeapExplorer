@@ -40,7 +40,7 @@ namespace HeapExplorer
 
             GUILayout.Space(4);
             GUILayout.Label(string.Format("{0} {1} for Unity", HeGlobals.k_Title, HeGlobals.k_Version), HeEditorStyles.heading1);
-            GUILayout.Label("Created by Peter Schraut");
+            GUILayout.Label("Created by Peter Schraut (www.console-dev.de)");
             GUILayout.Space(16);
 
             using (new EditorGUILayout.HorizontalScope())
@@ -71,12 +71,18 @@ namespace HeapExplorer
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_DocuUrl))) Application.OpenURL(HeGlobals.k_DocuUrl);
                 GUILayout.Space(8);
 
-                GUILayout.Label("Download, feedback and bug-reports", EditorStyles.boldLabel);
+                GUILayout.Label("Feedback and bug-reports", EditorStyles.boldLabel);
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
 
-                GUILayout.Label("Source Code", EditorStyles.boldLabel);
+                GUILayout.Label("Unity Package and C# Source Code", EditorStyles.boldLabel);
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_RepositoryUrl))) Application.OpenURL(HeGlobals.k_RepositoryUrl);
+                GUILayout.Space(8);
+
+                var memprofLink = "https://forum.unity.com/threads/new-memory-profiler-preview-package-available-for-unity-2018-3-and-newer-versions.597271/";
+                GUILayout.Label("Unity Memory Profiler", EditorStyles.boldLabel);
+                GUILayout.Label("Unity Technologies presented during Unite 2018 that they were working on a new Memory Profiler, which was made available shortly after. This new Memory Profiler will make Heap Explorer obsolete eventually, if it didn't already. Don't miss to check out their Memory Profiler, it must be far superior to Heap Explorer by now.", EditorStyles.wordWrappedLabel);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(memprofLink))) Application.OpenURL(memprofLink);
                 GUILayout.Space(8);
             }
         }
