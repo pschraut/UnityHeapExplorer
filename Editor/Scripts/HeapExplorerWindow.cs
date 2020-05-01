@@ -37,7 +37,7 @@ namespace HeapExplorer
         }
 
 #pragma warning disable 0414
-        //[NonSerialized] Test_Editor m_TestVariables = new Test_Editor(); // Allows me to easily check/test various types when capturing a snapshot in the editor.
+        [NonSerialized] TestVariables m_TestVariables = new TestVariables(); // Allows me to easily check/test various types when capturing a snapshot in the editor.
         [NonSerialized] bool m_IsCapturing; // Whether the tool is currently capturing a memory snapshot
         [NonSerialized] GotoHistory m_GotoHistory = new GotoHistory();
         [NonSerialized] PackedMemorySnapshot m_Heap; // The active memory snapshot
