@@ -88,15 +88,56 @@ The "delta" columns indicate changes. The "C# Objects" and "C++ Objects" nodes c
 Snapshot "A" is always the one you loaded using "File > Open Snapshot" or captured. While "B" is the memory snapshot that is used for comparison and can be replaced using the "Load..." button in the Compare Snapshot view.
 
 
+# C# Objects
+
+The C# Objects view displays managed objects found in a memory snapshot. Object instances are grouped by type. Grouping object instances by type allows to see how much memory a certain type is using.
+
+![alt text](Documentation~/images/cs_view_01.png "C# Objects View")
+
+| Location  | Description      |
+|----------|---------------|
+| Top-left panel | The main list that shows all managed objects found in the snapshot. |
+| Top-right panel | An Inspector that displays fields and their corresponding values of the selected object. |
+| Bottom-right panel | One or multiple paths to root of the selected object. |
+| Bottom-left panel | Objects that hold a reference to the selected object. |
+
+You can left-click on a column to sort and right-click on a column header to toggle individual columns:
+
+| Column  | Description      |
+|----------|---------------|
+| C# Type | The managed type of the object instance, such as System.String. |
+| C++ Name | If the C# object has a C++ counter-part, basically C# types that derive from UnityEngine.Object have, the name of the C++ native object is displayed in this column (UnityEngine.Object.name). |
+| Size | The amount of memory a managed object or group of managed objects is using. | 
+| Count | The number of managed objects in a group. |
+| Address | The memory address of a managed object. |
+| Assembly | The assembly (DLL) name in which the type lives. |
 
 
+# C# Object Inspector
 
+The C# Object Inspector displays fields of a managed object, along with the field type and value. I tried to mimic the feel of Visual Studio's Watch window.
 
+![alt text](Documentation~/images/cs_inspector_01.png "C# Object Inspector")
 
+The arrow in-front of the Name indicates the field provides further fields itself, or in the case of an array, provides array elements. Click the arrow to expand, as shown below.
 
+![alt text](Documentation~/images/cs_inspector_02.png "C# Object Inspector")
 
+The icon in-front of the Name represents the "high-level type" of a field, such as: ReferenceType, ValueType, Enum and Delegate. If the field is a ReferenceType, a button is shown next to the Name, which can be used to jump to the object instance.
 
+![alt text](Documentation~/images/cs_inspector_03.png "C# Object Inspector")
 
+A magnification icon appears next to the value, if the type provides a specific "Data Visualizer". A data visualizer allows Heap Explorer to display the value in a more specific way, tailored to the type, as shown below.
+
+![alt text](Documentation~/images/cs_inspector_04.png "C# Object Inspector")
+
+If a field is a pointer-type (ReferenceType, IntPtr, UIntPtr), but it points to null, the field is grayed-out. I found this very useful, because you often ignore null-values and having those grayed-out, makes it easier to skip them mentally.
+
+![alt text](Documentation~/images/cs_inspector_05.png "C# Object Inspector")
+
+The eye-like icon in the top-right corner of the Inspector can be used to toggle between the field- and raw-memory mode. I don't know how useful the raw-memory mode is for you, but it helped me to understand object memory, field layouts, etc while I was developing Heap Explorer. I thought there is no need to remove it.
+
+![alt text](Documentation~/images/cs_hexview_01.png "C# Object Inspector")
 
 
 
