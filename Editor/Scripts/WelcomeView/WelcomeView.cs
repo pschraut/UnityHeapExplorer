@@ -47,12 +47,6 @@ namespace HeapExplorer
             {
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    if (PlayerSettings.scriptingRuntimeVersion == ScriptingRuntimeVersion.Latest)
-                    {
-                        EditorGUILayout.HelpBox("The MemoryProfiling API does not work with .NET 4.x Scripting Runtime, which your project makes use of.", MessageType.Warning);
-                        GUILayout.Space(8);
-                    }
-
                     DrawBetaNote();
                     GUILayout.Space(8);
 
