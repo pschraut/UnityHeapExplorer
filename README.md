@@ -267,16 +267,16 @@ Here is what the C++ objects view displays.
 | HideFlags | The [UnityEngine.Object.hideFlags](https://docs.unity3d.com/ScriptReference/Object-hideFlags.html) this native object has. |
 
 
-> Major Unity bug?!
-> Native objects often contain hundreds of millions of references to thousands of completely unrelated objects.
-> I’m pretty sure this a bug in the Unity editor or engine and reported it as Case 987839:
-> https://issuetracker.unity3d.com/issues/packedmemorysnapshot-unexpected-connections-between-native-objects
-> 
-> The following forum post, shows an actual real example of the problem. Unity creates a connection array of 509.117.918  elements.
-> https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3617188
-> 
-> Here is another post in the Profiler forum, which sounds pretty much like the same issue.
-> https://forum.unity.com/threads/case-1115073-references-to-native-objects-that-do-not-make-sense.608905/
+## Message to Unity Technologies
+Unity bug?! Native objects often contain hundreds of millions of references to thousands of completely unrelated objects.
+I’m pretty sure this a bug in the Unity editor or engine and reported it as Case 987839:
+https://issuetracker.unity3d.com/issues/packedmemorysnapshot-unexpected-connections-between-native-objects
+ 
+The following forum post, shows an actual real example of the problem. Unity creates a connection array of 509.117.918  elements.
+https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3617188
+ 
+Here is another post in the Profiler forum, which sounds pretty much like the same issue.
+https://forum.unity.com/threads/case-1115073-references-to-native-objects-that-do-not-make-sense.608905/
 
 
 
