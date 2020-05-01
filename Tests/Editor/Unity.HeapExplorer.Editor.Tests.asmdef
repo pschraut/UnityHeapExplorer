@@ -1,0 +1,17 @@
+{
+    "name": "Unity.HeapExplorer.Editor.Tests",
+    "references": [
+        "GUID:f45de16929cc3034db2b2cc01b230fc6"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
