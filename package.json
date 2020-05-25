@@ -1,8 +1,8 @@
 {
   "name": "com.oddworm.heapexplorer",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "displayName": "Heap Explorer",
-  "description": "Heap Explorer is Memory Profiler, Debugger and Analyzer.",
+  "description": "Heap Explorer is Memory Profiler, Debugger and Analyzer.\n\nYou can find Heap Explorer in Unity's main menu under 'Windows > Analysis > Heap Explorer'.",
   "documentationUrl": "https://github.com/pschraut/UnityHeapExplorer",
   "unity": "2019.3",
   "dependencies": {

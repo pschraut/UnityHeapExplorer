@@ -6,9 +6,9 @@ I spent a significant amount of time identifying and fixing memory leaks, as wel
 
 This lead me to write my own memory profiler, where I have the opportunity to make all the things I didn't like about Unity's Memory Profiler better™.
 
-Fast-forward about a year, Unity Technologies announced they're working on a Memory Profiler too. This crushed my plans with what I had in mind for Heap Explorer. It was no longer a legit option for me to put a lot of time in the tool, as Unity Technologies tool is at least as good as what I'm able to come up with.
+Fast-forward about a year, Unity Technologies announced they're working on a [new Memory Profiler](https://forum.unity.com/threads/new-memory-profiler-preview-package-available-for-unity-2018-3-and-newer-versions.597271/) too. This crushed my plans with what I had in mind for Heap Explorer. It was no longer a legit option for me to put a lot of time in the tool, because Unity Technologies tool is going to be at least as good as what I'm able to come up with.
 
-After a lot of back-and-forth what to do with Heap Explorer, I came to the conclusion that the best option is to provide the source code and (mentally) move on. You can read more about this [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-4250698). 
+After a lot of back-and-forth what to do with Heap Explorer, I came to the conclusion the best option is to provide the source code and (mentally) move on. You can read more about this [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-4250698). 
 
 I've provided occasional updates since then, because several people still prefer Heap Explorer over Unity's Memory Profiler, due to its easier to understand UI/UX.
 
@@ -184,6 +184,15 @@ The view groups duplicates by type. If a type, or group, occurs more than once i
 For example, if you have ten "Banana" strings and ten "Apple" strings, these would be shown as two "System.String" groups. Two string groups, because both are of the same type, but with different content.
 
 The view can be sorted by various columns. The most interesting ones likely being "Size" and "Count".  Sorting the view by "Size" allows to quickly see where most memory is wasted due duplicated objects.
+
+
+# C# Empty Shell Objects
+
+The C# Empty Shell Objects View analyzes managed objects of type UnityEngine.Object if their native object counter-part has been destroyed, which can be a memory leak.
+
+If the m_CachedPtr value of a managed unity engine object points to null, it means its native object underneath has already been destroyed, but it leaked the managed shell. Please see [this post](https://forum.unity.com/threads/help-understanding-diff-data-from-memory-profiler.862813/#post-5684956) for more details.
+
+![alt text](Documentation~/images/cs_empty_shell_objects_01.png "Empty Shell Objects")
 
 
 # C# Delegates
