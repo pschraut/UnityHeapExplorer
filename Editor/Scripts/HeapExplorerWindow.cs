@@ -171,32 +171,12 @@ namespace HeapExplorer
 #endif
         static void Create()
         {
-            var supported = true;
-
-            var numbers = Application.unityVersion.Split('.');
-            if (numbers != null && numbers.Length >= 2)
+            if (!HeEditorUtility.IsVersionOrNewer(2019, 3))
             {
-                int major, minor;
-                if (!int.TryParse(numbers[0], out major)) major = -1;
-                if (!int.TryParse(numbers[1], out minor)) minor = -1;
-
-                if (major < 2017) supported = false;
-                if (major == 2017 && minor < 4) supported = false;
-            }
-
-            if (!supported)
-            {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2017.4 or newer. I tested the tool with Unity 2017.4.6f1.", HeGlobals.k_Title), "Forum", "Close"))
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2019.3 or newer.", HeGlobals.k_Title), "Forum", "Close"))
                     Application.OpenURL(HeGlobals.k_ForumUrl);
                 return;
             }
-
-            //if (DateTime.Now.Year > 2018)
-            //{
-            //    if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("The {0} {1} build expired.", HeGlobals.k_Title, HeGlobals.k_Version), "Forum", "Close"))
-            //        Application.OpenURL(HeGlobals.k_ForumUrl);
-            //    return;
-            //}
 
             EditorWindow.GetWindow<HeapExplorerWindow>();
         }
