@@ -44,9 +44,9 @@ namespace HeapExplorer
         /// </summary>
         public static bool IsVersionOrNewer(int major, int minor)
         {
-            if (s_Major < major) return false;
-            if (s_Minor < minor) return false;
-            return true;
+            if (s_Major > major) return true;
+            if (s_Major == major && s_Minor >= minor) return true;
+            return false;
         }
 
         /// <summary>
