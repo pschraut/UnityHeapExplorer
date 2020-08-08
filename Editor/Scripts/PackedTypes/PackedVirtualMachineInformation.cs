@@ -67,8 +67,10 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedVirtualMachineInformation FromMemoryProfiler(UnityEditor.MemoryProfiler.VirtualMachineInformation source)
+        public static PackedVirtualMachineInformation FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
+            var source = snapshot.virtualMachineInformation;
+
             var value = new PackedVirtualMachineInformation
             {
                 pointerSize = source.pointerSize,
@@ -77,7 +79,7 @@ namespace HeapExplorer
                 arrayBoundsOffsetInHeader = source.arrayBoundsOffsetInHeader,
                 arraySizeOffsetInHeader = source.arraySizeOffsetInHeader,
                 allocationGranularity = source.allocationGranularity,
-                heapFormatVersion = source.heapFormatVersion,
+                heapFormatVersion = 2019,
             };
             return value;
         }

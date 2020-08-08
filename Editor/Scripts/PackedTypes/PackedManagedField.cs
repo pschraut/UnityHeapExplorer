@@ -65,22 +65,6 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedManagedField[] FromMemoryProfiler(UnityEditor.MemoryProfiler.FieldDescription[] source)
-        {
-            var value = new PackedManagedField[source.Length];
-            for (int n = 0, nend = source.Length; n < nend; ++n)
-            {
-                value[n] = new PackedManagedField
-                {
-                    name = source[n].name,
-                    offset = source[n].offset,
-                    managedTypesArrayIndex = source[n].typeIndex,
-                    isStatic = source[n].isStatic
-                };
-            };
-            return value;
-        }
-
         public override string ToString()
         {
             var text = string.Format("name: {0}, offset: {1}, typeIndex: {2}, isStatic: {3}", name, offset, managedTypesArrayIndex, isStatic);

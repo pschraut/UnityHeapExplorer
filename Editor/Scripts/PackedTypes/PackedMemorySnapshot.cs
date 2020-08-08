@@ -53,29 +53,26 @@ namespace HeapExplorer
                 value.busyString = "Loading Header";
                 value.header = PackedMemorySnapshotHeader.FromMemoryProfiler();
 
-                value.busyString = string.Format("Loading {0} Native Types", source.nativeTypes.Length);
-                value.nativeTypes = PackedNativeType.FromMemoryProfiler(source.nativeTypes);
+                value.busyString = string.Format("Loading {0} Native Types", source.nativeTypes.GetNumEntries());
+                value.nativeTypes = PackedNativeType.FromMemoryProfiler(source);
 
-                value.busyString = string.Format("Loading {0} Native Objects", source.nativeObjects.Length);
-                value.nativeObjects = PackedNativeUnityEngineObject.FromMemoryProfiler(source.nativeObjects);
+                value.busyString = string.Format("Loading {0} Native Objects", source.nativeObjects.GetNumEntries());
+                value.nativeObjects = PackedNativeUnityEngineObject.FromMemoryProfiler(source);
 
-                value.busyString = string.Format("Loading {0} GC Handles", source.gcHandles.Length);
-                value.gcHandles = PackedGCHandle.FromMemoryProfiler(source.gcHandles);
+                value.busyString = string.Format("Loading {0} GC Handles", source.gcHandles.GetNumEntries());
+                value.gcHandles = PackedGCHandle.FromMemoryProfiler(source);
 
-                value.busyString = string.Format("Loading {0} Object Connections", source.connections.Length);
-                if (args.excludeNativeFromConnections)
-                    value.connections = ConnectionsFromMemoryProfilerWithoutNativeHACK(value, source);
-                else
-                    value.connections = PackedConnection.FromMemoryProfiler(source.connections);
+                value.busyString = string.Format("Loading {0} Object Connections", source.connections.GetNumEntries());
+                value.connections = PackedConnection.FromMemoryProfiler(source);
 
-                value.busyString = string.Format("Loading {0} Managed Heap Sections", source.managedHeapSections.Length);
-                value.managedHeapSections = PackedMemorySection.FromMemoryProfiler(source.managedHeapSections);
+                value.busyString = string.Format("Loading {0} Managed Heap Sections", source.managedHeapSections.GetNumEntries());
+                value.managedHeapSections = PackedMemorySection.FromMemoryProfiler(source);
 
-                value.busyString = string.Format("Loading {0} Managed Types", source.typeDescriptions.Length);
-                value.managedTypes = PackedManagedType.FromMemoryProfiler(source.typeDescriptions);
+                value.busyString = string.Format("Loading {0} Managed Types", source.typeDescriptions.GetNumEntries());
+                value.managedTypes = PackedManagedType.FromMemoryProfiler(source);
 
                 value.busyString = "Loading VM Information";
-                value.virtualMachineInformation = PackedVirtualMachineInformation.FromMemoryProfiler(source.virtualMachineInformation);
+                value.virtualMachineInformation = PackedVirtualMachineInformation.FromMemoryProfiler(source);
             }
             catch (System.Exception e)
             {
@@ -86,75 +83,28 @@ namespace HeapExplorer
             return value;
         }
 
-        static void VerifyMemoryProfilerSnapshot(UnityEditor.MemoryProfiler.PackedMemorySnapshot snapshot)
+        static void VerifyMemoryProfilerSnapshot(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
             if (snapshot == null)
                 throw new Exception("No snapshot was found.");
 
-            if (snapshot.typeDescriptions == null || snapshot.typeDescriptions.Length == 0)
+            if (snapshot.typeDescriptions == null || snapshot.typeDescriptions.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'typeDescriptions'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
 
-            if (snapshot.managedHeapSections == null || snapshot.managedHeapSections.Length == 0)
+            if (snapshot.managedHeapSections == null || snapshot.managedHeapSections.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'managedHeapSections'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
 
-            if (snapshot.gcHandles == null || snapshot.gcHandles.Length == 0)
+            if (snapshot.gcHandles == null || snapshot.gcHandles.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'gcHandles'. This is a known issue when using .NET 4.x Scripting Runtime.\n(Case 1079363) PackedMemorySnapshot: .NET 4.x Scripting Runtime breaks memory snapshot");
 
-            if (snapshot.nativeTypes == null || snapshot.nativeTypes.Length == 0)
+            if (snapshot.nativeTypes == null || snapshot.nativeTypes.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'nativeTypes'.");
 
-            if (snapshot.nativeObjects == null || snapshot.nativeObjects.Length == 0)
+            if (snapshot.nativeObjects == null || snapshot.nativeObjects.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'nativeObjects'.");
 
-            if (snapshot.connections == null || snapshot.connections.Length == 0)
+            if (snapshot.connections == null || snapshot.connections.GetNumEntries() == 0)
                 throw new Exception("The snapshot does not contain any 'connections'.");
-        }
-
-        // this method is a hack that excludes native object connections to workaround an unity bug.
-        // https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3615223
-        static PackedConnection[] ConnectionsFromMemoryProfilerWithoutNativeHACK(PackedMemorySnapshot snapshot, UnityEditor.MemoryProfiler.PackedMemorySnapshot source)
-        {
-            var managedStart = 0;
-            var managedEnd = managedStart + source.gcHandles.Length;
-            var nativeStart = managedStart + managedEnd;
-            var nativeEnd = nativeStart + source.nativeObjects.Length;
-            var output = new List<PackedConnection>(1024 * 1024);
-
-            for (int n = 0, nend = source.connections.Length; n < nend; ++n)
-            {
-                if ((n % (nend / 100)) == 0)
-                {
-                    var progress = ((n + 1.0f) / nend) * 100;
-                    snapshot.busyString = string.Format("Analyzing GCHandle Connections\n{0}/{1}, {2:F0}% done", n + 1, source.connections.Length, progress);
-                }
-
-                var connection = new PackedConnection
-                {
-                    from = source.connections[n].from,
-                    to = source.connections[n].to,
-                };
-
-                connection.fromKind = PackedConnection.Kind.GCHandle;
-                if (connection.from >= nativeStart && connection.from < nativeEnd)
-                {
-                    connection.from -= nativeStart;
-                    connection.fromKind = PackedConnection.Kind.Native;
-                }
-
-                connection.toKind = PackedConnection.Kind.GCHandle;
-                if (connection.to >= nativeStart && connection.to < nativeEnd)
-                {
-                    connection.to -= nativeStart;
-                    connection.toKind = PackedConnection.Kind.Native;
-                }
-
-                if (connection.fromKind != PackedConnection.Kind.Native)
-                    output.Add(connection);
-            }
-
-            snapshot.header.nativeObjectFromConnectionsExcluded = true;
-            Debug.LogWarning("HeapExplorer: Native object 'from' connections are excluded due workaround an Unity bug. Thus the object connections in Heap Explorer show fewer connections than actually exist.\nhttps://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3615223");
-            return output.ToArray();
         }
 
         /// <summary>
@@ -219,7 +169,6 @@ namespace HeapExplorer
     // Specifies how an Unity MemorySnapshot must be converted to HeapExplorer format.
     public class MemorySnapshotProcessingArgs
     {
-        public UnityEditor.MemoryProfiler.PackedMemorySnapshot source;
-        public bool excludeNativeFromConnections;
+        public UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot source;
     }
 }

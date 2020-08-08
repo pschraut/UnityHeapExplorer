@@ -70,28 +70,68 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedConnection[] FromMemoryProfiler(UnityEditor.MemoryProfiler.Connection[] source)
+        public static PackedConnection[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            PackedConnection[] value = null;
-            try
+            var result = new List<PackedConnection>(1024*1024);
+
+            // Get all NativeObject instanceIds
+            var nativeObjects = snapshot.nativeObjects;
+            var nativeObjectsInstanceIds = new int[nativeObjects.instanceId.GetNumEntries()];
+            nativeObjects.instanceId.GetEntries(0, nativeObjects.instanceId.GetNumEntries(), ref nativeObjectsInstanceIds);
+            
+            // Create lookup table from instanceId to NativeObject arrayindex
+            var instanceIdToNativeObjectIndex = new Dictionary<int, int>(nativeObjectsInstanceIds.Length);
+            for (var n=0; n< nativeObjectsInstanceIds.Length; ++n)
+                instanceIdToNativeObjectIndex.Add(nativeObjectsInstanceIds[n], n);
+
+            // Connect NativeObject with its GCHandle
+            var nativeObjectsGCHandleIndices = new int[nativeObjects.gcHandleIndex.GetNumEntries()];
+            nativeObjects.gcHandleIndex.GetEntries(0, nativeObjects.gcHandleIndex.GetNumEntries(), ref nativeObjectsGCHandleIndices);
+
+            var gcHandles = snapshot.gcHandles;
+            var gcHandlesCount = gcHandles.GetNumEntries();
+
+            for (var n=0; n< nativeObjectsGCHandleIndices.Length; ++n)
             {
-                value = new PackedConnection[source.Length];
+                if (nativeObjectsGCHandleIndices[n] < 0 || nativeObjectsGCHandleIndices[n] >= gcHandlesCount)
+                    continue; // I guess -1 means no connection to a gcHandle
+
+                var packed = new PackedConnection();
+                packed.from = n; // nativeObject index
+                packed.fromKind = Kind.Native;
+                packed.to = nativeObjectsGCHandleIndices[n]; // gcHandle index
+                packed.toKind = Kind.GCHandle;
+
+                result.Add(packed);
             }
-            catch
+            Debug.LogFormat("found {0} connections, gcHandlesCount={1}", result.Count, gcHandlesCount);
+
+            // Connect NativeObject with NativeObject
+
+            var source = snapshot.connections;
+            int[] sourceFrom = new int[source.from.GetNumEntries()];
+            source.from.GetEntries(0, source.from.GetNumEntries(), ref sourceFrom);
+
+            int[] sourceTo = new int[source.to.GetNumEntries()];
+            source.to.GetEntries(0, source.to.GetNumEntries(), ref sourceTo);
+
+            for (int n = 0, nend = sourceFrom.Length; n < nend; ++n)
             {
-                Debug.LogErrorFormat("HeapExplorer: Failed to allocate 'new PackedConnection[{0}]'.", source.Length);
-                throw;
+                var packed = new PackedConnection();
+
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceFrom[n], out packed.from))
+                    continue; // NativeObject InstanceID not found
+
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceTo[n], out packed.to))
+                    continue; // NativeObject InstanceID not found
+
+                packed.fromKind = Kind.Native;
+                packed.toKind = Kind.Native;
+
+                result.Add(packed);
             }
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
-            {
-                value[n] = new PackedConnection
-                {
-                    from = source[n].from,
-                    to = source[n].to,
-                };
-            }
-            return value;
+            return result.ToArray();
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using UnityEditor.Profiling.Memory.Experimental;
 
 namespace HeapExplorer
 {
@@ -100,23 +101,45 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedNativeUnityEngineObject[] FromMemoryProfiler(UnityEditor.MemoryProfiler.PackedNativeUnityEngineObject[] source)
+        public static PackedNativeUnityEngineObject[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            var value = new PackedNativeUnityEngineObject[source.Length];
+            var source = snapshot.nativeObjects;
+            var value = new PackedNativeUnityEngineObject[source.GetNumEntries()];
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            var sourceFlags = new ObjectFlags[source.flags.GetNumEntries()];
+            source.flags.GetEntries(0, source.flags.GetNumEntries(), ref sourceFlags);
+
+            var sourceObjectNames = new string[source.objectName.GetNumEntries()];
+            source.objectName.GetEntries(0, source.objectName.GetNumEntries(), ref sourceObjectNames);
+
+            var sourceInstanceIds = new int[source.instanceId.GetNumEntries()];
+            source.instanceId.GetEntries(0, source.instanceId.GetNumEntries(), ref sourceInstanceIds);
+
+            var sourceSizes = new ulong[source.size.GetNumEntries()];
+            source.size.GetEntries(0, source.size.GetNumEntries(), ref sourceSizes);
+
+            var sourceNativeTypeArrayIndex = new int[source.nativeTypeArrayIndex.GetNumEntries()];
+            source.nativeTypeArrayIndex.GetEntries(0, source.nativeTypeArrayIndex.GetNumEntries(), ref sourceNativeTypeArrayIndex);
+
+            var sourceHideFlags = new HideFlags[source.hideFlags.GetNumEntries()];
+            source.hideFlags.GetEntries(0, source.hideFlags.GetNumEntries(), ref sourceHideFlags);
+
+            var sourceNativeObjectAddress = new ulong[source.nativeObjectAddress.GetNumEntries()];
+            source.nativeObjectAddress.GetEntries(0, source.nativeObjectAddress.GetNumEntries(), ref sourceNativeObjectAddress);
+
+            for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 value[n] = new PackedNativeUnityEngineObject
                 {
-                    isPersistent = source[n].isPersistent,
-                    isDontDestroyOnLoad = source[n].isDontDestroyOnLoad,
-                    isManager = source[n].isManager,
-                    name = source[n].name,
-                    instanceId = source[n].instanceId,
-                    size = source[n].size,
-                    nativeTypesArrayIndex = source[n].nativeTypeArrayIndex,
-                    hideFlags = source[n].hideFlags,
-                    nativeObjectAddress = source[n].nativeObjectAddress,
+                    isPersistent = (sourceFlags[n] & ObjectFlags.IsPersistent) != 0,
+                    isDontDestroyOnLoad = (sourceFlags[n] & ObjectFlags.IsDontDestroyOnLoad) != 0,
+                    isManager = (sourceFlags[n] & ObjectFlags.IsManager) != 0,
+                    name = sourceObjectNames[n],
+                    instanceId = sourceInstanceIds[n],
+                    size = (int)sourceSizes[n], // TODO: should be ulong
+                    nativeTypesArrayIndex = sourceNativeTypeArrayIndex[n],
+                    hideFlags = sourceHideFlags[n],
+                    nativeObjectAddress = (long)sourceNativeObjectAddress[n], // TODO: should be ulong
 
                     nativeObjectsArrayIndex = n,
                     managedObjectsArrayIndex = -1,
