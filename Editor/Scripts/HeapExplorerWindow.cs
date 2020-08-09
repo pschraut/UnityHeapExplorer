@@ -182,7 +182,7 @@ namespace HeapExplorer
         {
             TryAbortThread();
             m_ThreadJobs = new List<AbstractThreadJob>();
-            
+
             EditorApplication.update -= OnApplicationUpdate;
 
             DestroyViews();

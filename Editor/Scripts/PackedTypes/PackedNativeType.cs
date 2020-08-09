@@ -89,7 +89,7 @@ namespace HeapExplorer
         {
             var source = snapshot.nativeTypes;
             var value = new PackedNativeType[source.GetNumEntries()];
-            
+
             var sourceTypeName = new string[source.typeName.GetNumEntries()];
             source.typeName.GetEntries(0, source.typeName.GetNumEntries(), ref sourceTypeName);
 

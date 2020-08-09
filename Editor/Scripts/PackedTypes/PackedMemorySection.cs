@@ -79,7 +79,7 @@ namespace HeapExplorer
         {
             var source = snapshot.managedHeapSections;
             var value = new PackedMemorySection[source.GetNumEntries()];
-            
+
             var sourceBytes = new byte[source.bytes.GetNumEntries()][];
             source.bytes.GetEntries(0, source.bytes.GetNumEntries(), ref sourceBytes);
 

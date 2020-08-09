@@ -80,7 +80,7 @@ namespace HeapExplorer
             var nativeObjectsCount = nativeObjects.GetNumEntries();
             var nativeObjectsInstanceIds = new int[nativeObjects.instanceId.GetNumEntries()];
             nativeObjects.instanceId.GetEntries(0, nativeObjects.instanceId.GetNumEntries(), ref nativeObjectsInstanceIds);
-            
+
             // Create lookup table from instanceId to NativeObject arrayindex
             var instanceIdToNativeObjectIndex = new Dictionary<int, int>(nativeObjectsInstanceIds.Length);
             for (var n=0; n< nativeObjectsInstanceIds.Length; ++n)
@@ -102,7 +102,7 @@ namespace HeapExplorer
                     if (nativeObjectsGCHandleIndices[n] != -1)
                         invalidIndices++; // I guess -1 means no connection to a gcHandle
 
-                    continue; 
+                    continue;
                 }
 
                 var packed = new PackedConnection();

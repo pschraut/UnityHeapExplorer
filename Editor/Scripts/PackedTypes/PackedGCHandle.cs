@@ -68,7 +68,7 @@ namespace HeapExplorer
             var source = snapshot.gcHandles;
             var value = new PackedGCHandle[source.GetNumEntries()];
 
-            var sourceTargets = new ulong[source.target.GetNumEntries()]; 
+            var sourceTargets = new ulong[source.target.GetNumEntries()];
             source.target.GetEntries(0, source.target.GetNumEntries(), ref sourceTargets);
 
             for (int n = 0, nend = value.Length; n < nend; ++n)

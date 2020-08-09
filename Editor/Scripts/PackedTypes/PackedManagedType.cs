@@ -365,7 +365,7 @@ namespace HeapExplorer
 
             // fields
             var desc = snapshot.fieldDescriptions;
-            
+
             var fieldName = new string[desc.fieldDescriptionName.GetNumEntries()];
             desc.fieldDescriptionName.GetEntries(0, desc.fieldDescriptionName.GetNumEntries(), ref fieldName);
 
@@ -404,11 +404,6 @@ namespace HeapExplorer
 
                     nativeTypeArrayIndex = -1,
                 };
-
-                if (value[n].arrayRank != 0)
-                {
-                    int a = 0;
-                }
 
                 value[n].fields = new PackedManagedField[sourceFieldIndices[n].Length];
                 for (var j=0; j< sourceFieldIndices[n].Length; ++j)
