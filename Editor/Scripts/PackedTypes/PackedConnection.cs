@@ -70,28 +70,108 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedConnection[] FromMemoryProfiler(UnityEditor.MemoryProfiler.Connection[] source)
+        public static PackedConnection[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            PackedConnection[] value = null;
-            try
+            var result = new List<PackedConnection>(1024*1024);
+            var invalidIndices = 0;
+
+            // Get all NativeObject instanceIds
+            var nativeObjects = snapshot.nativeObjects;
+            var nativeObjectsCount = nativeObjects.GetNumEntries();
+            var nativeObjectsInstanceIds = new int[nativeObjects.instanceId.GetNumEntries()];
+            nativeObjects.instanceId.GetEntries(0, nativeObjects.instanceId.GetNumEntries(), ref nativeObjectsInstanceIds);
+
+            // Create lookup table from instanceId to NativeObject arrayindex
+            var instanceIdToNativeObjectIndex = new Dictionary<int, int>(nativeObjectsInstanceIds.Length);
+            for (var n=0; n< nativeObjectsInstanceIds.Length; ++n)
+                instanceIdToNativeObjectIndex.Add(nativeObjectsInstanceIds[n], n);
+
+            // Connect NativeObject with its GCHandle
+            var nativeObjectsGCHandleIndices = new int[nativeObjects.gcHandleIndex.GetNumEntries()];
+            nativeObjects.gcHandleIndex.GetEntries(0, nativeObjects.gcHandleIndex.GetNumEntries(), ref nativeObjectsGCHandleIndices);
+
+            var gcHandles = snapshot.gcHandles;
+            var gcHandlesCount = gcHandles.GetNumEntries();
+
+            for (var n=0; n< nativeObjectsGCHandleIndices.Length; ++n)
             {
-                value = new PackedConnection[source.Length];
-            }
-            catch
-            {
-                Debug.LogErrorFormat("HeapExplorer: Failed to allocate 'new PackedConnection[{0}]'.", source.Length);
-                throw;
+                // Unity 2019.4.7f1 and earlier (maybe also newer) versions seem to have this issue:
+                // (Case 1269293) PackedMemorySnapshot: nativeObjects.gcHandleIndex contains -1 always
+                if (nativeObjectsGCHandleIndices[n] < 0 || nativeObjectsGCHandleIndices[n] >= gcHandlesCount)
+                {
+                    if (nativeObjectsGCHandleIndices[n] != -1)
+                        invalidIndices++; // I guess -1 means no connection to a gcHandle
+
+                    continue;
+                }
+
+                var packed = new PackedConnection();
+                packed.from = n; // nativeObject index
+                packed.fromKind = Kind.Native;
+                packed.to = nativeObjectsGCHandleIndices[n]; // gcHandle index
+                packed.toKind = Kind.GCHandle;
+
+                result.Add(packed);
             }
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            if (invalidIndices > 0)
+                Debug.LogErrorFormat("Reconstructing native to gchandle connections. Found {0} invalid indices into nativeObjectsGCHandleIndices[{1}] array.", invalidIndices, gcHandlesCount);
+
+
+            // Connect NativeObject with NativeObject
+
+            var source = snapshot.connections;
+            int[] sourceFrom = new int[source.from.GetNumEntries()];
+            source.from.GetEntries(0, source.from.GetNumEntries(), ref sourceFrom);
+
+            int[] sourceTo = new int[source.to.GetNumEntries()];
+            source.to.GetEntries(0, source.to.GetNumEntries(), ref sourceTo);
+
+            var invalidInstanceIDs = 0;
+            invalidIndices = 0;
+
+            for (int n = 0, nend = sourceFrom.Length; n < nend; ++n)
             {
-                value[n] = new PackedConnection
+                var packed = new PackedConnection();
+
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceFrom[n], out packed.from))
                 {
-                    from = source[n].from,
-                    to = source[n].to,
-                };
+                    invalidInstanceIDs++;
+                    continue; // NativeObject InstanceID not found
+                }
+
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceTo[n], out packed.to))
+                {
+                    invalidInstanceIDs++;
+                    continue; // NativeObject InstanceID not found
+                }
+
+                if (packed.from < 0 || packed.from >= nativeObjectsCount)
+                {
+                    invalidIndices++;
+                    continue; // invalid index into array
+                }
+
+                if (packed.to < 0 || packed.to >= nativeObjectsCount)
+                {
+                    invalidIndices++;
+                    continue; // invalid index into array
+                }
+
+                packed.fromKind = Kind.Native;
+                packed.toKind = Kind.Native;
+
+                result.Add(packed);
             }
-            return value;
+
+            if (invalidIndices > 0)
+                Debug.LogErrorFormat("Reconstructing native to native object connections. Found {0} invalid indices into nativeObjectsCount[{1}] array.", invalidIndices, nativeObjectsCount);
+
+            if (invalidInstanceIDs > 0)
+                Debug.LogErrorFormat("Reconstructing native to native object connections. Found {0} invalid instanceIDs.", invalidInstanceIDs, nativeObjectsCount);
+
+
+            return result.ToArray();
         }
     }
 }

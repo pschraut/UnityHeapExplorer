@@ -85,25 +85,31 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedNativeType[] FromMemoryProfiler(UnityEditor.MemoryProfiler.PackedNativeType[] source)
+        public static PackedNativeType[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            var value = new PackedNativeType[source.Length];
+            var source = snapshot.nativeTypes;
+            var value = new PackedNativeType[source.GetNumEntries()];
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            var sourceTypeName = new string[source.typeName.GetNumEntries()];
+            source.typeName.GetEntries(0, source.typeName.GetNumEntries(), ref sourceTypeName);
+
+            var sourceNativeBaseTypeArrayIndex = new int[source.nativeBaseTypeArrayIndex.GetNumEntries()];
+            source.nativeBaseTypeArrayIndex.GetEntries(0, source.nativeBaseTypeArrayIndex.GetNumEntries(), ref sourceNativeBaseTypeArrayIndex);
+
+            for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 value[n] = new PackedNativeType
                 {
-                    name = source[n].name,
-#if UNITY_5_6_OR_NEWER
-                    nativeBaseTypeArrayIndex = source[n].nativeBaseTypeArrayIndex,
-#else
-                    nativeBaseTypeArrayIndex = source[n].baseClassId,
-#endif
+                    name = sourceTypeName[n],
+                    nativeBaseTypeArrayIndex = sourceNativeBaseTypeArrayIndex[n],
                     nativeTypeArrayIndex = n,
                     managedTypeArrayIndex = -1,
                 };
             };
+
             return value;
         }
+
+
     }
 }

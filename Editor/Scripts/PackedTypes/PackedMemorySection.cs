@@ -75,16 +75,23 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedMemorySection[] FromMemoryProfiler(UnityEditor.MemoryProfiler.MemorySection[] source)
+        public static PackedMemorySection[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            var value = new PackedMemorySection[source.Length];
+            var source = snapshot.managedHeapSections;
+            var value = new PackedMemorySection[source.GetNumEntries()];
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            var sourceBytes = new byte[source.bytes.GetNumEntries()][];
+            source.bytes.GetEntries(0, source.bytes.GetNumEntries(), ref sourceBytes);
+
+            var sourceStartAddresses = new ulong[source.startAddress.GetNumEntries()];
+            source.startAddress.GetEntries(0, source.startAddress.GetNumEntries(), ref sourceStartAddresses);
+
+            for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 value[n] = new PackedMemorySection
                 {
-                    bytes = source[n].bytes,
-                    startAddress = source[n].startAddress,
+                    bytes = sourceBytes[n],
+                    startAddress = sourceStartAddresses[n],
                     arrayIndex = -1
                 };
             }

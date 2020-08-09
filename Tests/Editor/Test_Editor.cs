@@ -39,8 +39,8 @@ namespace HeapExplorer
         [UnityTest]
         public IEnumerator Capture()
         {
-            UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived += OnSnapshotReceived;
-            UnityEditor.MemoryProfiler.MemorySnapshot.RequestNewSnapshot();
+            var path = FileUtil.GetUniqueTempPathInProject();
+            UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(path, OnSnapshotReceived);
 
             var timeout = Time.realtimeSinceStartup + 15;
             while (m_snapshot == null)
@@ -173,13 +173,10 @@ namespace HeapExplorer
             Assert.AreEqual(value, matrix);
         }
 
-        void OnSnapshotReceived(UnityEditor.MemoryProfiler.PackedMemorySnapshot snapshot)
+        void OnSnapshotReceived(string path, bool captureResult)
         {
-            UnityEditor.MemoryProfiler.MemorySnapshot.OnSnapshotReceived -= OnSnapshotReceived;
-
             var args = new MemorySnapshotProcessingArgs();
-            args.source = snapshot;
-            args.excludeNativeFromConnections = false;
+            args.source = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path);
 
             m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(args);
         }

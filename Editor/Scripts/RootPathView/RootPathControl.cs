@@ -266,6 +266,7 @@ namespace HeapExplorer
             var queue = new Queue<List<ObjectProxy>>();
             queue.Enqueue(new List<ObjectProxy> { obj });
 
+            int issues = 0;
             int guard = 0;
             while (queue.Any())
             {
@@ -289,7 +290,7 @@ namespace HeapExplorer
                     continue;
                 }
 
-                var referencedBy = GetReferencedBy(tip);
+                var referencedBy = GetReferencedBy(tip, ref issues);
                 foreach (var next in referencedBy)
                 {
                     if (seen.Contains(next.id))
@@ -305,9 +306,12 @@ namespace HeapExplorer
 
             m_Items.Sort();
             m_IsBusy = false;
+
+            if (issues > 0)
+                Debug.LogWarningFormat("{0} issues have been detected while finding root-paths. This is most likely related to an earlier bug in Heap Explorer, that started to occur with Unity 2019.3 and causes that (some) object connections are invalid. Please capture a new memory snapshot.", issues);
         }
 
-        List<ObjectProxy> GetReferencedBy(ObjectProxy obj)
+        List<ObjectProxy> GetReferencedBy(ObjectProxy obj, ref int issues)
         {
             var referencedBy = new List<PackedConnection>(32);
 
@@ -329,18 +333,38 @@ namespace HeapExplorer
                 switch (c.fromKind)
                 {
                     case PackedConnection.Kind.Native:
+                        if (c.from < 0 || c.from >= obj.snapshot.nativeObjects.Length)
+                        {
+                            issues++;
+                            continue;
+                        }
                         value.Add(new ObjectProxy(obj.snapshot, obj.snapshot.nativeObjects[c.from]));
                         break;
 
                     case PackedConnection.Kind.Managed:
+                        if (c.from < 0 || c.from >= obj.snapshot.managedObjects.Length)
+                        {
+                            issues++;
+                            continue;
+                        }
                         value.Add(new ObjectProxy(obj.snapshot, obj.snapshot.managedObjects[c.from]));
                         break;
 
                     case PackedConnection.Kind.GCHandle:
+                        if (c.from < 0 || c.from >= obj.snapshot.gcHandles.Length)
+                        {
+                            issues++;
+                            continue;
+                        }
                         value.Add(new ObjectProxy(obj.snapshot, obj.snapshot.gcHandles[c.from]));
                         break;
 
                     case PackedConnection.Kind.StaticField:
+                        if (c.from < 0 || c.from >= obj.snapshot.managedStaticFields.Length)
+                        {
+                            issues++;
+                            continue;
+                        }
                         value.Add(new ObjectProxy(obj.snapshot, obj.snapshot.managedStaticFields[c.from]));
                         break;
                 }

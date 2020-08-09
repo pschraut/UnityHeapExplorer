@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using UnityEditor.Profiling.Memory.Experimental;
 
 namespace HeapExplorer
 {
@@ -330,28 +331,89 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedManagedType[] FromMemoryProfiler(UnityEditor.MemoryProfiler.TypeDescription[] source)
+        public static PackedManagedType[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            var value = new PackedManagedType[source.Length];
+            var source = snapshot.typeDescriptions;
+            var value = new PackedManagedType[source.GetNumEntries()];
 
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            var sourceAssembly = new string[source.assembly.GetNumEntries()];
+            source.assembly.GetEntries(0, source.assembly.GetNumEntries(), ref sourceAssembly);
+
+            var sourceFlags = new TypeFlags[source.flags.GetNumEntries()];
+            source.flags.GetEntries(0, source.flags.GetNumEntries(), ref sourceFlags);
+
+            var sourceName = new string[source.typeDescriptionName.GetNumEntries()];
+            source.typeDescriptionName.GetEntries(0, source.typeDescriptionName.GetNumEntries(), ref sourceName);
+
+            var sourceSize = new int[source.size.GetNumEntries()];
+            source.size.GetEntries(0, source.size.GetNumEntries(), ref sourceSize);
+
+            var sourceTypeInfoAddress = new ulong[source.typeInfoAddress.GetNumEntries()];
+            source.typeInfoAddress.GetEntries(0, source.typeInfoAddress.GetNumEntries(), ref sourceTypeInfoAddress);
+
+            var sourceTypeIndex = new int[source.typeIndex.GetNumEntries()];
+            source.typeIndex.GetEntries(0, source.typeIndex.GetNumEntries(), ref sourceTypeIndex);
+
+            var sourceBaseOrElementTypeIndex = new int[source.baseOrElementTypeIndex.GetNumEntries()];
+            source.baseOrElementTypeIndex.GetEntries(0, source.baseOrElementTypeIndex.GetNumEntries(), ref sourceBaseOrElementTypeIndex);
+
+            var sourceStaticFieldBytes = new byte[source.staticFieldBytes.GetNumEntries()][];
+            source.staticFieldBytes.GetEntries(0, source.staticFieldBytes.GetNumEntries(), ref sourceStaticFieldBytes);
+
+            var sourceFieldIndices = new int[source.fieldIndices.GetNumEntries()][];
+            source.fieldIndices.GetEntries(0, source.fieldIndices.GetNumEntries(), ref sourceFieldIndices);
+
+            // fields
+            var desc = snapshot.fieldDescriptions;
+
+            var fieldName = new string[desc.fieldDescriptionName.GetNumEntries()];
+            desc.fieldDescriptionName.GetEntries(0, desc.fieldDescriptionName.GetNumEntries(), ref fieldName);
+
+            var fieldStatic = new bool[desc.isStatic.GetNumEntries()];
+            desc.isStatic.GetEntries(0, desc.isStatic.GetNumEntries(), ref fieldStatic);
+
+            var fieldOffset = new int[desc.offset.GetNumEntries()];
+            desc.offset.GetEntries(0, desc.offset.GetNumEntries(), ref fieldOffset);
+
+            var fieldTypeIndex = new int[desc.typeIndex.GetNumEntries()];
+            desc.typeIndex.GetEntries(0, desc.typeIndex.GetNumEntries(), ref fieldTypeIndex);
+
+            var sourceFieldDescriptions = new PackedManagedField[desc.GetNumEntries()];
+            for (int n=0, nend = sourceFieldDescriptions.Length; n < nend; ++n)
+            {
+                sourceFieldDescriptions[n].name = fieldName[n];
+                sourceFieldDescriptions[n].isStatic = fieldStatic[n];
+                sourceFieldDescriptions[n].offset = fieldOffset[n];
+                sourceFieldDescriptions[n].managedTypesArrayIndex = fieldTypeIndex[n];
+            }
+
+            for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 value[n] = new PackedManagedType
                 {
-                    isValueType = source[n].isValueType,
-                    isArray = source[n].isArray,
-                    arrayRank = source[n].arrayRank,
-                    name = source[n].name,
-                    assembly = source[n].assembly,
-                    fields = PackedManagedField.FromMemoryProfiler(source[n].fields),
-                    staticFieldBytes = source[n].staticFieldBytes,
-                    baseOrElementTypeIndex = source[n].baseOrElementTypeIndex,
-                    size = source[n].size,
-                    typeInfoAddress = source[n].typeInfoAddress,
-                    managedTypesArrayIndex = source[n].typeIndex,
+                    isValueType = (sourceFlags[n] & TypeFlags.kValueType) != 0,
+                    isArray = (sourceFlags[n] & TypeFlags.kArray) != 0,
+                    arrayRank = (int)(sourceFlags[n] & TypeFlags.kArrayRankMask)>>16,
+                    name = sourceName[n],
+                    assembly = sourceAssembly[n],
+                    staticFieldBytes = sourceStaticFieldBytes[n],
+                    baseOrElementTypeIndex = sourceBaseOrElementTypeIndex[n],
+                    size = sourceSize[n],
+                    typeInfoAddress = sourceTypeInfoAddress[n],
+                    managedTypesArrayIndex = sourceTypeIndex[n],
 
                     nativeTypeArrayIndex = -1,
                 };
+
+                value[n].fields = new PackedManagedField[sourceFieldIndices[n].Length];
+                for (var j=0; j< sourceFieldIndices[n].Length; ++j)
+                {
+                    var i = sourceFieldIndices[n][j];
+                    value[n].fields[j].name = sourceFieldDescriptions[i].name;
+                    value[n].fields[j].offset = sourceFieldDescriptions[i].offset;
+                    value[n].fields[j].isStatic = sourceFieldDescriptions[i].isStatic;
+                    value[n].fields[j].managedTypesArrayIndex = sourceFieldDescriptions[i].managedTypesArrayIndex;
+                }
 
                 // namespace-less types have a preceding dot, which we remove here
                 if (value[n].name != null && value[n].name.Length > 0 && value[n].name[0] == '.')

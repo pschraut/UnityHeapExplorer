@@ -600,6 +600,37 @@ namespace HeapExplorer
         {
             busyString = "Analyzing Object Connections";
 
+            //var fromCount = 0;
+            //var toCount = 0;
+
+            for (int n = 0, nend = connections.Length; n < nend; ++n)
+            {
+                if ((n % (nend / 100)) == 0)
+                {
+                    var progress = ((n + 1.0f) / nend) * 100;
+                    busyString = string.Format("Analyzing Object Connections\n{0}/{1}, {2:F0}% done", n + 1, connections.Length, progress);
+
+                    if (abortActiveStepRequested)
+                        break;
+                }
+
+                var connection = connections[n];
+
+                AddConnection(connection.fromKind, connection.from, connection.toKind, connection.to);
+
+                //if (connection.fromKind == PackedConnection.Kind.Native || nativeObjects[connection.from].nativeObjectAddress == 0x8E9D4FD0)
+                //    fromCount++;
+                //if (connection.toKind == PackedConnection.Kind.Native || nativeObjects[connection.to].nativeObjectAddress == 0x8E9D4FD0)
+                //    toCount++;
+            }
+
+            //Debug.LogFormat("toCount={0}, fromCount={1}", toCount, fromCount);
+        }
+
+        void InitializeConnections_OldMemoryProfilingAPI()
+        {
+            busyString = "Analyzing Object Connections";
+
             var managedStart = 0;
             var managedEnd = managedStart + gcHandles.Length;
             var nativeStart = managedStart + managedEnd;
@@ -1069,7 +1100,10 @@ namespace HeapExplorer
                 EndProfilerSample();
 
                 BeginProfilerSample("InitializeConnections");
-                InitializeConnections();
+                if (virtualMachineInformation.heapFormatVersion >= 2019)
+                    InitializeConnections();
+                else
+                    InitializeConnections_OldMemoryProfilingAPI();
                 abortActiveStepRequested = false;
                 EndProfilerSample();
 

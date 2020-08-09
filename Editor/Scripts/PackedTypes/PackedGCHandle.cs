@@ -63,14 +63,19 @@ namespace HeapExplorer
             }
         }
 
-        public static PackedGCHandle[] FromMemoryProfiler(UnityEditor.MemoryProfiler.PackedGCHandle[] source)
+        public static PackedGCHandle[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
-            var value = new PackedGCHandle[source.Length];
-            for (int n = 0, nend = source.Length; n < nend; ++n)
+            var source = snapshot.gcHandles;
+            var value = new PackedGCHandle[source.GetNumEntries()];
+
+            var sourceTargets = new ulong[source.target.GetNumEntries()];
+            source.target.GetEntries(0, source.target.GetNumEntries(), ref sourceTargets);
+
+            for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 value[n] = new PackedGCHandle
                 {
-                    target = source[n].target,
+                    target = sourceTargets[n],
                     gcHandlesArrayIndex = n,
                     managedObjectsArrayIndex = -1,
                 };
