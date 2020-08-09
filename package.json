@@ -1,6 +1,6 @@
 {
   "name": "com.oddworm.heapexplorer",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "displayName": "Heap Explorer",
   "description": "Heap Explorer is Memory Profiler, Debugger and Analyzer.",
   "documentationUrl": "https://github.com/pschraut/UnityHeapExplorer",
