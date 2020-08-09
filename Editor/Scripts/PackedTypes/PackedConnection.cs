@@ -73,9 +73,11 @@ namespace HeapExplorer
         public static PackedConnection[] FromMemoryProfiler(UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot)
         {
             var result = new List<PackedConnection>(1024*1024);
+            var invalidIndices = 0;
 
             // Get all NativeObject instanceIds
             var nativeObjects = snapshot.nativeObjects;
+            var nativeObjectsCount = nativeObjects.GetNumEntries();
             var nativeObjectsInstanceIds = new int[nativeObjects.instanceId.GetNumEntries()];
             nativeObjects.instanceId.GetEntries(0, nativeObjects.instanceId.GetNumEntries(), ref nativeObjectsInstanceIds);
             
@@ -93,8 +95,15 @@ namespace HeapExplorer
 
             for (var n=0; n< nativeObjectsGCHandleIndices.Length; ++n)
             {
+                // Unity 2019.4.7f1 and earlier (maybe also newer) versions seem to have this issue:
+                // (Case 1269293) PackedMemorySnapshot: nativeObjects.gcHandleIndex contains -1 always
                 if (nativeObjectsGCHandleIndices[n] < 0 || nativeObjectsGCHandleIndices[n] >= gcHandlesCount)
-                    continue; // I guess -1 means no connection to a gcHandle
+                {
+                    if (nativeObjectsGCHandleIndices[n] != -1)
+                        invalidIndices++; // I guess -1 means no connection to a gcHandle
+
+                    continue; 
+                }
 
                 var packed = new PackedConnection();
                 packed.from = n; // nativeObject index
@@ -104,7 +113,10 @@ namespace HeapExplorer
 
                 result.Add(packed);
             }
-            Debug.LogFormat("found {0} connections, gcHandlesCount={1}", result.Count, gcHandlesCount);
+
+            if (invalidIndices > 0)
+                Debug.LogErrorFormat("Reconstructing native to gchandle connections. Found {0} invalid indices into nativeObjectsGCHandleIndices[{1}] array.", invalidIndices, gcHandlesCount);
+
 
             // Connect NativeObject with NativeObject
 
@@ -115,21 +127,49 @@ namespace HeapExplorer
             int[] sourceTo = new int[source.to.GetNumEntries()];
             source.to.GetEntries(0, source.to.GetNumEntries(), ref sourceTo);
 
+            var invalidInstanceIDs = 0;
+            invalidIndices = 0;
+
             for (int n = 0, nend = sourceFrom.Length; n < nend; ++n)
             {
                 var packed = new PackedConnection();
 
                 if (!instanceIdToNativeObjectIndex.TryGetValue(sourceFrom[n], out packed.from))
+                {
+                    invalidInstanceIDs++;
                     continue; // NativeObject InstanceID not found
+                }
 
                 if (!instanceIdToNativeObjectIndex.TryGetValue(sourceTo[n], out packed.to))
+                {
+                    invalidInstanceIDs++;
                     continue; // NativeObject InstanceID not found
+                }
+
+                if (packed.from < 0 || packed.from >= nativeObjectsCount)
+                {
+                    invalidIndices++;
+                    continue; // invalid index into array
+                }
+
+                if (packed.to < 0 || packed.to >= nativeObjectsCount)
+                {
+                    invalidIndices++;
+                    continue; // invalid index into array
+                }
 
                 packed.fromKind = Kind.Native;
                 packed.toKind = Kind.Native;
 
                 result.Add(packed);
             }
+
+            if (invalidIndices > 0)
+                Debug.LogErrorFormat("Reconstructing native to native object connections. Found {0} invalid indices into nativeObjectsCount[{1}] array.", invalidIndices, nativeObjectsCount);
+
+            if (invalidInstanceIDs > 0)
+                Debug.LogErrorFormat("Reconstructing native to native object connections. Found {0} invalid instanceIDs.", invalidInstanceIDs, nativeObjectsCount);
+
 
             return result.ToArray();
         }
