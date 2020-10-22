@@ -825,7 +825,7 @@ namespace HeapExplorer
         void CaptureAndSaveHeap()
         {
             if (string.IsNullOrEmpty(autoSavePath))
-                autoSavePath = Application.dataPath + "/memory.heap";
+                autoSavePath = System.IO.Path.Combine(Application.persistentDataPath, "memory.heap");
 
             var path = EditorUtility.SaveFilePanel("Save snapshot as...", System.IO.Path.GetDirectoryName(autoSavePath), System.IO.Path.GetFileNameWithoutExtension(autoSavePath), "heap");
             if (string.IsNullOrEmpty(path))
@@ -838,7 +838,8 @@ namespace HeapExplorer
                 FreeMem();
                 m_IsCapturing = true;
 
-                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(path, OnHeapReceivedSaveOnly);
+                string snapshotPath = System.IO.Path.ChangeExtension(path, "snapshot");
+                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(snapshotPath, OnHeapReceivedSaveOnly);
             }
             finally
             {
