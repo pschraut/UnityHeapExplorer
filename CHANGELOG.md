@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
  - Added link to CHANGELOG.md in Heap Explorer start view
 ### Fixed
  - fix for CaputureAndSaveHeap fails in 3.4.0 due to sharing violation (thanks chris, see [PR](https://github.com/pschraut/UnityHeapExplorer/pull/1) for details)
-
+### Removed
+ - Removed item from "File > Settings" popup menu named "Settings/Ignore nested structs (workaround for bug Case 1104590)". Unity Technologies fixed this issue already and the menu option wasn't doing anything useful anymore.
 
 ## [3.4.0] - 2020-08-09
 ### Changed

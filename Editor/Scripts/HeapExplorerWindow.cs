@@ -97,19 +97,6 @@ namespace HeapExplorer
             }
         }
 
-        bool ignoreNestedStructs
-        {
-            get
-            {
-                return EditorPrefs.GetBool("HeapExplorerWindow.ignoreNestedStructs", true);
-            }
-            set
-            {
-                PackedManagedObjectCrawler.s_IgnoreNestedStructs = value;
-                EditorPrefs.SetBool("HeapExplorerWindow.ignoreNestedStructs", value);
-            }
-        }
-
         bool showInternalMemorySections
         {
             get
@@ -166,7 +153,6 @@ namespace HeapExplorer
             titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
-            ignoreNestedStructs = ignoreNestedStructs;
             showInternalMemorySections = showInternalMemorySections;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
@@ -544,10 +530,6 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent("Settings/Debug View Menu"), debugViewMenu, delegate ()
                     {
                         debugViewMenu = !debugViewMenu;
-                    });
-                    menu.AddItem(new GUIContent("Settings/Ignore nested structs (workaround for bug Case 1104590)"), ignoreNestedStructs, delegate ()
-                    {
-                        ignoreNestedStructs = !ignoreNestedStructs;
                     });
                     menu.AddItem(new GUIContent("Settings/Show unaligned memory sections (removes MonoMemPool sections)"), showInternalMemorySections, delegate ()
                     {
