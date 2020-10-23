@@ -71,6 +71,10 @@ namespace HeapExplorer
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_DocuUrl))) Application.OpenURL(HeGlobals.k_DocuUrl);
                 GUILayout.Space(8);
 
+                GUILayout.Label("Changelog", EditorStyles.boldLabel);
+                if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ChangelogUrl))) Application.OpenURL(HeGlobals.k_ChangelogUrl);
+                GUILayout.Space(8);
+
                 GUILayout.Label("Feedback and bug-reports", EditorStyles.boldLabel);
                 if (HeEditorGUILayout.LinkButton(new GUIContent(HeGlobals.k_ForumUrl))) Application.OpenURL(HeGlobals.k_ForumUrl);
                 GUILayout.Space(8);
@@ -81,7 +85,7 @@ namespace HeapExplorer
 
                 var memprofLink = "https://forum.unity.com/threads/new-memory-profiler-preview-package-available-for-unity-2018-3-and-newer-versions.597271/";
                 GUILayout.Label("Unity Memory Profiler", EditorStyles.boldLabel);
-                GUILayout.Label("Unity Technologies presented during Unite 2018 that they were working on a new Memory Profiler, which was made available shortly after. This new Memory Profiler will make Heap Explorer obsolete eventually, if it didn't already. Don't miss to check out their Memory Profiler, it must be far superior to Heap Explorer by now.", EditorStyles.wordWrappedLabel);
+                GUILayout.Label("Unity Technologies presented during Unite 2018 that they were working on a new Memory Profiler, which was made available shortly after. Their new Memory Profiler will make Heap Explorer obsolete eventually, if it didn't already. Don't miss to check out their Memory Profiler, it must be far superior to Heap Explorer by now.", EditorStyles.wordWrappedLabel);
                 if (HeEditorGUILayout.LinkButton(new GUIContent(memprofLink))) Application.OpenURL(memprofLink);
                 GUILayout.Space(8);
             }

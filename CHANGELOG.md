@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [3.5.0] - 2020-10-23
 ### Added
  - Added CHANGELOG.md to repository
+ - Added link to CHANGELOG.md in Heap Explorer start view
 ### Fixed
  - fix for CaputureAndSaveHeap fails in 3.4.0 due to sharing violation (thanks chris, see [PR](https://github.com/pschraut/UnityHeapExplorer/pull/1) for details)
 
