@@ -28,6 +28,7 @@ In Unity's Package Manager, choose "Add package from git URL" and insert one of 
 
 | Version  |     Link      |
 |----------|---------------|
+| 3.6.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.6.0 |
 | 3.5.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.5.0 |
 | 3.4.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.4.0 |
 | 3.3.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.3.0 |
