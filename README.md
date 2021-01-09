@@ -53,7 +53,7 @@ Yes. You can use Heap Explorer to debug, profile and analyze your hobby-, Indie-
 
 If, however, Heap Explorer is useful to you, I would appreciate if you mention my name in your credits screen.
 
-Something like "Heap Explorer by Peter Schraut" would be very much appreciated from my side. You can, however, use Heap Explorer for free without having to give me credit at all.
+Something like "Heap Explorer by Peter Schraut" or "Thanks to Peter Schraut" would be very much appreciated from my side. You can, however, use Heap Explorer for free without having to give me credit at all.
 
 
 
@@ -317,8 +317,9 @@ Heap Explorer incorrectly detects the following textures as duplicates, because 
 It would be very useful if you store additional information in a “development mode” build, to be able to map a native UnityEngine object in a MemorySnapshot to its asset guid in the project for example. This would allow tools such Heap Explorer to implement some powerful functionality. This additional information should be stripped in non-development builds.
 
 
+# Enable Heap Explorer tests
 
-
+In order to enable the Heap Explorer tests, you need Unity's [Test Framework](https://docs.unity3d.com/Packages/com.unity.test-framework@latest) package and set the ```HEAPEXPLORER_ENABLE_TESTS``` define either [Scripting Define Symbols](https://docs.unity3d.com/Manual/class-PlayerSettingsStandalone.html#Other) in Player Settings, or in a [csc.rsp file](https://docs.unity3d.com/Manual/PlatformDependentCompilation.html).
 
 
 
