@@ -35,6 +35,11 @@ In Unity's Package Manager, choose "Add package from git URL" and insert one of 
 | 3.2.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.2.0 |
 
 
+# Credits
+
+If you find this package useful, please mention my name in your credits screen.
+Something like "Heap Explorer by Peter Schraut" or "Thanks to Peter Schraut" would be very much appreciated.
+
 
 # Contact
 
@@ -52,9 +57,8 @@ http://www.console-dev.de
 
 Yes. You can use Heap Explorer to debug, profile and analyze your hobby-, Indie- and commercial applications for free. You do not have to pay me anything.
 
-If, however, Heap Explorer is useful to you, I would appreciate if you mention my name in your credits screen.
-
-Something like "Heap Explorer by Peter Schraut" or "Thanks to Peter Schraut" would be very much appreciated from my side. You can, however, use Heap Explorer for free without having to give me credit at all.
+If you find Heap Explorer useful, please mention my name in your credits screen.
+Something like "Heap Explorer by Peter Schraut" or "Thanks to Peter Schraut" would be very much appreciated.
 
 
 
