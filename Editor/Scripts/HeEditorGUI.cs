@@ -259,21 +259,25 @@ namespace HeapExplorer
         {
             TypeName(position, text, tooltip);
         }
-
         static string ShortenTypeName(string typeName)
         {
             s_StringBuilder.Length = 0;
 
-            for (int n = 0; n < typeName.Length; ++n)
+            for (var n = 0; n < typeName.Length; ++n)
             {
                 if (typeName[n] != '.')
+                {
                     continue;
+                }
 
                 // Skip the ... sequence
                 if (typeName[n] == '.' && n + 1 < typeName.Length && typeName[n + 1] == '.')
                 {
                     while (typeName[n] == '.' && n + 1 < typeName.Length && typeName[n + 1] == '.')
+                    {
                         ++n;
+                    }
+
                     ++n;
                     continue;
                 }
@@ -281,13 +285,8 @@ namespace HeapExplorer
                 ++n; // skip the '.'
 
                 // Copy chars over to dest
-                while (n < typeName.Length)
-                {
-                    s_StringBuilder.Append(typeName[n]);
-                    ++n;
-                }
-
-                s_StringBuilder.Insert(0, "...");
+                s_StringBuilder.Append("...");
+                s_StringBuilder.Append(typeName, n, typeName.Length - n);
                 return s_StringBuilder.ToString();
             }
 

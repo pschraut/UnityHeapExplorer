@@ -316,6 +316,10 @@ namespace HeapExplorer
                 var s = size[0];
                 size[0] = size[1];
                 size[1] = s;
+
+                var c = count[0];
+                count[0] = count[1];
+                count[1] = c;
             }
 
             public override void GetItemSearchString(string[] target, out int count)
