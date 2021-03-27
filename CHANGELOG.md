@@ -4,6 +4,12 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2021-03-27
+### Fixed
+ - Fixed "Count" display in Compare Snapshots not updating correctly after swapping two snapshots. Thanks to niqibiao for the fix. See [PR#3](https://github.com/pschraut/UnityHeapExplorer/pull/3) for details.
+ - Fixed slow performance and high memory usage in rendering large lists, in particular when resizing a column or the window.  Thanks to niqibiao for the fix. See [PR#3](https://github.com/pschraut/UnityHeapExplorer/pull/3) for details.
+
+
 ## [3.6.0] - 2021-01-09
 ### Changed
  - Heap Explorer tests now run only if the ```HEAPEXPLORER_ENABLE_TESTS``` define is set. In order to run the Heap Explorer tests, you need Unity's [Test Framework](https://docs.unity3d.com/Packages/com.unity.test-framework@latest) package and set the ```HEAPEXPLORER_ENABLE_TESTS``` define either [Scripting Define Symbols](https://docs.unity3d.com/Manual/class-PlayerSettingsStandalone.html#Other) in Player Settings, or in a [csc.rsp file](https://docs.unity3d.com/Manual/PlatformDependentCompilation.html). This is a workaround for [issue #2](https://github.com/pschraut/UnityHeapExplorer/issues/2).
