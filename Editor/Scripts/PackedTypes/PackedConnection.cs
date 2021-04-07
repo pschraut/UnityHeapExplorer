@@ -26,11 +26,10 @@ namespace HeapExplorer
 
         public System.Int32 from; // Index into a gcHandles, nativeObjects.
         public System.Int32 to; // Index into a gcHandles, nativeObjects.
+        public Kind fromKind;
+        public Kind toKind;
 
-        [NonSerialized] public Kind fromKind;
-        [NonSerialized] public Kind toKind;
-
-        const System.Int32 k_Version = 1;
+        const System.Int32 k_Version = 2;
 
         public static void Write(System.IO.BinaryWriter writer, PackedConnection[] value)
         {
@@ -39,6 +38,8 @@ namespace HeapExplorer
 
             for (int n = 0, nend = value.Length; n < nend; ++n)
             {
+                writer.Write((byte)value[n].fromKind);
+                writer.Write((byte)value[n].toKind);
                 writer.Write(value[n].from);
                 writer.Write(value[n].to);
             }
@@ -50,7 +51,26 @@ namespace HeapExplorer
             stateString = "";
 
             var version = reader.ReadInt32();
-            if (version >= 1)
+            if (version >= 2)
+            {
+                var length = reader.ReadInt32();
+                value = new PackedConnection[length];
+                if (length == 0)
+                    return;
+
+                var onePercent = Math.Max(1, value.Length / 100);
+                for (int n = 0, nend = value.Length; n < nend; ++n)
+                {
+                    if ((n % onePercent) == 0)
+                        stateString = string.Format("Loading Object Connections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
+
+                    value[n].fromKind = (Kind)reader.ReadByte();
+                    value[n].toKind = (Kind)reader.ReadByte();
+                    value[n].from = reader.ReadInt32();
+                    value[n].to = reader.ReadInt32();
+                }
+            }
+            else if (version >= 1)
             {
                 var length = reader.ReadInt32();
                 //stateString = string.Format("Loading {0} Object Connections", length);
@@ -64,6 +84,7 @@ namespace HeapExplorer
                     if ((n % onePercent) == 0)
                         stateString = string.Format("Loading Object Connections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
 
+                    // v1 didn't include fromKind and toKind which was a bug
                     value[n].from = reader.ReadInt32();
                     value[n].to = reader.ReadInt32();
                 }

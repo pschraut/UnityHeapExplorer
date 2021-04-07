@@ -4,6 +4,11 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2021-04-07
+### Fixed
+ - Fixed object connections lost when loading a snapshot from file. Please see [Issue #5](https://github.com/pschraut/UnityHeapExplorer/issues/5) for details. Thanks to jojo59516 for the report.
+ 
+
 ## [3.7.0] - 2021-03-27
 ### Fixed
  - Fixed "Count" display in Compare Snapshots not updating correctly after swapping two snapshots. Thanks to niqibiao for the fix. See [PR#3](https://github.com/pschraut/UnityHeapExplorer/pull/3) for details.
