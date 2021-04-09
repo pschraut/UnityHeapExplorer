@@ -944,7 +944,7 @@ namespace HeapExplorer
 
                     case "UnityEngine.RectTransform":
                         {
-                            coreTypes.unityEngineTransform = n;
+                            coreTypes.unityEngineRectTransform = n;
                             break;
                         }
 
