@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [3.9.0] - 2021-04-??
+### Added
+ - Added ability to search for a specific type in any list that provides a search-field. Use ```t:type``` just like in Unity's search-fields too. 
+If you want to search for ```RenderTexture``` types, enter ```t:RenderTexture``` in the search-field.
+Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschraut/UnityHeapExplorer/pull/7) for details.
 ### Fixed
  - Fixed UnityEngine.RectTransform handled as UnityEngine.Transform. Thanks to jojo59516 for the fix. See [PR#6](https://github.com/pschraut/UnityHeapExplorer/pull/6) for details.
  
