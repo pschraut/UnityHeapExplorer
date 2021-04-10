@@ -35,6 +35,28 @@ namespace HeapExplorer
             public List<string> types = new List<string>();
             public List<string> labels = new List<string>();
 
+            public bool IsTypeMatch(string type)
+            {
+                if (types.Count == 0)
+                    return true; // no type filter, always pass
+
+                if (string.IsNullOrWhiteSpace(type))
+                    return false;
+
+                return types.Contains(type);
+            }
+
+            public bool IsLabelMatch(string label)
+            {
+                if (labels.Count == 0)
+                    return true; // no label filter, always pass
+
+                if (string.IsNullOrWhiteSpace(label))
+                    return false;
+
+                return labels.Contains(label);
+            }
+
             public bool IsNameMatch(string text)
             {
                 if (m_NamesExpr.Count == 0)

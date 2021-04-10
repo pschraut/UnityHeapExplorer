@@ -261,9 +261,11 @@ namespace HeapExplorer
                 m_GCHandle = new RichGCHandle(snapshot, gcHandlesArrayIndex);
             }
 
-            public override void GetItemSearchString(string[] target, out int count)
+            public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
             {
-                count = 0;
+                base.GetItemSearchString(target, out count, out type, out label);
+
+                type = typeName;
                 target[count++] = typeName;
                 target[count++] = string.Format(StringFormat.Address, address);
             }

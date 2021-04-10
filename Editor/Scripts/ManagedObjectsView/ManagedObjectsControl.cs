@@ -347,13 +347,16 @@ namespace HeapExplorer
                 m_Object = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
             }
 
-            public override void GetItemSearchString(string[] target, out int count)
+            public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
             {
-                count = 0;
+                base.GetItemSearchString(target, out count, out type, out label);
+
+                type = typeName;
                 target[count++] = typeName;
                 target[count++] = string.Format(StringFormat.Address, m_Object.address);
                 target[count++] = cppName;
                 target[count++] = assembly;
+
             }
 
             public override void OnGUI(Rect position, int column)

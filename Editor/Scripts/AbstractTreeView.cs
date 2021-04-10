@@ -243,7 +243,12 @@ namespace HeapExplorer
             if (i != null)
             {
                 int searchCount;
-                i.GetItemSearchString(m_SearchCache, out searchCount);
+                string type;
+                string label;
+                i.GetItemSearchString(m_SearchCache, out searchCount, out type, out label);
+
+                if (!m_Search.IsTypeMatch(type) || !m_Search.IsLabelMatch(label))
+                    return false;
 
                 m_SearchBuilder.Length = 0;
                 for (var n=0; n < searchCount; ++n)
@@ -253,10 +258,7 @@ namespace HeapExplorer
                 }
                 m_SearchBuilder.Append("\0");
 
-                if (m_Search.IsNameMatch(m_SearchBuilder.ToString()))
-                    return true;
-
-                return false;
+                return m_Search.IsNameMatch(m_SearchBuilder.ToString());
             }
 
             return base.DoesItemMatchSearch(item, search);
@@ -388,9 +390,11 @@ namespace HeapExplorer
         public bool enabled = true;
         public bool isExpanded;
 
-        public virtual void GetItemSearchString(string[] target, out int count)
+        public virtual void GetItemSearchString(string[] target, out int count, out string type, out string label)
         {
             count = 0;
+            type = null;
+            label = null;
         }
 
         public abstract void OnGUI(Rect position, int column);

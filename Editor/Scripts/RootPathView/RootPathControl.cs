@@ -607,9 +607,11 @@ namespace HeapExplorer
             protected string m_Value;
             protected System.UInt64 m_Address;
 
-            public override void GetItemSearchString(string[] target, out int count)
+            public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
             {
-                count = 0;
+                base.GetItemSearchString(target, out count, out type, out label);
+
+                type = displayName;
                 target[count++] = displayName;
                 target[count++] = m_Value;
                 target[count++] = string.Format(StringFormat.Address, m_Address);

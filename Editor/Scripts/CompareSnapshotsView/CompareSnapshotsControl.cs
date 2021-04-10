@@ -322,10 +322,12 @@ namespace HeapExplorer
                 count[1] = c;
             }
 
-            public override void GetItemSearchString(string[] target, out int count)
+            public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
             {
-                count = 0;
-                target[count++] = displayName ?? k_UnknownTypeString;
+                base.GetItemSearchString(target, out count, out type, out label);
+
+                type = displayName ?? k_UnknownTypeString;
+                target[count++] = type;
             }
 
             public override void OnGUI(Rect position, int column)
