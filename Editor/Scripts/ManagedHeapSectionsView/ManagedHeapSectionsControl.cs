@@ -148,9 +148,10 @@ namespace HeapExplorer
 #endif
             protected ManagedHeapSectionsControl m_Owner;
 
-            public override void GetItemSearchString(string[] target, out int count)
+            public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
             {
-                count = 0;
+                base.GetItemSearchString(target, out count, out type, out label);
+
                 target[count++] = displayName;
                 target[count++] = string.Format(StringFormat.Address, address);
             }
