@@ -323,6 +323,12 @@ Heap Explorer incorrectly detects the following textures as duplicates, because 
 ## Message to Unity Technologies
 It would be very useful if you store additional information in a “development mode” build, to be able to map a native UnityEngine object in a MemorySnapshot to its asset guid in the project for example. This would allow tools such Heap Explorer to implement some powerful functionality. This additional information should be stripped in non-development builds.
 
+# Search fields
+
+Starting with Heap Explorer 3.9.0, any search-field provides the ability to search
+for a specific type. Use ```t:type``` just like in Unity's own search-fields. 
+If you want to search for ```RenderTexture``` types, enter ```t:RenderTexture``` in the search-field.
+
 
 # Enable Heap Explorer tests
 
