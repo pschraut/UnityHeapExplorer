@@ -5,15 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## [3.9.0] - 2021-04-??
+## [3.9.0] - 2021-04-11
 ### Added
  - Added ability to search for a specific type in any list that provides a search-field. Use ```t:type``` just like in Unity's search-fields too. 
 If you want to search for ```RenderTexture``` types, enter ```t:RenderTexture``` in the search-field.
 Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschraut/UnityHeapExplorer/pull/7) for details.
 ### Fixed
  - Fixed UnityEngine.RectTransform handled as UnityEngine.Transform. Thanks to jojo59516 for the fix. See [PR#6](https://github.com/pschraut/UnityHeapExplorer/pull/6) for details.
+ - Fixed sorting by size in native objects list is incorrect when searching by string. Thanks to patrickdevarney for the bug-report. See [Issue #4](https://github.com/pschraut/UnityHeapExplorer/issues/4) for details.
+ - Fixed sorting by name in native objects list resulting in semi-random order.
  
-
 ## [3.8.0] - 2021-04-07
 ### Fixed
  - Fixed object connections lost when loading a snapshot from file. Please see [Issue #5](https://github.com/pschraut/UnityHeapExplorer/issues/5) for details. Thanks to jojo59516 for the report.
