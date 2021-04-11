@@ -33,8 +33,10 @@ namespace HeapExplorer
         int m_FirstVisibleRow;
         IList<int> m_Expanded = new List<int>(32);
         TreeViewItem m_Tree;
+        TreeViewItem m_ActiveTree;
         string[] m_SearchCache = new string[32];
         System.Text.StringBuilder m_SearchBuilder = new System.Text.StringBuilder();
+        bool m_HasSearch;
 
         public AbstractTreeView(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(state)
@@ -71,7 +73,7 @@ namespace HeapExplorer
         public void SetTree(TreeViewItem tree)
         {
             m_Tree = tree;
-
+            m_ActiveTree = m_Tree;
             Reload();
         }
 
@@ -82,8 +84,8 @@ namespace HeapExplorer
 
         protected override TreeViewItem BuildRoot()
         {
-            if (m_Tree != null)
-                return m_Tree;
+            if (m_ActiveTree != null)
+                return m_ActiveTree;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
             root.AddChild(new TreeViewItem { id = root.id + 1, depth = -1, displayName = "" });
@@ -95,18 +97,17 @@ namespace HeapExplorer
             if (rootItem == null || !rootItem.hasChildren)
                 return;
 
-            var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            foreach (var item in rootItem.children)
-                root.AddChild(item);
-
-            SortItemsRecursive(root, OnSortItem);
-            SetTree(root);
+            SortItemsRecursive(m_ActiveTree, OnSortItem);
+            Reload();
         }
 
         protected abstract int OnSortItem(TreeViewItem x, TreeViewItem y);
 
         protected void SortItemsRecursive(TreeViewItem parent, System.Comparison<TreeViewItem> comparison)
         {
+            if (parent == null)
+                return;
+
             var sortMe = new List<TreeViewItem>();
             sortMe.Add(parent);
 
@@ -123,10 +124,67 @@ namespace HeapExplorer
 
         public void Search(string search)
         {
-            var selection = this.GetSelection();
+            m_HasSearch = !string.IsNullOrEmpty(search);
+
+            var selectedId = -1;
+            var selection = new List<int>(this.GetSelection());
+            if (selection != null && selection.Count != 0)
+                selectedId = selection[0];
+            selection.Clear();
 
             m_Search = SearchTextParser.Parse(search);
-            base.searchString = search;
+
+            // I don't use the TreeViewControl base.searchString API, because I didn't get
+            // it to work to display filtered content sorted.
+            // Therefore I perform the filter myself as seen below, by building a new tree
+            // containing a flat list of filtered items only.
+            //base.searchString = search;
+
+            if (!m_HasSearch)
+            {
+                m_ActiveTree = m_Tree;
+            }
+            else
+            {
+                // Create a node that contains all items that match the search
+                m_ActiveTree = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
+
+                // Get all items in the tree as a flat list
+                var itemsToProcess = new List<TreeViewItem>();
+                itemsToProcess.Add(m_Tree);
+                for (var n = 0; n < itemsToProcess.Count; ++n)
+                {
+                    var item = itemsToProcess[n];
+                    if (item == null)
+                        continue;
+
+                    if (item.hasChildren)
+                        itemsToProcess.AddRange(item.children); // process all children too (this makes it kind of recursive)
+
+                    if (item.id == 0)
+                        continue; // ignore tree root node itself
+
+                    if (!DoesItemMatchSearch(item, search))
+                        continue;
+
+                    // Keep track of the selected item
+                    if (selectedId == item.id)
+                    {
+                        selection = new List<int>();
+                        selection.Add(selectedId);
+                    }
+
+                    m_ActiveTree.AddChild(item);
+                }
+
+                // If the search didn't find any item, make sure to add at least one
+                // invisible item, otherwise the TreeViewControl displays an error.
+                if (!m_ActiveTree.hasChildren)
+                    m_ActiveTree.AddChild(new TreeViewItem { id = m_ActiveTree.id + 1, depth = -1, displayName = "" });
+            }
+
+            SortItemsRecursive(m_ActiveTree, OnSortItem);
+            Reload();
 
             if (selection != null && selection.Count > 0)
                 this.SetSelection(selection, TreeViewSelectionOptions.FireSelectionChanged | TreeViewSelectionOptions.RevealAndFrame);
@@ -302,7 +360,12 @@ namespace HeapExplorer
                 {
                     rect.x += extraSpaceBeforeIconAndLabel;
                     rect.width -= extraSpaceBeforeIconAndLabel;
-                    rect = TreeViewUtility.IndentByDepth(args.item, rect);
+
+                    // Display the tree as a flat list when content is filtered
+                    if (m_HasSearch)
+                        rect = TreeViewUtility.IndentByDepth(0, rect);
+                    else
+                        rect = TreeViewUtility.IndentByDepth(args.item.depth, rect);
                 }
 
                 if (item != null)
@@ -402,10 +465,10 @@ namespace HeapExplorer
 
     public static class TreeViewUtility
     {
-        public static Rect IndentByDepth(TreeViewItem item, Rect rect)
+        public static Rect IndentByDepth(int itemDepth, Rect rect)
         {
             var foldoutWidth = 14;
-            var indent = item.depth + 1;
+            var indent = itemDepth + 1;
 
             rect.x += indent * foldoutWidth;
             rect.width -= indent * foldoutWidth;
