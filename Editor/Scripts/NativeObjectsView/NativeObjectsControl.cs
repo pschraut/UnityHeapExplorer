@@ -367,6 +367,9 @@ namespace HeapExplorer
 
             switch ((Column)sortingColumn)
             {
+                case Column.Name:
+                    return string.Compare(itemB.name ?? "", itemA.name ?? "", true);
+
                 case Column.Type:
                     return string.Compare(itemB.typeName, itemA.typeName, true);
 
