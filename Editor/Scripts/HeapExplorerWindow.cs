@@ -57,6 +57,7 @@ namespace HeapExplorer
         [NonSerialized] int m_BusyDraws;
         [NonSerialized] List<Exception> m_Exceptions = new List<Exception>(); // If exception occur in threaded jobs, these are collected and logged on the main thread
         [NonSerialized] bool m_CloseDueToError; // If set to true, will close the editor during the next Update
+        private static readonly int m_ControlHash = nameof(HeapExplorerWindow).GetHashCode();
 
         static List<System.Type> s_ViewTypes = new List<Type>();
 #pragma warning restore 0414
@@ -437,7 +438,10 @@ namespace HeapExplorer
                 GUILayout.Label(m_StatusBarString);
 
                 GUILayout.FlexibleSpace();
-                if (!string.IsNullOrEmpty(snapshotPath))
+                if (string.IsNullOrEmpty(snapshotPath))
+                    // Hack to make sure that control IDs stay the same when the help box is there or is not there.
+                    GUIUtility.GetControlID(m_ControlHash, FocusType.Passive, new Rect(0, 0, 0, 0));
+                else
                     GUILayout.Label(snapshotPath);
             }
 
