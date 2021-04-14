@@ -154,8 +154,6 @@ namespace HeapExplorer
                 }
             }
 
-            SortItemsRecursive(root, OnSortItem);
-
             return root;
         }
 

@@ -253,8 +253,6 @@ namespace HeapExplorer
                 }
             }
 
-            SortItemsRecursive(root, OnSortItem);
-
             if (!root.hasChildren)
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
 
@@ -348,8 +346,6 @@ namespace HeapExplorer
 
                 group.AddChild(item);
             }
-
-            SortItemsRecursive(root, OnSortItem);
 
             if (!root.hasChildren)
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
