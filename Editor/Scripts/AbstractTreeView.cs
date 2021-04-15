@@ -2,7 +2,8 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
@@ -99,7 +100,7 @@ namespace HeapExplorer
             if (hasSearch)
             {
                 SearchTree(root, searchString, m_RowsCache);
-                m_RowsCache.Sort(OnSortItem);
+                m_RowsCache.Sort(CompareItem);
             }
             else
             {
@@ -136,7 +137,7 @@ namespace HeapExplorer
         {
             if (root.hasChildren)
             {
-                root.children.Sort(OnSortItem);
+                root.children.Sort(CompareItem);
                 foreach (TreeViewItem child in root.children)
                 {
                     GetAndSortExpandedRowsRecursive(child, rows);
@@ -153,7 +154,7 @@ namespace HeapExplorer
 
             if (item.hasChildren && IsExpanded(item.id))
             {
-                item.children.Sort(OnSortItem);
+                item.children.Sort(CompareItem);
                 foreach (TreeViewItem child in item.children)
                 {
                     GetAndSortExpandedRowsRecursive(child, expandedRows);
@@ -170,6 +171,14 @@ namespace HeapExplorer
         }
 
         protected abstract int OnSortItem(TreeViewItem x, TreeViewItem y);
+
+        protected int CompareItem(TreeViewItem x, TreeViewItem y)
+        {
+            int result = OnSortItem(x, y);
+            if (result == 0)
+                return x.id.CompareTo(y.id);
+            return result;
+        }
 
         public void Search(string search)
         {
