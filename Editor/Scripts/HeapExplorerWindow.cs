@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Threading;
 
 namespace HeapExplorer
 {
@@ -47,6 +48,7 @@ namespace HeapExplorer
         [NonSerialized] Rect m_FileToolbarButtonRect; // The rect of the File button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_ViewToolbarButtonRect; // The rect of the View button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_CaptureToolbarButtonRect; // The rect of the Capture button in the toolbar menu. Used as position to open its popup menu.
+        [NonSerialized] bool m_IsClosing = false;
         [NonSerialized] List<AbstractThreadJob> m_ThreadJobs = new List<AbstractThreadJob>(); // Jobs to run on a background thread
         [NonSerialized] List<AbstractThreadJob> m_IntegrationJobs = new List<AbstractThreadJob>(); // These are completed thread jobs that are not being integrated on the main-thread
         [NonSerialized] bool m_Repaint; // Threads write to this variable rather than calling window.Repaint()
@@ -160,8 +162,14 @@ namespace HeapExplorer
 
         void OnDisable()
         {
-            TryAbortThread();
-            m_ThreadJobs = new List<AbstractThreadJob>();
+            lock (m_ThreadJobs)
+            {
+                // ask thread to exit
+                m_IsClosing = true;
+                Monitor.Pulse(m_ThreadJobs);
+            }
+            m_Thread.Join(); // wait for thread exit
+            m_Thread = null;
 
             DestroyViews();
         }
@@ -635,28 +643,6 @@ namespace HeapExplorer
             LoadFromFile(path);
         }
 
-        void TryAbortThread()
-        {
-            if (m_Thread == null)
-                return;
-
-            var guard = 0;
-            var flags = System.Threading.ThreadState.Stopped | System.Threading.ThreadState.Aborted;
-
-            m_Thread.Abort();
-            while ((m_Thread.ThreadState & flags) == 0)
-            {
-                System.Threading.Thread.Sleep(1);
-                if (++guard > 1000)
-                {
-                    Debug.LogWarning("Waiting for thread abort");
-                    break;
-                }
-            }
-
-            m_Thread = null;
-        }
-
         public void LoadFromFile(string path)
         {
             SaveView();
@@ -683,26 +669,18 @@ namespace HeapExplorer
 
         void ThreadLoop()
         {
-            var keepRunning = true;
-            while (keepRunning)
+            while (!m_IsClosing)
             {
-                System.Threading.Thread.Sleep(10);
-                switch (m_Thread.ThreadState)
-                {
-                    case System.Threading.ThreadState.Aborted:
-                    case System.Threading.ThreadState.AbortRequested:
-                    case System.Threading.ThreadState.Stopped:
-                    case System.Threading.ThreadState.StopRequested:
-                        keepRunning = false;
-                        break;
-                }
-
                 AbstractThreadJob job = null;
 
                 lock (m_ThreadJobs)
                 {
-                    if (m_ThreadJobs.Count == 0)
-                        continue;
+                    while (m_ThreadJobs.Count == 0)
+                    {
+                        Monitor.Wait(m_ThreadJobs); // block myself, waiting for jobs
+                        if (m_IsClosing)
+                            return; // exit
+                    }
 
                     job = m_ThreadJobs[0];
                     m_ThreadJobs.RemoveAt(0);
@@ -934,6 +912,7 @@ namespace HeapExplorer
                 }
 
                 m_ThreadJobs.Add(job);
+                Monitor.Pulse(m_ThreadJobs); // notify thread that jobs here
             }
 
             m_Repaint = true;
