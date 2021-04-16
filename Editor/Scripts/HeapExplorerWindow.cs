@@ -156,8 +156,6 @@ namespace HeapExplorer
             m_Thread.Start();
 
             CreateViews();
-
-            EditorApplication.update += OnApplicationUpdate;
         }
 
         void OnDisable()
@@ -165,19 +163,11 @@ namespace HeapExplorer
             TryAbortThread();
             m_ThreadJobs = new List<AbstractThreadJob>();
 
-            EditorApplication.update -= OnApplicationUpdate;
-
             DestroyViews();
         }
 
-        void OnApplicationUpdate()
+        void OnInspectorUpdate()
         {
-            if (m_Repaint)
-            {
-                m_Repaint = false;
-                Repaint();
-            }
-
             if (m_CloseDueToError)
             {
                 EditorUtility.DisplayDialog("Heap Explorer - ERROR", "An error occured. Please check Unity's Debug Console for more information.", "OK");
@@ -319,7 +309,6 @@ namespace HeapExplorer
                 {
                     m_BusyDraws--;
                     m_BusyString = "";
-                    Repaint();
 
                     DrawToolbar();
 
@@ -345,6 +334,12 @@ namespace HeapExplorer
             {
                 m_Repaint = true;
                 DrawBusy(abortButton);
+            }
+
+            if (Event.current.type == EventType.Repaint && m_Repaint)
+            {
+                m_Repaint = false;
+                Repaint();
             }
         }
 
