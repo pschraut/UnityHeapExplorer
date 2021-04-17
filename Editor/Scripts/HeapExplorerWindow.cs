@@ -438,12 +438,9 @@ namespace HeapExplorer
         {
             using (new GUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
             {
-                //GUILayout.Label(m_StatusBarString, EditorStyles.boldLabel);
                 GUILayout.Label(m_StatusBarString);
-
                 GUILayout.FlexibleSpace();
-                if (!string.IsNullOrEmpty(snapshotPath))
-                    GUILayout.Label(snapshotPath);
+                GUILayout.Label(snapshotPath ?? "");
             }
 
             // Darken the status area a little
