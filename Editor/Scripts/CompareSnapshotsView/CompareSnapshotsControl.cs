@@ -116,8 +116,6 @@ namespace HeapExplorer
             BuildMemoryTree(snapshots, ref uniqueId, root);
             BuildGCHandleTree(snapshots, ref uniqueId, root);
 
-            SortItemsRecursive(root, OnSortItem);
-
             return root;
         }
 

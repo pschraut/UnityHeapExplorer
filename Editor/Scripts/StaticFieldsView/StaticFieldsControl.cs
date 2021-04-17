@@ -121,8 +121,6 @@ namespace HeapExplorer
                 root.AddChild(group);
             }
 
-            SortItemsRecursive(root, OnSortItem);
-
             return root;
         }
 
