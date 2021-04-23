@@ -71,6 +71,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.managedTypes.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var type = m_Snapshot.managedTypes[n];
 
                 var item = new ManagedTypeItem
