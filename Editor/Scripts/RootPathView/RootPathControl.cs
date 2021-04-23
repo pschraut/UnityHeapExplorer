@@ -514,6 +514,9 @@ namespace HeapExplorer
 
             for (var j=0; j< paths.count; ++j)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var path = paths[j];
                 var parent = root;
 

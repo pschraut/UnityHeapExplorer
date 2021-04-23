@@ -132,6 +132,9 @@ namespace HeapExplorer
 
             for (int k = 0, kend = snapshots.Length; k < kend; ++k)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var snapshot = snapshots[k];
 
                 foreach (var section in snapshot.managedHeapSections)
@@ -156,6 +159,9 @@ namespace HeapExplorer
 
             for (int k = 0, kend = snapshots.Length; k < kend; ++k)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var snapshot = snapshots[k];
 
                 parent.size[k] += snapshot.gcHandles.Length * snapshot.virtualMachineInformation.pointerSize;
@@ -179,6 +185,9 @@ namespace HeapExplorer
 
             for (int k = 0, kend = snapshots.Length; k < kend; ++k)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var snapshot = snapshots[k];
 
                 for (int n = 0, nend = snapshot.nativeTypes.Length; n < nend; ++n)
@@ -222,6 +231,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = parent.children.Count; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var item = parent.children[n] as Item;
                 if (item == null)
                     continue;
@@ -250,6 +262,9 @@ namespace HeapExplorer
 
             for (int k = 0, kend = snapshots.Length; k < kend; ++k)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var snapshot = snapshots[k];
 
                 for (int n = 0, nend = snapshot.managedTypes.Length; n < nend; ++n)

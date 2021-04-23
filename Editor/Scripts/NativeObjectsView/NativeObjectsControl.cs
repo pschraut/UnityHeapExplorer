@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
 using System.Reflection;
+using System.Threading;
 
 namespace HeapExplorer
 {
@@ -169,6 +170,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.nativeObjects.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var no = m_Snapshot.nativeObjects[n];
                 if (!buildArgs.CanAdd(no))
                     continue;
@@ -277,6 +281,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.nativeObjects.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var no = m_Snapshot.nativeObjects[n];
                 if (!no.isPersistent)
                     continue;
@@ -312,6 +319,9 @@ namespace HeapExplorer
             foreach(var dupePair in dupesLookup)
             for (int n = 0, nend = dupePair.Value.Count; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var list = dupePair.Value;
                 if (list.Count <= 1)
                     continue;

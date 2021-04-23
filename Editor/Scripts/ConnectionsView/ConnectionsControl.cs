@@ -179,6 +179,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Connections.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var connection = m_Connections[n];
 
                 if (m_AddTo)

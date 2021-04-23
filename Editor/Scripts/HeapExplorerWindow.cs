@@ -2,11 +2,13 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
+#pragma warning disable 0414
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Threading;
 
 namespace HeapExplorer
 {
@@ -36,7 +38,6 @@ namespace HeapExplorer
             }
         }
 
-#pragma warning disable 0414
         [NonSerialized] TestVariables m_TestVariables = new TestVariables(); // Allows me to easily check/test various types when capturing a snapshot in the editor.
         [NonSerialized] bool m_IsCapturing; // Whether the tool is currently capturing a memory snapshot
         [NonSerialized] GotoHistory m_GotoHistory = new GotoHistory();
@@ -57,9 +58,11 @@ namespace HeapExplorer
         [NonSerialized] int m_BusyDraws;
         [NonSerialized] List<Exception> m_Exceptions = new List<Exception>(); // If exception occur in threaded jobs, these are collected and logged on the main thread
         [NonSerialized] bool m_CloseDueToError; // If set to true, will close the editor during the next Update
+        [NonSerialized] double m_LastRepaintTimestamp; // The EditorApplication.timeSinceStartup when a Repaint() was issued
 
         static List<System.Type> s_ViewTypes = new List<Type>();
-#pragma warning restore 0414
+
+        public bool isClosing { get; private set; }
 
         bool useThreads
         {
@@ -146,10 +149,13 @@ namespace HeapExplorer
 
         void OnEnable()
         {
+            isClosing = false;
             titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
             showInternalMemorySections = showInternalMemorySections;
+            m_LastRepaintTimestamp = 0;
+            m_Repaint = true;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
             m_Thread = new System.Threading.Thread(ThreadLoop);
@@ -157,25 +163,37 @@ namespace HeapExplorer
 
             CreateViews();
 
-            EditorApplication.update += OnApplicationUpdate;
+            EditorApplication.update += OnEditorApplicationUpdate;
         }
 
         void OnDisable()
         {
-            TryAbortThread();
-            m_ThreadJobs = new List<AbstractThreadJob>();
+            lock (m_ThreadJobs)
+            {
+                // ask thread to exit
+                isClosing = true;
+                if (m_Heap != null && m_Heap.isProcessing)
+                    m_Heap.abortActiveStepRequested = true;
+                Monitor.Pulse(m_ThreadJobs);
+            }
+            m_Thread.Join(); // wait for thread exit
+            m_Thread = null;
 
-            EditorApplication.update -= OnApplicationUpdate;
+            EditorApplication.update -= OnEditorApplicationUpdate;
 
             DestroyViews();
         }
 
-        void OnApplicationUpdate()
+        void OnEditorApplicationUpdate()
         {
-            if (m_Repaint)
+            if (m_Repaint || (m_Heap != null && m_Heap.isBusy))
             {
-                m_Repaint = false;
-                Repaint();
+                if (m_LastRepaintTimestamp+0.05f < EditorApplication.timeSinceStartup)
+                {
+                    m_Repaint = false;
+                    m_LastRepaintTimestamp = EditorApplication.timeSinceStartup;
+                    Repaint();
+                }
             }
 
             if (m_CloseDueToError)
@@ -319,7 +337,6 @@ namespace HeapExplorer
                 {
                     m_BusyDraws--;
                     m_BusyString = "";
-                    Repaint();
 
                     DrawToolbar();
 
@@ -637,28 +654,6 @@ namespace HeapExplorer
             LoadFromFile(path);
         }
 
-        void TryAbortThread()
-        {
-            if (m_Thread == null)
-                return;
-
-            var guard = 0;
-            var flags = System.Threading.ThreadState.Stopped | System.Threading.ThreadState.Aborted;
-
-            m_Thread.Abort();
-            while ((m_Thread.ThreadState & flags) == 0)
-            {
-                System.Threading.Thread.Sleep(1);
-                if (++guard > 1000)
-                {
-                    Debug.LogWarning("Waiting for thread abort");
-                    break;
-                }
-            }
-
-            m_Thread = null;
-        }
-
         public void LoadFromFile(string path)
         {
             SaveView();
@@ -685,26 +680,18 @@ namespace HeapExplorer
 
         void ThreadLoop()
         {
-            var keepRunning = true;
-            while (keepRunning)
+            while (!isClosing)
             {
-                System.Threading.Thread.Sleep(10);
-                switch (m_Thread.ThreadState)
-                {
-                    case System.Threading.ThreadState.Aborted:
-                    case System.Threading.ThreadState.AbortRequested:
-                    case System.Threading.ThreadState.Stopped:
-                    case System.Threading.ThreadState.StopRequested:
-                        keepRunning = false;
-                        break;
-                }
-
                 AbstractThreadJob job = null;
 
                 lock (m_ThreadJobs)
                 {
-                    if (m_ThreadJobs.Count == 0)
-                        continue;
+                    while (m_ThreadJobs.Count == 0)
+                    {
+                        Monitor.Wait(m_ThreadJobs); // block myself, waiting for jobs
+                        if (isClosing)
+                            return; // exit
+                    }
 
                     job = m_ThreadJobs[0];
                     m_ThreadJobs.RemoveAt(0);
@@ -936,6 +923,7 @@ namespace HeapExplorer
                 }
 
                 m_ThreadJobs.Add(job);
+                Monitor.Pulse(m_ThreadJobs); // notify thread that jobs here
             }
 
             m_Repaint = true;

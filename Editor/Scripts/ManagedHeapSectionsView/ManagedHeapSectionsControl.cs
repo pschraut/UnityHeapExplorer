@@ -93,6 +93,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = sections.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var section = sections[n];
 
                 var item = new HeapSectionItem()

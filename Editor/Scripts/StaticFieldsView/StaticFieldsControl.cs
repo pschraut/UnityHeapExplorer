@@ -108,6 +108,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.managedStaticTypes.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var type = m_Snapshot.managedTypes[m_Snapshot.managedStaticTypes[n]];
 
                 var group = new StaticTypeItem

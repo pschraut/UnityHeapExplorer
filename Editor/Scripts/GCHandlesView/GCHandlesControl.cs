@@ -105,6 +105,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.gcHandles.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var gcHandle = m_Snapshot.gcHandles[n];
                 var managedTypeIndex = -1;
                 if (gcHandle.managedObjectsArrayIndex >= 0)
