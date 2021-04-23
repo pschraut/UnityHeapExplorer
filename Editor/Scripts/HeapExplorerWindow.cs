@@ -48,7 +48,7 @@ namespace HeapExplorer
         [NonSerialized] Rect m_FileToolbarButtonRect; // The rect of the File button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_ViewToolbarButtonRect; // The rect of the View button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_CaptureToolbarButtonRect; // The rect of the Capture button in the toolbar menu. Used as position to open its popup menu.
-        [NonSerialized] bool m_IsClosing = false;
+        public bool isClosing { get; private set; }
         [NonSerialized] List<AbstractThreadJob> m_ThreadJobs = new List<AbstractThreadJob>(); // Jobs to run on a background thread
         [NonSerialized] List<AbstractThreadJob> m_IntegrationJobs = new List<AbstractThreadJob>(); // These are completed thread jobs that are not being integrated on the main-thread
         [NonSerialized] bool m_Repaint; // Threads write to this variable rather than calling window.Repaint()
@@ -165,7 +165,9 @@ namespace HeapExplorer
             lock (m_ThreadJobs)
             {
                 // ask thread to exit
-                m_IsClosing = true;
+                isClosing = true;
+                if (m_Heap != null && m_Heap.isProcessing)
+                    m_Heap.abortActiveStepRequested = true;
                 Monitor.Pulse(m_ThreadJobs);
             }
             m_Thread.Join(); // wait for thread exit
@@ -669,7 +671,7 @@ namespace HeapExplorer
 
         void ThreadLoop()
         {
-            while (!m_IsClosing)
+            while (!isClosing)
             {
                 AbstractThreadJob job = null;
 
@@ -678,7 +680,7 @@ namespace HeapExplorer
                     while (m_ThreadJobs.Count == 0)
                     {
                         Monitor.Wait(m_ThreadJobs); // block myself, waiting for jobs
-                        if (m_IsClosing)
+                        if (isClosing)
                             return; // exit
                     }
 

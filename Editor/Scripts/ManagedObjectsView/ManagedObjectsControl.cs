@@ -168,6 +168,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var mo = m_Snapshot.managedObjects[n];
                 if (!OnCanAddObject(mo))
                     continue;

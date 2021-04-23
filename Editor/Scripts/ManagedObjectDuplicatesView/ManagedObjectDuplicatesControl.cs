@@ -33,6 +33,9 @@ namespace HeapExplorer
 
             for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 progress.value = (n + 1.0f) / nend;
 
                 var obj = m_Snapshot.managedObjects[n];

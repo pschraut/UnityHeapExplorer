@@ -63,6 +63,9 @@ namespace HeapExplorer
             // Build a table that contains indices of all objects that are the "Target" of a delegate
             for (int n = 0, nend = m_Snapshot.managedObjects.Length; n < nend; ++n)
             {
+                if (window.isClosing) // the window is closing
+                    break;
+
                 var obj = m_Snapshot.managedObjects[n];
                 if (obj.address == 0)
                     continue;
