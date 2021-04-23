@@ -2,6 +2,7 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
+#pragma warning disable 0414
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -37,7 +38,6 @@ namespace HeapExplorer
             }
         }
 
-#pragma warning disable 0414
         [NonSerialized] TestVariables m_TestVariables = new TestVariables(); // Allows me to easily check/test various types when capturing a snapshot in the editor.
         [NonSerialized] bool m_IsCapturing; // Whether the tool is currently capturing a memory snapshot
         [NonSerialized] GotoHistory m_GotoHistory = new GotoHistory();
@@ -48,7 +48,6 @@ namespace HeapExplorer
         [NonSerialized] Rect m_FileToolbarButtonRect; // The rect of the File button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_ViewToolbarButtonRect; // The rect of the View button in the toolbar menu. Used as position to open its popup menu.
         [NonSerialized] Rect m_CaptureToolbarButtonRect; // The rect of the Capture button in the toolbar menu. Used as position to open its popup menu.
-        public bool isClosing { get; private set; }
         [NonSerialized] List<AbstractThreadJob> m_ThreadJobs = new List<AbstractThreadJob>(); // Jobs to run on a background thread
         [NonSerialized] List<AbstractThreadJob> m_IntegrationJobs = new List<AbstractThreadJob>(); // These are completed thread jobs that are not being integrated on the main-thread
         [NonSerialized] bool m_Repaint; // Threads write to this variable rather than calling window.Repaint()
@@ -59,9 +58,11 @@ namespace HeapExplorer
         [NonSerialized] int m_BusyDraws;
         [NonSerialized] List<Exception> m_Exceptions = new List<Exception>(); // If exception occur in threaded jobs, these are collected and logged on the main thread
         [NonSerialized] bool m_CloseDueToError; // If set to true, will close the editor during the next Update
+        [NonSerialized] double m_LastRepaintTimestamp; // The EditorApplication.timeSinceStartup when a Repaint() was issued
 
         static List<System.Type> s_ViewTypes = new List<Type>();
-#pragma warning restore 0414
+
+        public bool isClosing { get; private set; }
 
         bool useThreads
         {
@@ -153,12 +154,16 @@ namespace HeapExplorer
             minSize = new Vector2(800, 600);
             snapshotPath = "";
             showInternalMemorySections = showInternalMemorySections;
+            m_LastRepaintTimestamp = 0;
+            m_Repaint = true;
 
             m_ThreadJobs = new List<AbstractThreadJob>();
             m_Thread = new System.Threading.Thread(ThreadLoop);
             m_Thread.Start();
 
             CreateViews();
+
+            EditorApplication.update += OnEditorApplicationUpdate;
         }
 
         void OnDisable()
@@ -174,11 +179,23 @@ namespace HeapExplorer
             m_Thread.Join(); // wait for thread exit
             m_Thread = null;
 
+            EditorApplication.update -= OnEditorApplicationUpdate;
+
             DestroyViews();
         }
 
-        void OnInspectorUpdate()
+        void OnEditorApplicationUpdate()
         {
+            if (m_Repaint || (m_Heap != null && m_Heap.isBusy))
+            {
+                if (m_LastRepaintTimestamp+0.05f < EditorApplication.timeSinceStartup)
+                {
+                    m_Repaint = false;
+                    m_LastRepaintTimestamp = EditorApplication.timeSinceStartup;
+                    Repaint();
+                }
+            }
+
             if (m_CloseDueToError)
             {
                 EditorUtility.DisplayDialog("Heap Explorer - ERROR", "An error occured. Please check Unity's Debug Console for more information.", "OK");
@@ -345,12 +362,6 @@ namespace HeapExplorer
             {
                 m_Repaint = true;
                 DrawBusy(abortButton);
-            }
-
-            if (Event.current.type == EventType.Repaint && m_Repaint)
-            {
-                m_Repaint = false;
-                Repaint();
             }
         }
 
