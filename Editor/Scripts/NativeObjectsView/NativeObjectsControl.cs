@@ -173,8 +173,6 @@ namespace HeapExplorer
                 if (window.isClosing) // the window is closing
                     break;
 
-                Thread.Sleep(10);
-
                 var no = m_Snapshot.nativeObjects[n];
                 if (!buildArgs.CanAdd(no))
                     continue;
