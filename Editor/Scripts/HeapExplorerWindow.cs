@@ -148,6 +148,7 @@ namespace HeapExplorer
 
         void OnEnable()
         {
+            isClosing = false;
             titleContent = new GUIContent(HeGlobals.k_Title);
             minSize = new Vector2(800, 600);
             snapshotPath = "";
