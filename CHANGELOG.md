@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
  - Fixed search regression introduced in 3.9.0. Thanks to jojo59516 for the fix. See [PR#10](https://github.com/pschraut/UnityHeapExplorer/pull/10) for details.
  - Fixed "ArgumentException: Getting control 2's position in a group with only 2 controls when doing repaint" error that occurred very often when loading a memory snapshot.
- 
+ - Fixed high CPU utilization caused by repainting the "analyzing in progress" GUI. Thanks to jojo59516 for the fix. See [PR#11](https://github.com/pschraut/UnityHeapExplorer/pull/11) for details.
+ - Fixed that closing the Heap Explorer window while analyzing a memory snapshot is in progress sometimes didn't close the window immediately. Thanks to jojo59516 for the fix. See [PR#11](https://github.com/pschraut/UnityHeapExplorer/pull/11) for details.
+
 ## [3.9.0] - 2021-04-11
 ### Added
  - Added ability to search for a specific type in any list that provides a search-field. Use ```t:type``` just like in Unity's search-fields too. 
