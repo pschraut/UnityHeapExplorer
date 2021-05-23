@@ -4,7 +4,7 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2021-??-??
+## [4.0.0] - 2021-05-23
 ### Fixed
  - Fixed search regression introduced in 3.9.0. Thanks to jojo59516 for the fix. See [PR#10](https://github.com/pschraut/UnityHeapExplorer/pull/10) for details.
  - Fixed "ArgumentException: Getting control 2's position in a group with only 2 controls when doing repaint" error that occurred very often when loading a memory snapshot.

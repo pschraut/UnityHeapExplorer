@@ -26,8 +26,13 @@ In Unity's Package Manager, choose "Add package from git URL" and insert one of 
 
 ## Package URL's
 
+I recommend to right-click the URL below and choose "Copy Link" rather than selecting the text and copying it, because sometimes it copies a space at the end and the Unity Package Manager can't handle it and spits out an error when you try to add the package.
+
+Please see the ```CHANGELOG.md``` file to see what's changed in each version.
+
 | Version  |     Link      |
 |----------|---------------|
+| 4.0.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.0.0 |
 | 3.9.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.9.0 |
 | 3.8.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.8.0 |
 | 3.7.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.7.0 |
@@ -36,7 +41,6 @@ In Unity's Package Manager, choose "Add package from git URL" and insert one of 
 | 3.4.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.4.0 |
 | 3.3.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.3.0 |
 | 3.2.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.2.0 |
-
 
 # Credits
 
