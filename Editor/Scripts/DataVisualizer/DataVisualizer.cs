@@ -1,5 +1,5 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// Heap Explorer for Unity. Copyright (c) 2019-2022 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
 using System.Collections;
@@ -256,6 +256,28 @@ namespace HeapExplorer
             var path = FileUtil.GetUniqueTempPathInProject() + ".txt";
             System.IO.File.WriteAllText(path, m_String);
             EditorUtility.OpenWithDefaultApp(path);
+        }
+    }
+
+    class DateTimeDataVisualizer : AbstractDataVisualizer
+    {
+        System.DateTime m_DateTime;
+
+        [InitializeOnLoadMethod]
+        static void RegisterVisualizer()
+        {
+            RegisterVisualizer("System.DateTime", typeof(DateTimeDataVisualizer));
+        }
+
+        protected override void OnInitialize()
+        {
+            var ticks = m_MemoryReader.ReadInt64(m_Address);
+            m_DateTime = new System.DateTime(ticks);
+        }
+
+        protected override void OnGUI()
+        {
+            EditorGUILayout.LabelField(m_DateTime.ToString());
         }
     }
 

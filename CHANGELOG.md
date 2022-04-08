@@ -4,6 +4,10 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2022-??-?? (not released yet)
+### Added
+ - Added visualizer for ```System.DateTime``` to the C# managed object inspector.
+
 ## [4.0.0] - 2021-05-23
 ### Fixed
  - Fixed search regression introduced in 3.9.0. Thanks to jojo59516 for the fix. See [PR#10](https://github.com/pschraut/UnityHeapExplorer/pull/10) for details.
