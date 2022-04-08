@@ -1,7 +1,8 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// Heap Explorer for Unity. Copyright (c) 2019-2022 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
+#pragma warning disable 0414
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -18,7 +19,6 @@ namespace HeapExplorer
     /// </summary>
     public class TestVariables
     {
-#pragma warning disable 0414
         interface ITestInterface
         {
             void HelloWorld();
@@ -234,6 +234,18 @@ namespace HeapExplorer
         uint m_magic0 = (uint)0xdeadbeef;
 
         string m_testString = "This is a string";
-#pragma warning restore 0414
+
+        long m_long = -1234567890;
+        ulong m_ulong = 0x11_22_33_44_55_66_77_88;
+
+        Color m_redColor = Color.red;
+        Color m_greenColor = Color.green;
+        Color m_blueColor = Color.blue;
+
+        Color32 m_redColor32 = Color.red;
+        Color32 m_greenColor32 = Color.green;
+        Color32 m_blueColor32 = Color.blue;
+
+        DateTime m_dateTime_1999_11_22 = new DateTime(1999, 11, 22, 1, 2, 3);
     }
 }

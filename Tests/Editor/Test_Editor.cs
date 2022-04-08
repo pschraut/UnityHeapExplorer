@@ -1,7 +1,8 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019-2021 Peter Schraut (www.console-dev.de). See LICENSE.md
+// Heap Explorer for Unity. Copyright (c) 2019-2022 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
+#pragma warning disable 0414
 #if HEAPEXPLORER_ENABLE_TESTS
 using System;
 using UnityEngine;
@@ -96,13 +97,18 @@ namespace HeapExplorer
             AssertQuaternion("m_quaternion1", Quaternion.AngleAxis(90, Vector3.up), managedObject);
 
             AssertMatrix4x4("m_matrix", Matrix4x4.identity, managedObject);
+
+            AssertLong("m_long", -1234567890, managedObject);
+            AssertULong("m_ulong", 0x11_22_33_44_55_66_77_88, managedObject);
+
+            AssertDateTime("m_dateTime_1999_11_22", new DateTime(1999, 11, 22, 1, 2, 3), managedObject);
         }
 
         PackedManagedField GetField(string fieldName, RichManagedObject managedObject)
         {
             PackedManagedField field;
-            var index = managedObject.type.FindField(fieldName, out field);
-            Assert.AreNotEqual(-1, index, "Field '{0}' not found.", fieldName);
+            var found = managedObject.type.FindField(fieldName, out field);
+            Assert.IsTrue(found, $"Field '{fieldName}' not found.");
 
             return field;
         }
@@ -121,6 +127,22 @@ namespace HeapExplorer
 
             var field = GetField(fieldName, managedObject);
             Assert.AreEqual(value, memory.ReadInt32((uint)field.offset + managedObject.address));
+        }
+
+        void AssertLong(string fieldName, long value, RichManagedObject managedObject)
+        {
+            var memory = new MemoryReader(m_snapshot);
+
+            var field = GetField(fieldName, managedObject);
+            Assert.AreEqual(value, memory.ReadInt64((uint)field.offset + managedObject.address));
+        }
+
+        void AssertULong(string fieldName, ulong value, RichManagedObject managedObject)
+        {
+            var memory = new MemoryReader(m_snapshot);
+
+            var field = GetField(fieldName, managedObject);
+            Assert.AreEqual(value, memory.ReadUInt64((uint)field.offset + managedObject.address));
         }
 
         void AssertVector2(string fieldName, Vector2 value, RichManagedObject managedObject)
@@ -174,6 +196,15 @@ namespace HeapExplorer
             Assert.AreEqual(value, matrix);
         }
 
+        void AssertDateTime(string fieldName, DateTime value, RichManagedObject managedObject)
+        {
+            var memory = new MemoryReader(m_snapshot);
+
+            var field = GetField(fieldName, managedObject);
+            var ticks = memory.ReadInt64(0 + (uint)field.offset + managedObject.address);
+            Assert.AreEqual(value, new DateTime(ticks));
+        }
+
         void OnSnapshotReceived(string path, bool captureResult)
         {
             var args = new MemorySnapshotProcessingArgs();
@@ -182,7 +213,6 @@ namespace HeapExplorer
             m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(args);
         }
 
-#pragma warning disable 0414
         int m_intOne = 1;
         int m_intTwo = 2;
         int m_intThree = 3;
@@ -377,7 +407,19 @@ namespace HeapExplorer
         uint m_magic0 = (uint)0xdeadbeef;
 
         string m_testString = "This is a string";
-#pragma warning restore 0414
+
+        long m_long = -1234567890;
+        ulong m_ulong = 0x11_22_33_44_55_66_77_88;
+
+        Color m_redColor = Color.red;
+        Color m_greenColor = Color.green;
+        Color m_blueColor = Color.blue;
+
+        Color32 m_redColor32 = Color.red;
+        Color32 m_greenColor32 = Color.green;
+        Color32 m_blueColor32 = Color.blue;
+
+        DateTime m_dateTime_1999_11_22 = new DateTime(1999, 11, 22, 1, 2, 3);
     }
 }
 #endif // HEAPEXPLORER_ENABLE_TESTS
