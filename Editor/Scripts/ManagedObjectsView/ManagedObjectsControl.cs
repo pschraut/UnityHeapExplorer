@@ -149,6 +149,10 @@ namespace HeapExplorer
                 }
             }
 
+            // For the TreeView to work, make this at least one item exists
+            if (!root.hasChildren)
+                root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
+
             return root;
         }
 

@@ -200,6 +200,14 @@ For example, if you have ten "Banana" strings and ten "Apple" strings, these wou
 
 The view can be sorted by various columns. The most interesting ones likely being "Size" and "Count".  Sorting the view by "Size" allows to quickly see where most memory is wasted due duplicated objects.
 
+# C# Empty Shell Objects
+
+The C# Empty Shell Objects View analyzes managed objects of type UnityEngine.Object if their native object counter-part has been destroyed, which can be a memory leak.
+
+If the m_CachedPtr value of a managed unity engine object points to null, it means its native object underneath has already been destroyed, but it leaked the managed shell. Please see [this post](https://forum.unity.com/threads/help-understanding-diff-data-from-memory-profiler.862813/#post-5684956) for more details.
+
+![alt text](Documentation~/images/cs_empty_shell_objects_01.png "Empty Shell Objects")
+
 
 # C# Delegates
 
