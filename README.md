@@ -32,6 +32,7 @@ Please see the ```CHANGELOG.md``` file to see what's changed in each version.
 
 | Version  |     Link      |
 |----------|---------------|
+| 4.1.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.1.0 |
 | 4.0.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.0.0 |
 | 3.9.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.9.0 |
 | 3.8.0 | https://github.com/pschraut/UnityHeapExplorer.git#3.8.0 |

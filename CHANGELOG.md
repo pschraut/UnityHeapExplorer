@@ -4,8 +4,9 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [4.1.0] - 2022-??-?? (not released yet)
+## [4.1.0] - 2022-06-28
 ### Added
+ - Added ```#C Empty Shell Objects``` view. It's basically a native Unity object that was destroyed, where its managed object representation is still hanging around, which seems to indicate some sort of memory leak. See [this forum post](https://forum.unity.com/threads/heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-5#post-5896832) for more details.
  - Added visualizer for ```System.DateTime``` to the C# managed object inspector.
 
 ## [4.0.0] - 2021-05-23
