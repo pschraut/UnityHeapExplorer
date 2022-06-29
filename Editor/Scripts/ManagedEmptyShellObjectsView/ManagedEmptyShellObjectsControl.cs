@@ -50,16 +50,16 @@ namespace HeapExplorer
                 // Get type as a "higher level" representation that is easier to work with
                 var richType = new RichManagedType(m_Snapshot, obj.managedTypesArrayIndex);
 
-                // Try to get the m_InstanceID field
+                // Try to get the m_InstanceID field (only exists in editor, not in built players)
                 PackedManagedField packedField;
-                if (!richType.FindField("m_InstanceID", out packedField))
-                    continue;
-
-                // The editor contains various empty shell objects whose instanceID all contain 0.
-                // I guess it's some kind of special object? In this case we just ignore them.
-                var instanceID = memoryReader.ReadInt32(obj.address + (ulong)packedField.offset);
-                if (instanceID == 0)
-                    continue;
+                if (richType.FindField("m_InstanceID", out packedField))
+                {
+                    // The editor contains various empty shell objects whose instanceID all contain 0.
+                    // I guess it's some kind of special object? In this case we just ignore them.
+                    var instanceID = memoryReader.ReadInt32(obj.address + (ulong)packedField.offset);
+                    if (instanceID == 0)
+                        continue;
+                }
 
                 // Check if we already have a grouping node for that type.
                 // Create a new node if we don't have it.
