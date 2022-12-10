@@ -1,6 +1,6 @@
 {
   "name": "com.oddworm.heapexplorer",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "displayName": "Heap Explorer",
   "description": "Heap Explorer is a Memory Profiler, Debugger and Analyzer for Unity. You can open it from the main menu 'Window > Analysis > Heap Explorer'.",
   "documentationUrl": "https://github.com/pschraut/UnityHeapExplorer",

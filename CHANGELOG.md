@@ -4,6 +4,10 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [4.1.2] - 202?-??-??
+### Fixed
+ - Fixed ```ComputeConnectionKey``` possibly causing an overflow and showing wrong connections. Thanks to Yi Ji for sending me the fix.
+
 ## [4.1.1] - 2022-06-29
 ### Fixed
  - Fixed that ```#C Empty Shell Objects``` detection didn't work with memory snapshots taken from a Player. Thanks to Gotmachine for the fix, see [this post](https://forum.unity.com/threads/heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-6#post-8240496) in the Unity forums for details.

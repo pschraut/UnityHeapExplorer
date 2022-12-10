@@ -359,9 +359,9 @@ namespace HeapExplorer
             }
         }
 
-        UInt64 ComputeConnectionKey(PackedConnection.Kind kind, int index)
+        ulong ComputeConnectionKey(PackedConnection.Kind kind, int index)
         {
-            var value = (UInt64)(((int)kind << 50) + index);
+            var value = (((ulong)kind << 50) + (ulong)index);
             return value;
         }
 
