@@ -4,16 +4,18 @@
 //
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
     public class NativeObjectPreviewView : HeapExplorerView
     {
         Editor m_Editor;
-        RichNativeObject m_Object;
+        Option<RichNativeObject> m_Object;
         bool m_HasPreviewAssets;
         List<string> m_Guids = new List<string>();
         List<UnityEngine.Object> m_LoadedAssets = new List<Object>();
@@ -36,7 +38,7 @@ namespace HeapExplorer
             base.Awake();
 
             titleContent = new GUIContent("Asset Preview", "");
-            m_Object = RichNativeObject.invalid;
+            m_Object = None._;
         }
 
         public override void OnDestroy()
@@ -51,7 +53,7 @@ namespace HeapExplorer
 
             m_Guids = new List<string>();
             m_LoadedAssets = new List<Object>();
-            m_Object = RichNativeObject.invalid;
+            m_Object = None._;
         }
 
         public void Clear()
@@ -62,7 +64,7 @@ namespace HeapExplorer
                 m_Editor = null;
             }
 
-            m_Object = RichNativeObject.invalid;
+            m_Object = None._;
             m_HasPreviewAssets = false;
             m_LoadedAssets = new List<Object>();
             m_Guids = new List<string>();
@@ -75,18 +77,19 @@ namespace HeapExplorer
             Clear();
 
             m_PreviewTime = Time.realtimeSinceStartup;
-            m_Object = new RichNativeObject(snapshot, obj.nativeObjectsArrayIndex);
+            var nativeObject = new RichNativeObject(snapshot, obj.nativeObjectsArrayIndex);
+            m_Object = Some(nativeObject);
 
-            if (autoLoad && m_Object.isValid && m_Object.isPersistent)
+            if (autoLoad && nativeObject.isPersistent)
                 LoadAssetPreviews();
         }
 
         void LoadAssetPreviews()
         {
-            if (!m_Object.isValid)
+            if (!m_Object.valueOut(out var obj))
                 return;
 
-            m_Guids = new List<string>(AssetDatabase.FindAssets(string.Format("t:{0} {1}", m_Object.type.name, m_Object.name)));
+            m_Guids = new List<string>(AssetDatabase.FindAssets($"t:{obj.type.name} {obj.name}"));
             m_LoadPreview = true;
             window.Repaint();
         }
@@ -106,12 +109,14 @@ namespace HeapExplorer
                     // Make sure the filename and object name match
                     var path = AssetDatabase.GUIDToAssetPath(guid);
                     var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
-                    if (string.Equals(fileName, m_Object.name, System.StringComparison.OrdinalIgnoreCase))
-                    {
+                    {if (
+                        m_Object.valueOut(out var obj)
+                        && string.Equals(fileName, obj.name, System.StringComparison.OrdinalIgnoreCase)
+                    ) {
                         var asset = AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(guid));
                         if (asset != null)
                             m_LoadedAssets.Add(asset);
-                    }
+                    }}
 
                     if (m_Guids.Count == 0 && m_LoadedAssets.Count > 0)
                     {
@@ -137,14 +142,13 @@ namespace HeapExplorer
                 return;
             }
 
-            if (!m_Object.isValid || !m_Object.isPersistent)
-            {
+            {if (!m_Object.valueOut(out var obj) || !obj.isPersistent) {
                 DrawPreviewButtons(false);
 
                 var text = "Select an asset to display its preview here.";
                 DrawBackground(HeEditorGUILayout.GetLargeRect(), text, true);
                 return;
-            }
+            }}
 
             // Tried to load preview already?
             if (!m_LoadPreview)
@@ -167,7 +171,10 @@ namespace HeapExplorer
             {
                 DrawPreviewButtons(false);
 
-                var text = string.Format("Could not find any asset named '{1}' of type '{0}' in the project.", m_Object.type.name, m_Object.name);
+                var text = 
+                    m_Object.valueOut(out var obj)
+                    ? string.Format("Could not find any asset named '{1}' of type '{0}' in the project.", obj.type.name, obj.name)
+                    : "no object selected";
                 DrawBackground(HeEditorGUILayout.GetLargeRect(), text, true);
                 return;
             }
@@ -202,8 +209,8 @@ namespace HeapExplorer
                 autoLoad = GUILayout.Toggle(autoLoad, new GUIContent(HeEditorStyles.previewAutoLoadImage, "Automatically preview assets."), HeEditorStyles.previewButton, GUILayout.Width(24));
                 if (EditorGUI.EndChangeCheck())
                 {
-                    if (m_Object.isValid)
-                        Inspect(m_Object.packed);
+                    if (m_Object.valueOut(out var obj))
+                        Inspect(obj.packed);
                 }
 
                 using (new EditorGUI.DisabledScope(m_LoadedAssets.Count == 0))

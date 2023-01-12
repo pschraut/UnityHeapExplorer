@@ -2,11 +2,12 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -33,7 +34,8 @@ namespace HeapExplorer
 
         protected override void OnDrawHeader()
         {
-            var text = string.Format("{0} managed object(s), {1} memory", m_ObjectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize));
+            var text =
+                $"{m_ObjectsControl.managedObjectsCount} managed object(s), {EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize)} memory";
             window.SetStatusbarString(text);
             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
@@ -41,7 +43,8 @@ namespace HeapExplorer
 
     public class ManagedDelegateTargetsControl : AbstractManagedObjectsControl
     {
-        Dictionary<int, byte> m_delegateObjectTable = new Dictionary<int, byte>(64);
+        readonly Dictionary<PackedManagedObject.ArrayIndex, byte> m_delegateObjectTable = 
+            new Dictionary<PackedManagedObject.ArrayIndex, byte>(64);
 
         public ManagedDelegateTargetsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(window, editorPrefsKey, state)
@@ -56,8 +59,7 @@ namespace HeapExplorer
             var reader = new MemoryReader(m_Snapshot);
             var systemDelegate = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemDelegate];
 
-            PackedManagedField field;
-            if (!systemDelegate.TryGetField("m_target", out field))
+            if (!systemDelegate.TryGetField("m_target", out var field))
                 return;
 
             // Build a table that contains indices of all objects that are the "Target" of a delegate
@@ -76,17 +78,19 @@ namespace HeapExplorer
                     continue;
 
                 // Read the delegate m_target pointer
-                var pointer = reader.ReadPointer(obj.address + (uint)field.offset);
+                var m_targetPtr = obj.address + field.offset;
+                if (!reader.ReadPointer(obj.address + field.offset).valueOut(out var pointer)) {
+                    Debug.LogError($"Can't read 'm_target' pointer from address {m_targetPtr:X}");
+                    continue;
+                }
                 if (pointer == 0)
                     continue;
 
                 // Try to find the managed object where m_target points to
-                var target = m_Snapshot.FindManagedObjectOfAddress(pointer);
-                if (target < 0)
-                    continue;
-
-                // We found a managed object that is referenced by a System.Delegate
-                m_delegateObjectTable[target] = 1;
+                {if (m_Snapshot.FindManagedObjectOfAddress(pointer).valueOut(out var target)) {
+                    // We found a managed object that is referenced by a System.Delegate
+                    m_delegateObjectTable[target] = 1;
+                }}
             }
         }
 
@@ -122,7 +126,8 @@ namespace HeapExplorer
 
         protected override void OnDrawHeader()
         {
-            var text = string.Format("{0} delegate(s), {1} memory", m_ObjectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize));
+            var text =
+                $"{m_ObjectsControl.managedObjectsCount} delegate(s), {EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize)} memory";
             window.SetStatusbarString(text);
             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
@@ -163,7 +168,7 @@ namespace HeapExplorer
 
         public override int CanProcessCommand(GotoCommand command)
         {
-            if (command.toManagedObject.isValid)
+            if (command.toManagedObject.isSome)
                 return 10;
 
             return base.CanProcessCommand(command);
@@ -176,7 +181,8 @@ namespace HeapExplorer
 
         protected override void OnDrawHeader()
         {
-            var text = string.Format("{0} managed object(s), {1} memory", m_ObjectsControl.managedObjectsCount, EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize));
+            var text =
+                $"{m_ObjectsControl.managedObjectsCount} managed object(s), {EditorUtility.FormatBytes(m_ObjectsControl.managedObjectsSize)} memory";
             window.SetStatusbarString(text);
             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
@@ -201,7 +207,7 @@ namespace HeapExplorer
 
         HeSearchField m_ObjectsSearchField;
         ConnectionsView m_ConnectionsView;
-        RichManagedObject m_Selected;
+        Option<RichManagedObject> m_Selected;
         RootPathView m_RootPathView;
         PropertyGridView m_PropertyGridView;
         float m_SplitterHorzPropertyGrid = 0.32f;
@@ -258,23 +264,23 @@ namespace HeapExplorer
 
         public override void RestoreCommand(GotoCommand command)
         {
-            if (command.toManagedObject.isValid)
-                m_ObjectsControl.Select(command.toManagedObject.packed);
+            {if (command.toManagedObject.valueOut(out var managedObject))
+                m_ObjectsControl.Select(managedObject.packed);}
 
             base.RestoreCommand(command);
         }
 
         public override GotoCommand GetRestoreCommand()
         {
-            if (m_Selected.isValid)
-                return new GotoCommand(m_Selected);
+            if (m_Selected.valueOut(out var selected))
+                return new GotoCommand(selected);
 
             return base.GetRestoreCommand();
         }
 
         void OnListViewSelectionChange(PackedManagedObject? item)
         {
-            m_Selected = RichManagedObject.invalid;
+            m_Selected = None._;
             if (!item.HasValue)
             {
                 m_RootPathView.Clear();
@@ -283,10 +289,11 @@ namespace HeapExplorer
                 return;
             }
 
-            m_Selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
-            m_ConnectionsView.Inspect(m_Selected.packed);
-            m_PropertyGridView.Inspect(m_Selected.packed);
-            m_RootPathView.Inspect(m_Selected.packed);
+            var selected = new RichManagedObject(snapshot, item.Value.managedObjectsArrayIndex);
+            m_Selected = Some(selected);
+            m_ConnectionsView.Inspect(selected.packed);
+            m_PropertyGridView.Inspect(selected.packed);
+            m_RootPathView.Inspect(selected.packed);
         }
 
         public override void OnGUI()

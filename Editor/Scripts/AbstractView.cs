@@ -81,7 +81,7 @@ namespace HeapExplorer
                 body = ubody.Operand as MemberExpression;
             }
 
-            return string.Format("HeapExplorer.{0}.{1}", editorPrefsKey, body.Member.Name);
+            return $"HeapExplorer.{editorPrefsKey}.{body.Member.Name}";
         }
 
         public HeapExplorerView()

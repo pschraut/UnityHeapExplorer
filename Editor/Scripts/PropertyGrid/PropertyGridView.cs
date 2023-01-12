@@ -2,11 +2,12 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
+
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -15,8 +16,7 @@ namespace HeapExplorer
         PropertyGridControl m_PropertyGrid;
         AbstractDataVisualizer m_DataVisualizer;
         Vector2 m_DataVisualizerScrollPos;
-        RichManagedObject m_ManagedObject;
-        RichManagedType m_ManagedType;
+        Option<RichManagedType> m_ManagedType;
         bool m_ShowAsHex;
         HexView m_HexView;
 
@@ -52,9 +52,7 @@ namespace HeapExplorer
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var label = "Field(s)";
-                    if (m_ManagedType.isValid)
-                        label = m_ManagedType.name + " field(s)";
+                    var label = m_ManagedType.fold("Field(s)", managedType => managedType.name + " field(s)");
                     EditorGUILayout.LabelField(label, EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
 
                     m_ShowAsHex = GUILayout.Toggle(m_ShowAsHex, new GUIContent(HeEditorStyles.eyeImage, "Show Memory"), EditorStyles.miniButton, GUILayout.Width(30), GUILayout.Height(17));
@@ -75,36 +73,39 @@ namespace HeapExplorer
             }
         }
 
-        public void Inspect(PackedManagedObject managedObject)
-        {
-            m_ManagedObject = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
-            m_ManagedType = m_ManagedObject.type;
-            m_PropertyGrid.Inspect(snapshot, m_ManagedObject.packed);
+        public void Inspect(PackedManagedObject managedObject) {
+            var richManagedObject = new RichManagedObject(snapshot, managedObject.managedObjectsArrayIndex);
+            m_ManagedType = Some(richManagedObject.type);
+            m_PropertyGrid.Inspect(snapshot, richManagedObject.packed);
 
             m_DataVisualizer = null;
-            if (AbstractDataVisualizer.HasVisualizer(m_ManagedObject.type.name))
+            if (AbstractDataVisualizer.HasVisualizer(richManagedObject.type.name))
             {
-                m_DataVisualizer = AbstractDataVisualizer.CreateVisualizer(m_ManagedObject.type.name);
-                m_DataVisualizer.Initialize(snapshot, new MemoryReader(snapshot), m_ManagedObject.address, m_ManagedObject.type.packed);
+                m_DataVisualizer = AbstractDataVisualizer.CreateVisualizer(richManagedObject.type.name);
+                m_DataVisualizer.Initialize(snapshot, new MemoryReader(snapshot), richManagedObject.address, richManagedObject.type.packed);
             }
 
-            m_HexView.Inspect(snapshot, managedObject.address, (ulong)managedObject.size);
+            m_HexView.Inspect(snapshot, managedObject.address, managedObject.size.getOrElse(0));
         }
 
         public void Inspect(RichManagedType managedType)
         {
-            m_ManagedObject = RichManagedObject.invalid;
-            m_ManagedType = managedType;
-            m_PropertyGrid.InspectStaticType(snapshot, m_ManagedType.packed);
-            m_HexView.Inspect(snapshot, 0, new ArraySegment64<byte>(managedType.packed.staticFieldBytes, 0, (ulong)managedType.packed.staticFieldBytes.LongLength));
+            m_ManagedType = Some(managedType);
+            m_PropertyGrid.InspectStaticType(snapshot, managedType.packed);
+            m_HexView.Inspect(
+                snapshot, 0, 
+                new ArraySegment64<byte>(
+                    managedType.packed.staticFieldBytes, 0, 
+                    managedType.packed.staticFieldBytes.LongLength.ToULongClamped()
+                )
+            );
 
             m_DataVisualizer = null;
         }
 
         public void Clear()
         {
-            m_ManagedObject = RichManagedObject.invalid;
-            m_ManagedType = RichManagedType.invalid;
+            m_ManagedType = None._;
             m_PropertyGrid.Clear();
             m_HexView.Clear();
             m_DataVisualizer = null;

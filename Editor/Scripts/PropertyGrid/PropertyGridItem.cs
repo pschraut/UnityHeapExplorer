@@ -66,11 +66,8 @@ namespace HeapExplorer
 
             OnInitialize();
 
-            var text = string.Format("{0} {1} = {2}\n\n{3}",
-                displayType,
-                displayName,
-                displayValue,
-                PackedManagedTypeUtility.GetInheritanceAsString(m_Snapshot, type.managedTypesArrayIndex));
+            var text =
+                $"{displayType} {displayName} = {displayValue}\n\n{PackedManagedTypeUtility.GetInheritanceAsString(m_Snapshot, type.managedTypesArrayIndex)}";
 
             this.tooltip = text.Trim();
         }
@@ -145,7 +142,7 @@ namespace HeapExplorer
             {
                 var pointer = address;
                 if (type.isPointer)
-                    pointer = myMemoryReader.ReadPointer(address);
+                    pointer = myMemoryReader.ReadPointer(address).getOrThrow();
 
                 DataVisualizerWindow.CreateWindow(m_Snapshot, myMemoryReader, pointer, type);
             }
@@ -163,13 +160,13 @@ namespace HeapExplorer
                 return;
 
             // If it points to null, it has no object
-            var pointer = itm.myMemoryReader.ReadPointer(itm.address);
+            var pointer = itm.myMemoryReader.ReadPointer(itm.address).getOrThrow();
             if (pointer == 0)
                 return;
 
             // Check if it is a managed object
-            var managedObjIndex = m_Snapshot.FindManagedObjectOfAddress(itm.type.isArray ? itm.address : pointer);
-            if (managedObjIndex != -1)
+            var maybeManagedObjIndex = m_Snapshot.FindManagedObjectOfAddress(itm.type.isArray ? itm.address : pointer);
+            if (maybeManagedObjIndex.valueOut(out var managedObjIndex))
             {
                 if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref rect, rect.height)))
                 {
@@ -178,8 +175,7 @@ namespace HeapExplorer
             }
 
             // Check if it is a native object
-            var nativeObjIndex = m_Snapshot.FindNativeObjectOfAddress(pointer);
-            if (nativeObjIndex != -1)
+            if (m_Snapshot.FindNativeObjectOfAddress(pointer).valueOut(out var nativeObjIndex))
             {
                 if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref rect, rect.height)))
                 {

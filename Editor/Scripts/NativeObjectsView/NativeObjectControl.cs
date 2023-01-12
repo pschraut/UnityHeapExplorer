@@ -4,6 +4,7 @@
 //
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
@@ -58,7 +59,7 @@ namespace HeapExplorer
 
             AddTreeViewItem(root, new Item() { displayName = "Name", value = m_Object.name });
             AddTreeViewItem(root, new Item() { displayName = "Type", value = m_Snapshot.nativeTypes[m_Object.nativeTypesArrayIndex].name });
-            AddTreeViewItem(root, new Item() { displayName = "Size", value = EditorUtility.FormatBytes(m_Object.size) });
+            AddTreeViewItem(root, new Item() { displayName = "Size", value = EditorUtility.FormatBytes(m_Object.size.ToLongClamped()) });
             AddTreeViewItem(root, new Item() { displayName = "Address", value = string.Format(StringFormat.Address, m_Object.nativeObjectAddress) });
             AddTreeViewItem(root, new Item() { displayName = "InstanceID", value = m_Object.instanceId.ToString() });
             AddTreeViewItem(root, new Item() { displayName = "Persistent", value = m_Object.isPersistent.ToString() });

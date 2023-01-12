@@ -22,7 +22,7 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            m_Pointer = m_MemoryReader.ReadPointer(address);
+            m_Pointer = m_MemoryReader.ReadPointer(address).getOrThrow();
 
             // If it's a pointer, read the actual object type from the object in memory
             // and do not rely on the field type. The reason for this is that the field type
@@ -30,15 +30,14 @@ namespace HeapExplorer
             var type = m_Snapshot.managedTypes[field.managedTypesArrayIndex];
             if (type.isPointer && m_Pointer != 0)
             {
-                var i = m_Snapshot.FindManagedObjectTypeOfAddress(m_Pointer);
-                if (i != -1)
+                if (m_Snapshot.FindManagedObjectTypeOfAddress(m_Pointer).valueOut(out var i))
                     type = m_Snapshot.managedTypes[i];
             }
 
             base.type = type;
             displayName = field.name;
             displayType = type.name;
-            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type);
+            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type).getOrElse("<cannot read>");
             isExpandable = false;// m_pointer > 0 && PackedManageTypeUtility.HasTypeOrBaseAnyInstanceField(m_snapshot, type);
             enabled = m_Pointer > 0;
             icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);

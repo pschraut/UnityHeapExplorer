@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using static HeapExplorer.ViewConsts;
 
 namespace HeapExplorer
 {
@@ -56,7 +57,7 @@ namespace HeapExplorer
                 new MultiColumnHeaderState(new[]
                 {
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("C# Type"), width = 250, autoResize = true },
-                new MultiColumnHeaderState.Column() { headerContent = new GUIContent("C++ Name", "If the C# object has a C++ counterpart, display its C++ object name in this column."), width = 150, autoResize = true },
+                new MultiColumnHeaderState.Column() { headerContent = new GUIContent(COLUMN_CPP_NAME, COLUMN_CPP_NAME_DESCRIPTION), width = 150, autoResize = true },
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Size"), width = 80, autoResize = true },
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Count"), width = 80, autoResize = true },
                 new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Address"), width = 120, autoResize = true },
@@ -70,7 +71,7 @@ namespace HeapExplorer
 
         public void Select(PackedManagedObject obj)
         {
-            var item = FindItemByAddressRecursive(rootItem, (ulong)(obj.address));
+            var item = FindItemByAddressRecursive(rootItem, obj.address);
             SelectItem(item);
         }
 
@@ -308,17 +309,7 @@ namespace HeapExplorer
                 }
             }
 
-            public override string cppName
-            {
-                get
-                {
-                    var nativeObj = m_Object.nativeObject;
-                    if (nativeObj.isValid)
-                        return nativeObj.name;
-
-                    return "";
-                }
-            }
+            public override string cppName => m_Object.nativeObject.valueOut(out var nativeObj) ? nativeObj.name : "";
 
             public override long size
             {
@@ -378,11 +369,11 @@ namespace HeapExplorer
                     //    }
                     //}
 
-                    if (m_Object.nativeObject.isValid)
+                    if (m_Object.nativeObject.valueOut(out var nativeObject))
                     {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_Object.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(nativeObject));
                         }
                     }
                 }
@@ -394,8 +385,8 @@ namespace HeapExplorer
                         break;
 
                     case Column.CppCounterpart:
-                        if (m_Object.nativeObject.isValid)
-                            GUI.Label(position, m_Object.nativeObject.name);
+                        if (m_Object.nativeObject.valueOut(out var nativeObject))
+                            GUI.Label(position, nativeObject.name);
                         break;
 
                     case Column.Size:

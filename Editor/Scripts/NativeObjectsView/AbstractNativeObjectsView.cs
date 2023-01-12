@@ -4,6 +4,7 @@
 //
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
@@ -17,7 +18,7 @@ namespace HeapExplorer
         NativeObjectControl m_NativeObjectControl;
         HeSearchField m_SearchField;
         ConnectionsView m_ConnectionsView;
-        PackedNativeUnityEngineObject? m_Selected;
+        Option<PackedNativeUnityEngineObject> m_Selected;
         RootPathView m_RootPathView;
         NativeObjectPreviewView m_PreviewView;
         float m_SplitterHorz = 0.33333f;
@@ -163,9 +164,9 @@ namespace HeapExplorer
 
         public override void RestoreCommand(GotoCommand command)
         {
-            if (command.toNativeObject.isValid)
+            if (command.toNativeObject.valueOut(out var nativeObject))
             {
-                m_NativeObjectsControl.Select(command.toNativeObject.packed);
+                m_NativeObjectsControl.Select(nativeObject.packed);
                 return;
             }
 
@@ -174,8 +175,8 @@ namespace HeapExplorer
 
         public override GotoCommand GetRestoreCommand()
         {
-            if (m_Selected.HasValue)
-                return new GotoCommand(new RichNativeObject(snapshot, m_Selected.Value.nativeObjectsArrayIndex));
+            if (m_Selected.valueOut(out var selected))
+                return new GotoCommand(new RichNativeObject(snapshot, selected.nativeObjectsArrayIndex));
 
             return base.GetRestoreCommand();
         }
@@ -227,9 +228,9 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope(GUILayout.MaxWidth(16)))
                         {
-                            if (m_Selected.HasValue)
+                            if (m_Selected.valueOut(out var selected))
                             {
-                                HeEditorGUI.NativeObjectIcon(GUILayoutUtility.GetRect(16, 16), m_Selected.Value);
+                                HeEditorGUI.NativeObjectIcon(GUILayoutUtility.GetRect(16, 16), selected);
                                 //GUI.DrawTexture(r, HeEditorStyles.assetImage);
                             }
 
@@ -261,10 +262,10 @@ namespace HeapExplorer
         {
         }
 
-        void OnListViewSelectionChange(PackedNativeUnityEngineObject? nativeObject)
+        void OnListViewSelectionChange(Option<PackedNativeUnityEngineObject> nativeObject)
         {
             m_Selected = nativeObject;
-            if (!m_Selected.HasValue)
+            if (!m_Selected.valueOut(out var selected))
             {
                 m_RootPathView.Clear();
                 m_ConnectionsView.Clear();
@@ -273,10 +274,10 @@ namespace HeapExplorer
                 return;
             }
 
-            m_ConnectionsView.Inspect(m_Selected.Value);
-            m_NativeObjectControl.Inspect(snapshot, m_Selected.Value);
-            m_PreviewView.Inspect(m_Selected.Value);
-            m_RootPathView.Inspect(m_Selected.Value);
+            m_ConnectionsView.Inspect(selected);
+            m_NativeObjectControl.Inspect(snapshot, selected);
+            m_PreviewView.Inspect(selected);
+            m_RootPathView.Inspect(selected);
         }
 
         // The 'Filer' menu displays this content

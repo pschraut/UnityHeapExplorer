@@ -34,7 +34,7 @@ namespace HeapExplorer
                 if (obj.address == 0)
                     continue; // points to null
 
-                if (obj.nativeObjectsArrayIndex != -1)
+                if (obj.nativeObjectsArrayIndex.isSome)
                     continue; // has a native object, thus can't be an empty shell object
 
                 var type = m_Snapshot.managedTypes[obj.managedTypesArrayIndex];
@@ -51,12 +51,14 @@ namespace HeapExplorer
                 var richType = new RichManagedType(m_Snapshot, obj.managedTypesArrayIndex);
 
                 // Try to get the m_InstanceID field (only exists in editor, not in built players)
-                PackedManagedField packedField;
-                if (richType.FindField("m_InstanceID", out packedField))
-                {
+                if (richType.FindField("m_InstanceID", out var packedField)) {
+                    var instanceIDPtr = obj.address + packedField.offset;
+                    if (!memoryReader.ReadInt32(instanceIDPtr).valueOut(out var instanceID)) {
+                        m_Snapshot.Error($"Can't read 'instanceID' from address {instanceIDPtr:X}, skipping."); 
+                        continue;
+                    }
                     // The editor contains various empty shell objects whose instanceID all contain 0.
                     // I guess it's some kind of special object? In this case we just ignore them.
-                    var instanceID = memoryReader.ReadInt32(obj.address + (ulong)packedField.offset);
                     if (instanceID == 0)
                         continue;
                 }

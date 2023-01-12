@@ -4,6 +4,7 @@
 //
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace HeapExplorer
 {
@@ -24,7 +25,14 @@ namespace HeapExplorer
             public LogicalOperator Op;
             public bool Not;
             public bool Exact;
-            public string Text;
+            
+            /// <summary>
+            /// Lower-cased text.
+            /// <para/>
+            /// It is a lot cheaper to lower-case the string once than use
+            /// <see cref="StringComparison.OrdinalIgnoreCase"/> on every search. 
+            /// </summary>
+            public string LowerCasedText;
         }
 
         public class Result
@@ -57,13 +65,12 @@ namespace HeapExplorer
                 return labels.Contains(label);
             }
 
-            public bool IsNameMatch(string text)
+            /// <param name="lowerCasedText">string that underwent transformation to lower-case.</param>
+            public bool IsNameMatch(string lowerCasedText)
             {
                 if (m_NamesExpr.Count == 0)
                     return true;
-                if (text == null || text.Length == 0)
-                    return true;
-
+                
                 var or_result = false;
                 var or_result_missing = true;
 
@@ -75,18 +82,18 @@ namespace HeapExplorer
                     {
                         if (expression.Not)
                         {
-                            if (!expression.Exact && text.IndexOf(expression.Text, StringComparison.OrdinalIgnoreCase) != -1)
+                            if (!expression.Exact && lowerCasedText.ContainsFast(expression.LowerCasedText))
                                 return false;
 
-                            if (expression.Exact && text.Equals(expression.Text, StringComparison.OrdinalIgnoreCase))
+                            if (expression.Exact && lowerCasedText.Equals(expression.LowerCasedText, StringComparison.Ordinal))
                                 return false;
                         }
                         else
                         {
-                            if (!expression.Exact && text.IndexOf(expression.Text, StringComparison.OrdinalIgnoreCase) == -1)
+                            if (!expression.Exact && !lowerCasedText.ContainsFast(expression.LowerCasedText))
                                 return false;
 
-                            if (expression.Exact && !text.Equals(expression.Text, StringComparison.OrdinalIgnoreCase))
+                            if (expression.Exact && !lowerCasedText.Equals(expression.LowerCasedText, StringComparison.Ordinal))
                                 return false;
                         }
                     }
@@ -94,18 +101,18 @@ namespace HeapExplorer
                     {
                         if (expression.Not)
                         {
-                            if (!expression.Exact && text.IndexOf(expression.Text, StringComparison.OrdinalIgnoreCase) == -1)
+                            if (!expression.Exact && !lowerCasedText.ContainsFast(expression.LowerCasedText))
                                 or_result = true;
 
-                            if (expression.Exact && !text.Equals(expression.Text, StringComparison.OrdinalIgnoreCase))
+                            if (expression.Exact && !lowerCasedText.Equals(expression.LowerCasedText, StringComparison.Ordinal))
                                 or_result = true;
                         }
                         else
                         {
-                            if (!expression.Exact && text.IndexOf(expression.Text, StringComparison.OrdinalIgnoreCase) != -1)
+                            if (!expression.Exact && lowerCasedText.ContainsFast(expression.LowerCasedText))
                                 or_result = true;
 
-                            if (expression.Exact && text.Equals(expression.Text, StringComparison.OrdinalIgnoreCase))
+                            if (expression.Exact && lowerCasedText.Equals(expression.LowerCasedText, StringComparison.Ordinal))
                                 or_result = true;
                         }
                         or_result_missing = false;
@@ -126,17 +133,24 @@ namespace HeapExplorer
             var types = result.types;
             var labels = result.labels;
             var builder = new System.Text.StringBuilder(64);
-            var loopguard = 0;
             var condition = LogicalOperator.And;
             var not = false;
             var exact = false;
 
+            var lastN = -1;
             var n = 0;
-            while (n < text.Length)
-            {
-                if (++loopguard > 10000)
+            while (n < text.Length) {
+                if (n == lastN) {
+                    Debug.LogError(
+                        $"HeapExplorer: {nameof(SearchTextParser)}.{nameof(Parse)}() got stuck at n={n}, aborting. "
+                        + "This should not happen."
+                    );
                     break;
-
+                }
+                else {
+                    lastN = n;
+                }
+                
                 SkipWhiteSpace(text, ref n);
                 if (n + 1 < text.Length)
                 {
@@ -179,7 +193,7 @@ namespace HeapExplorer
                                 names[names.Count - 1].Op = LogicalOperator.Or;
                             var r = new ResultExpr();
                             r.Op = condition;
-                            r.Text = builder.ToString().Trim();
+                            r.LowerCasedText = builder.ToString().Trim().ToLowerInvariant();
                             r.Not = not;
                             r.Exact = exact;
                             names.Add(r);
@@ -223,20 +237,19 @@ namespace HeapExplorer
                 }
 
                 GetNextWord(text, ref n, builder);
-                if (builder.Length > 0)
-                {
+                if (builder.Length > 0) {
                     if (names.Count > 0 && condition == LogicalOperator.Or)
                         names[names.Count-1].Op = LogicalOperator.Or;
-                    var r = new ResultExpr();
-                    r.Op = condition;
-                    r.Text = builder.ToString().Trim();
-                    r.Not = not;
-                    r.Exact = exact;
+                    var r = new ResultExpr {
+                        Op = condition,
+                        LowerCasedText = builder.ToString().Trim().ToLowerInvariant(),
+                        Not = not,
+                        Exact = exact
+                    };
                     names.Add(r);
                     builder.Length = 0;
                     not = false;
                     condition = LogicalOperator.And;
-                    continue;
                 }
             }
 
@@ -249,7 +262,7 @@ namespace HeapExplorer
             //    builder.AppendLine("Label: " + labels[n]);
 
             foreach (var v in result.m_NamesExpr)
-                result.names.Add(v.Text);
+                result.names.Add(v.LowerCasedText);
 
             // sort by operator. AND first, OR second
             var nam = new List<ResultExpr>();
@@ -267,45 +280,30 @@ namespace HeapExplorer
             return result;
         }
 
-        static void SkipWhiteSpace(string text, ref int index)
-        {
-            int loopguard = 0;
-
-            while (index < text.Length)
-            {
-                var tc = text[index];
-                if (!char.IsWhiteSpace(tc))
+        static void SkipWhiteSpace(string text, ref int index) {
+            while (index < text.Length) {
+                var textChar = text[index];
+                if (!char.IsWhiteSpace(textChar))
                     return;
 
                 index++;
-
-                if (++loopguard > 10000)
-                    break;
             }
         }
 
         static void GetNextWord(string text, ref int index, System.Text.StringBuilder builder)
         {
-            int loopguard = 0;
-
-            while (index < text.Length)
-            {
+            while (index < text.Length) {
                 var tc = text[index];
                 if (char.IsWhiteSpace(tc))
                     return;
 
                 builder.Append(tc);
                 index++;
-
-                if (++loopguard > 10000)
-                    break;
             }
         }
 
         static void GetNextQuotedWord(string text, ref int index, System.Text.StringBuilder builder)
         {
-            int loopguard = 0;
-
             index++; // skip first quote
             while (index < text.Length)
             {
@@ -319,10 +317,15 @@ namespace HeapExplorer
 
                 builder.Append(tc);
                 index++;
-
-                if (++loopguard > 10000)
-                    break;
             }
+        }
+
+        /// <summary>
+        /// Makes sure to compare using the <see cref="StringComparison.Ordinal"/> which is the fastest way there is. 
+        /// </summary>
+        static bool ContainsFast(this string haystack, string needle) 
+        {
+            return haystack.IndexOf(needle, StringComparison.Ordinal) >= 0;
         }
     }
 }

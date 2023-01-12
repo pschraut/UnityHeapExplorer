@@ -2,8 +2,8 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
@@ -83,7 +83,7 @@ namespace HeapExplorer
                             progressUpdate = Time.realtimeSinceStartup + 0.1f;
                             if (EditorUtility.DisplayCancelableProgressBar(
                                 "Saving...",
-                                string.Format("Memory Section {0} / {1}", n+1, sections.Length),
+                                $"Memory Section {n + 1} / {sections.Length}",
                                 (n + 1.0f) / sections.Length))
                                 break;
                         }
@@ -214,7 +214,8 @@ namespace HeapExplorer
                     // Managed heap fragmentation view
                     using (new EditorGUILayout.VerticalScope(HeEditorStyles.panel))
                     {
-                        var text = string.Format("{0} managed heap sections ({1}) within an {2} address space", GetMemorySections().Length, EditorUtility.FormatBytes((long)GetTotalHeapSize()), EditorUtility.FormatBytes((long)GetHeapAddressSpace()));
+                        var text =
+                            $"{GetMemorySections().Length} managed heap sections ({EditorUtility.FormatBytes((long) GetTotalHeapSize())}) within an {EditorUtility.FormatBytes((long) GetHeapAddressSpace())} address space";
                         GUILayout.Label(text, EditorStyles.boldLabel);
                         GUI.DrawTexture(GUILayoutUtility.GetRect(100, window.position.height * 0.1f, GUILayout.ExpandWidth(true)), m_HeapFragTexture, ScaleMode.StretchToFill);
                     }
@@ -251,22 +252,23 @@ namespace HeapExplorer
             }
         }
 
-        void OnListViewSelectionChange(PackedMemorySection? mo)
+        void OnListViewSelectionChange(Option<PackedMemorySection> mo)
         {
-            if (!mo.HasValue)
+            if (!mo.valueOut(out var packedMemorySection))
             {
                 m_ConnectionsView.Clear();
                 return;
             }
 
-            var job = new MemorySectionFragmentationJob();
-            job.texture = m_SectionFragTexture;
-            job.snapshot = snapshot;
-            job.memorySection = mo.Value;
+            var job = new MemorySectionFragmentationJob {
+                texture = m_SectionFragTexture,
+                snapshot = snapshot,
+                memorySection = packedMemorySection
+            };
             ScheduleJob(job);
 
-            m_ConnectionsView.Inspect(mo.Value);
-            m_HexView.Inspect(snapshot, mo.Value.startAddress, mo.Value.size);
+            m_ConnectionsView.Inspect(packedMemorySection);
+            m_HexView.Inspect(snapshot, packedMemorySection.startAddress, packedMemorySection.size);
         }
 
 
@@ -362,8 +364,8 @@ namespace HeapExplorer
 
         public static Color32[] GetManagedMemorySectionUsageAsTextureData(PackedMemorySnapshot snapshot, PackedMemorySection memorySection)
         {
-            List<PackedConnection> references = new List<PackedConnection>();
-            snapshot.GetConnections(memorySection, references, null);
+            var references = new List<PackedConnection.Pair>();
+            snapshot.GetConnections(memorySection, references, _ => _);
 
             var pixels = new Color32[k_TextureWidth * k_TextureHeight];
 
@@ -378,15 +380,15 @@ namespace HeapExplorer
                 var reference = references[n];
                 ulong address = 0;
                 ulong size = 0;
-                switch (reference.toKind)
+                switch (reference.kind)
                 {
                     case PackedConnection.Kind.Managed:
-                        size = (ulong)snapshot.managedObjects[reference.to].size;
-                        address = snapshot.managedObjects[reference.to].address;
+                        size = snapshot.managedObjects[reference.index].size.getOrElse(0);
+                        address = snapshot.managedObjects[reference.index].address;
                         break;
 
                     default:
-                        Debug.LogErrorFormat("{0} not supported yet", reference.toKind);
+                        Debug.LogErrorFormat("{0} not supported yet", reference.kind);
                         continue;
                 }
 

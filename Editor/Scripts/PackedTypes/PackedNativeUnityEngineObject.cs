@@ -2,11 +2,9 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 using System;
+using HeapExplorer.Utilities;
 using UnityEditor.Profiling.Memory.Experimental;
 
 namespace HeapExplorer
@@ -16,29 +14,36 @@ namespace HeapExplorer
     public struct PackedNativeUnityEngineObject
     {
         // The memory address of the native C++ object. This matches the "m_CachedPtr" field of UnityEngine.Object.
-        public System.Int64 nativeObjectAddress;
+        public ulong nativeObjectAddress;
 
         // InstanceId of this object.
         public System.Int32 instanceId;
 
         // Size in bytes of this object.
-        public System.Int32 size;
+        public ulong size;
 
         // The index used to obtain the native C++ type description from the PackedMemorySnapshot.nativeTypes array.
-        public System.Int32 nativeTypesArrayIndex;
+        public PInt nativeTypesArrayIndex;
 
-        // The index of this element in the PackedMemorySnapshot.nativeObjects array.
+        /// <summary>
+        /// The index of this element in the <see cref="PackedMemorySnapshot.nativeObjects"/> array.
+        /// </summary>
         [NonSerialized]
-        public System.Int32 nativeObjectsArrayIndex;
+        public PInt nativeObjectsArrayIndex;
 
-        // The index of the C# counter-part in the PackedMemorySnapshot.managedObjects array or -1 if no C# object exists.
+        /// <summary>
+        /// The index of the C# counter-part in the <see cref="PackedMemorySnapshot.managedObjects"/> array or `None`
+        /// if no C# object exists.
+        /// </summary>
         [NonSerialized]
-        public System.Int32 managedObjectsArrayIndex;
+        public Option<PackedManagedObject.ArrayIndex> managedObjectsArrayIndex;
 
         // The hideFlags this native object has.
         public HideFlags hideFlags;
 
-        // Name of this object.
+        /// <summary>
+        /// Name of this object.
+        /// </summary>
         public System.String name;
 
         // Is this object persistent? (Assets are persistent, objects stored in scenes are persistent, dynamically created objects are not)
@@ -50,7 +55,7 @@ namespace HeapExplorer
         // Is this native object an internal Unity manager object?
         public System.Boolean isManager;
 
-        const System.Int32 k_Version = 1;
+        const System.Int32 k_Version = 2;
 
         public static void Write(System.IO.BinaryWriter writer, PackedNativeUnityEngineObject[] value)
         {
@@ -80,7 +85,7 @@ namespace HeapExplorer
             if (version >= 1)
             {
                 var length = reader.ReadInt32();
-                stateString = string.Format("Loading {0} Native Objects", length);
+                stateString = $"Loading {length} Native Objects";
                 value = new PackedNativeUnityEngineObject[length];
 
                 for (int n = 0, nend = value.Length; n < nend; ++n)
@@ -90,13 +95,11 @@ namespace HeapExplorer
                     value[n].isManager = reader.ReadBoolean();
                     value[n].name = reader.ReadString();
                     value[n].instanceId = reader.ReadInt32();
-                    value[n].size = reader.ReadInt32();
-                    value[n].nativeTypesArrayIndex = reader.ReadInt32();
+                    value[n].size = version >= 2 ? reader.ReadUInt64() : reader.ReadPInt();
+                    value[n].nativeTypesArrayIndex = reader.ReadPInt();
                     value[n].hideFlags = (HideFlags)reader.ReadInt32();
-                    value[n].nativeObjectAddress = reader.ReadInt64();
-
-                    value[n].nativeObjectsArrayIndex = n;
-                    value[n].managedObjectsArrayIndex = -1;
+                    value[n].nativeObjectAddress = version >= 2 ? reader.ReadUInt64() : reader.ReadInt64().ToULongClamped();
+                    value[n].nativeObjectsArrayIndex = PInt.createOrThrow(n);
                 }
             }
         }
@@ -127,8 +130,10 @@ namespace HeapExplorer
             var sourceNativeObjectAddress = new ulong[source.nativeObjectAddress.GetNumEntries()];
             source.nativeObjectAddress.GetEntries(0, source.nativeObjectAddress.GetNumEntries(), ref sourceNativeObjectAddress);
 
-            for (int n = 0, nend = value.Length; n < nend; ++n)
+            for (int n = 0, nend = value.Length; n < nend; ++n) 
             {
+                var nativeObjectAddress = sourceNativeObjectAddress[n];
+                var nativeTypesArrayIndex = sourceNativeTypeArrayIndex[n];
                 value[n] = new PackedNativeUnityEngineObject
                 {
                     isPersistent = (sourceFlags[n] & ObjectFlags.IsPersistent) != 0,
@@ -136,14 +141,22 @@ namespace HeapExplorer
                     isManager = (sourceFlags[n] & ObjectFlags.IsManager) != 0,
                     name = sourceObjectNames[n],
                     instanceId = sourceInstanceIds[n],
-                    size = (int)sourceSizes[n], // TODO: should be ulong
-                    nativeTypesArrayIndex = sourceNativeTypeArrayIndex[n],
+                    size = sourceSizes[n],
+                    nativeTypesArrayIndex = PInt.createOrThrow(nativeTypesArrayIndex),
                     hideFlags = sourceHideFlags[n],
-                    nativeObjectAddress = (long)sourceNativeObjectAddress[n], // TODO: should be ulong
+                    nativeObjectAddress = nativeObjectAddress,
 
-                    nativeObjectsArrayIndex = n,
-                    managedObjectsArrayIndex = -1,
+                    nativeObjectsArrayIndex = PInt.createOrThrow(n),
                 };
+
+                if (nativeTypesArrayIndex < 0) 
+                {
+                    Debug.LogWarningFormat(
+                        "HeapExplorer: native object at {0:X} does not have an associated native type "
+                        + "(nativeTypesArrayIndex={1}). This should not happen.",
+                        nativeObjectAddress, nativeTypesArrayIndex
+                    );
+                }
             }
 
             return value;

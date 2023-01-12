@@ -49,7 +49,10 @@ namespace HeapExplorer
                 if (type.isValueType)
                     continue;
 
-                var hash = memoryReader.ComputeObjectHash(obj.address, type);
+                if (!memoryReader.ComputeObjectHash(obj.address, type).valueOut(out var hash)) {
+                    Debug.LogError($"Can't compute object hash for object of type {type.name} at address {obj.address:X}");
+                    continue;
+                }
 
                 AbstractItem parent;
                 if (!lookup.TryGetValue(hash, out parent))

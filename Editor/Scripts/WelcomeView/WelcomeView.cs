@@ -39,7 +39,7 @@ namespace HeapExplorer
             base.OnGUI();
 
             GUILayout.Space(4);
-            GUILayout.Label(string.Format("{0} {1} for Unity", HeGlobals.k_Title, HeGlobals.k_Version), HeEditorStyles.heading1);
+            GUILayout.Label($"{HeGlobals.k_Title} {HeGlobals.k_Version} for Unity", HeEditorStyles.heading1);
             GUILayout.Label("Created by Peter Schraut (www.console-dev.de)");
             GUILayout.Space(16);
 
@@ -129,7 +129,7 @@ You can switch the connected application in Unity's Profiler (Window > Profiler)
                         {
                             var path = HeMruFiles.GetPath(n);
 
-                            GUILayout.Label(string.Format("{0,2:##}", n + 1), GUILayout.Width(20));
+                            GUILayout.Label($"{n + 1,2:##}", GUILayout.Width(20));
 
                             if (GUILayout.Button(new GUIContent(HeEditorStyles.deleteImage, "Remove entry from list"), HeEditorStyles.iconStyle, GUILayout.Width(16), GUILayout.Height(16)))
                             {
@@ -137,7 +137,7 @@ You can switch the connected application in Unity's Profiler (Window > Profiler)
                                 break;
                             }
 
-                            if (GUILayout.Button(new GUIContent(string.Format("{0}", path)), HeEditorStyles.hyperlink))
+                            if (GUILayout.Button(new GUIContent($"{path}"), HeEditorStyles.hyperlink))
                             {
                                 window.LoadFromFile(path);
                             }

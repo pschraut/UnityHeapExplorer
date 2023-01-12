@@ -2,198 +2,73 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
-    public struct RichNativeObject
+    /// <summary>
+    /// An <see cref="PackedNativeUnityEngineObject"/> index validated against a <see cref="PackedMemorySnapshot"/>.
+    /// </summary>
+    public readonly struct RichNativeObject
     {
         public RichNativeObject(PackedMemorySnapshot snapshot, int nativeObjectsArrayIndex)
-            : this()
         {
-            m_Snapshot = snapshot;
-            m_NativeObjectArrayIndex = nativeObjectsArrayIndex;
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (nativeObjectsArrayIndex < 0 || nativeObjectsArrayIndex >= snapshot.nativeObjects.Length)
+                throw new ArgumentOutOfRangeException(
+                    $"nativeObjectsArrayIndex ({nativeObjectsArrayIndex})is out of bounds [0..{snapshot.nativeObjects.Length})"
+                );
+            this.snapshot = snapshot;
+            this.nativeObjectsArrayIndex = nativeObjectsArrayIndex;
         }
 
-        public PackedNativeUnityEngineObject packed
-        {
-            get
-            {
-                if (!isValid)
-                    return new PackedNativeUnityEngineObject() { nativeObjectsArrayIndex = -1, nativeTypesArrayIndex = -1, managedObjectsArrayIndex = -1 };
+        public override string ToString() =>
+            // We output the address with '0x' prefix to make it comfortable to copy and paste it into an exact search
+            // field.
+            $"Addr: 0x{address:X}, InstanceId: {instanceId}, Type: {type.name}, "
+            + $"GCHandle: {gcHandle}, ManagedObject: {managedObject}";
 
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
-            }
-        }
+        public PackedNativeUnityEngineObject packed => snapshot.nativeObjects[nativeObjectsArrayIndex];
 
-        public PackedMemorySnapshot snapshot
-        {
-            get
-            {
-                return m_Snapshot;
-            }
-        }
+        public RichNativeType type => new RichNativeType(snapshot, packed.nativeTypesArrayIndex);
 
-        public bool isValid
-        {
-            get
-            {
-                return m_Snapshot != null && m_NativeObjectArrayIndex >= 0 && m_NativeObjectArrayIndex < m_Snapshot.nativeObjects.Length;
-            }
-        }
+        public Option<RichManagedObject> managedObject =>
+            packed.managedObjectsArrayIndex.valueOut(out var index)
+                ? Some(new RichManagedObject(snapshot, index))
+                : None._;
 
-        public RichNativeType type
-        {
-            get
-            {
-                if (!isValid)
-                    return RichNativeType.invalid;
+        public Option<RichGCHandle> gcHandle => managedObject.flatMap(_ => _.gcHandle);
 
-                var obj = m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
-                return new RichNativeType(m_Snapshot, obj.nativeTypesArrayIndex);
-            }
-        }
+        public string name => packed.name;
 
-        public RichManagedObject managedObject
-        {
-            get
-            {
-                if (!isValid)
-                    return RichManagedObject.invalid;
+        public ulong address => packed.nativeObjectAddress;
 
-                var native = m_Snapshot.nativeObjects[m_NativeObjectArrayIndex];
-                if (native.managedObjectsArrayIndex < 0)
-                    return RichManagedObject.invalid;
+        public HideFlags hideFlags => packed.hideFlags;
 
-                return new RichManagedObject(m_Snapshot, native.managedObjectsArrayIndex);
-            }
-        }
+        public int instanceId => packed.instanceId;
 
-        public RichGCHandle gcHandle
-        {
-            get
-            {
-                return managedObject.gcHandle;
-            }
-        }
+        public bool isDontDestroyOnLoad => packed.isDontDestroyOnLoad;
 
-        public string name
-        {
-            get
-            {
-                if (!isValid)
-                    return "<invalid>";
+        public bool isManager => packed.isManager;
 
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].name;
-            }
-        }
+        public bool isPersistent => packed.isPersistent;
 
-        public System.UInt64 address
-        {
-            get
-            {
-                if (!isValid)
-                    return 0;
-
-                return (System.UInt64)m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].nativeObjectAddress;
-            }
-        }
-
-        public HideFlags hideFlags
-        {
-            get
-            {
-                if (!isValid)
-                    return HideFlags.None;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].hideFlags;
-            }
-        }
-
-        public int instanceId
-        {
-            get
-            {
-                if (!isValid)
-                    return 0;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].instanceId;
-            }
-        }
-
-        public bool isDontDestroyOnLoad
-        {
-            get
-            {
-                if (!isValid)
-                    return true;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isDontDestroyOnLoad;
-            }
-        }
-
-        public bool isManager
-        {
-            get
-            {
-                if (!isValid)
-                    return false;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isManager;
-            }
-        }
-
-        public bool isPersistent
-        {
-            get
-            {
-                if (!isValid)
-                    return false;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].isPersistent;
-            }
-        }
-
-        public int size
-        {
-            get
-            {
-                if (!isValid)
-                    return 0;
-
-                return m_Snapshot.nativeObjects[m_NativeObjectArrayIndex].size;
-            }
-        }
-
-        public void GetConnections(List<PackedConnection> references, List<PackedConnection> referencedBy)
-        {
-            if (!isValid)
-                return;
-
-            m_Snapshot.GetConnections(packed, references, referencedBy);
-        }
+        public ulong size => packed.size;
 
         public void GetConnectionsCount(out int referencesCount, out int referencedByCount)
         {
-            if (!isValid)
-            {
-                referencesCount = 0;
-                referencedByCount = 0;
-                return;
-            }
-
-            m_Snapshot.GetConnectionsCount(PackedConnection.Kind.Native, m_NativeObjectArrayIndex, out referencesCount, out referencedByCount);
+            snapshot.GetConnectionsCount(
+                new PackedConnection.Pair(PackedConnection.Kind.Native, nativeObjectsArrayIndex), 
+                out referencesCount, out referencedByCount
+            );
         }
 
-        public static readonly RichNativeObject invalid = new RichNativeObject()
-        {
-            m_Snapshot = null,
-            m_NativeObjectArrayIndex = -1
-        };
-
-        PackedMemorySnapshot m_Snapshot;
-        int m_NativeObjectArrayIndex;
+        public readonly PackedMemorySnapshot snapshot;
+        public readonly int nativeObjectsArrayIndex;
     }
 }
