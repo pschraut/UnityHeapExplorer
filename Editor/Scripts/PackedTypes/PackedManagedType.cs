@@ -545,8 +545,7 @@ namespace HeapExplorer
                 .Select(tpl => tpl.idx)
                 .ToArray();
             if (importFailureIndexes.Length > 0) {
-                // Offset will be -1 if the field is a static field with `[ThreadStatic]` attached to it.
-                bool isThreadStatic(int idx) => fieldStatic[idx] && fieldOffset[idx] == -1;
+                bool isThreadStatic(int idx) => PackedManagedField.isThreadStatic(fieldStatic[idx], fieldOffset[idx]);
                 
                 var threadStatics = importFailureIndexes.Where(isThreadStatic).ToArray();
                 reportFailures(

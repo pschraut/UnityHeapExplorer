@@ -137,7 +137,9 @@ namespace HeapExplorer
                     Option<PackedManagedField> field;
                     if (version >= 3) {
                         var hasField = reader.ReadBoolean();
-                        field = hasField ? Option.Some(PackedManagedField.Read(reader)) : None._;
+                        field = hasField
+                            ? Option.Some(PackedManagedField.Read(reader).getOrThrow("this should never fail")) 
+                            : None._;
                     }
                     else {
                         field = None._;

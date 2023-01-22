@@ -3,7 +3,9 @@
 // https://github.com/pschraut/UnityHeapExplorer/
 //
 using System;
+using System.Collections.Generic;
 using HeapExplorer.Utilities;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -62,34 +64,47 @@ namespace HeapExplorer
             writer.Write(value.isStatic);
         }
 
-        public static void Read(System.IO.BinaryReader reader, out PackedManagedField[] value)
+        public static void Read(System.IO.BinaryReader reader, out PackedManagedField[] values)
         {
-            value = new PackedManagedField[0];
-
             var version = reader.ReadInt32();
             if (version >= 1)
             {
                 var length = reader.ReadInt32();
-                value = new PackedManagedField[length];
+                var list = new List<PackedManagedField>(capacity: length);
 
-                for (int n = 0, nend = value.Length; n < nend; ++n) {
-                    value[n] = Read(reader);
+                for (var n = 0; n < length; ++n) {
+                    if (Read(reader).valueOut(out var value)) list.Add(value);
                 }
+
+                values = list.ToArray();
+            }
+            else {
+                throw new Exception($"Unknown {nameof(PackedManagedField)} version {version}.");
             }
         }
 
-        public static PackedManagedField Read(System.IO.BinaryReader reader) {
+        /// <returns>`None` if it's incompatible data from an old format.</returns>
+        public static Option<PackedManagedField> Read(System.IO.BinaryReader reader) {
             var name = reader.ReadString();
-            var offset = PInt.createOrThrow(reader.ReadInt32());
+            var rawOffset = reader.ReadInt32();
             var managedTypesArrayIndex = PInt.createOrThrow(reader.ReadInt32());
             var isStatic = reader.ReadBoolean();
-            return new PackedManagedField(
-                name: name,
-                offset: offset,
-                managedTypesArrayIndex: managedTypesArrayIndex,
-                isStatic: isStatic
-            );
+            if (isThreadStatic(isStatic, rawOffset)) return None._;
+            else {
+                var offset = PInt.createOrThrow(rawOffset);
+                return Some(new PackedManagedField(
+                    name: name,
+                    offset: offset,
+                    managedTypesArrayIndex: managedTypesArrayIndex,
+                    isStatic: isStatic
+                ));
+            }
         }
+        
+        /// <summary>
+        /// Offset will be -1 if the field is a static field with `[ThreadStatic]` attached to it.
+        /// </summary>
+        public static bool isThreadStatic(bool isStatic, int rawOffset) => isStatic && rawOffset == -1;
 
         public override string ToString()
         {
