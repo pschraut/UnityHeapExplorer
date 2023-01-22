@@ -24,6 +24,8 @@ namespace HeapExplorer.Utilities {
       isSome = true;
     }
 
+    public static Option<A> None => new Option<A>();
+
     public override string ToString() => isSome ? $"Some({__unsafeGet})" : "None";
 
     /// <example><code><![CDATA[

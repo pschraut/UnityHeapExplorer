@@ -11,6 +11,8 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -60,27 +62,29 @@ namespace HeapExplorer
         void RunTest()
         {
             // Find the test type
-            RichManagedType classType = RichManagedType.invalid;
+            var maybeClassType = Option<RichManagedType>.None;
             foreach (var type in m_snapshot.managedTypes)
             {
                 if (type.name != "HeapExplorer.Test_Editor")
                     continue;
 
-                classType = new RichManagedType(m_snapshot, type.managedTypesArrayIndex);
+                maybeClassType = Some(new RichManagedType(m_snapshot, type.managedTypesArrayIndex));
                 break;
             }
-            Assert.IsTrue(classType.isValid);
+            Assert.IsTrue(maybeClassType.isSome);
+            var classType = maybeClassType.getOrThrow();
 
             // Find the test object instance
-            RichManagedObject managedObject = RichManagedObject.invalid;
+            var maybeManagedObject = Option<RichManagedObject>.None;
             foreach (var obj in m_snapshot.managedObjects)
             {
                 if (obj.managedTypesArrayIndex != classType.packed.managedTypesArrayIndex)
                     continue;
 
-                managedObject = new RichManagedObject(m_snapshot, obj.managedObjectsArrayIndex);
+                maybeManagedObject = Some(new RichManagedObject(m_snapshot, obj.managedObjectsArrayIndex));
             }
-            Assert.IsTrue(managedObject.isValid);
+            Assert.IsTrue(maybeManagedObject.isSome);
+            var managedObject = maybeManagedObject.getOrThrow();
 
             AssertInt("m_intOne", 1, managedObject);
             AssertInt("m_intTwo", 2, managedObject);
@@ -188,7 +192,9 @@ namespace HeapExplorer
             {
                 for (var x = 0; x < 4; ++x)
                 {
-                    matrix[y, x] = memory.ReadSingle((uint)field.offset + (uint)(sizeOfSingle * element) + managedObject.address);
+                    matrix[y, x] = 
+                        memory.ReadSingle((uint)field.offset + (uint)(sizeOfSingle * element) + managedObject.address)
+                            .getOrThrow();
                     element++;
                 }
             }
@@ -201,14 +207,15 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            var ticks = memory.ReadInt64(0 + (uint)field.offset + managedObject.address);
+            var ticks = memory.ReadInt64(0 + (uint)field.offset + managedObject.address).getOrThrow();
             Assert.AreEqual(value, new DateTime(ticks));
         }
 
         void OnSnapshotReceived(string path, bool captureResult)
         {
-            var args = new MemorySnapshotProcessingArgs();
-            args.source = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path);
+            var args = new MemorySnapshotProcessingArgs(
+                UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path)
+            );
 
             m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(args);
         }
