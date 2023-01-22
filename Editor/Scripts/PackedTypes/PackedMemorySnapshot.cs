@@ -255,7 +255,7 @@ namespace HeapExplorer
     // Specifies how an Unity MemorySnapshot must be converted to HeapExplorer format.
     public class MemorySnapshotProcessingArgs {
         public readonly UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot source;
-        public PackedMemorySnapshot.UpdateUnityUI maybeUpdateUI;
+        public readonly PackedMemorySnapshot.UpdateUnityUI maybeUpdateUI;
 
         public MemorySnapshotProcessingArgs(
             UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot source, 
