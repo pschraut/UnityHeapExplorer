@@ -29,14 +29,14 @@ namespace HeapExplorer
         /// <summary>Is this type a reference type? (if it's not a reference type, it's a value type)</summary>
         public bool isReferenceType => !isValueType;
 
-        /// <summary>Is this type an array?</summary>
-        public readonly bool isArray;
-
         /// <summary>
-        /// If this is an arrayType, this will return the rank of the array. (1 for a 1-dimensional array, 2 for a
-        /// 2-dimensional array, etc)
+        /// `None` if this type is not an array, `Some(arrayRank)` if it is an array.
+        /// <para/>
+        /// The rank of the array is 1 for a 1-dimensional array, 2 for a 2-dimensional array, etc.
         /// </summary>
-        public readonly PInt arrayRank;
+        public readonly Option<PInt> arrayRank;
+
+        public bool isArray => arrayRank.isSome;
 
         /// <summary>
         /// Name of this type.
@@ -129,12 +129,11 @@ namespace HeapExplorer
         public bool containsFieldOfReferenceTypeInInheritanceChain;
 
         public PackedManagedType(
-            bool isValueType, bool isArray, PInt arrayRank, string name, string assembly, PackedManagedField[] fields, 
+            bool isValueType, Option<PInt> arrayRank, string name, string assembly, PackedManagedField[] fields, 
             byte[] staticFieldBytes, Option<PInt> baseOrElementTypeIndex, PInt size, ulong typeInfoAddress, 
             PInt managedTypesArrayIndex
         ) {
             this.isValueType = isValueType;
-            this.isArray = isArray;
             this.arrayRank = arrayRank;
             this.name = name;
             this.assembly = assembly;
@@ -357,8 +356,8 @@ namespace HeapExplorer
             for (int n = 0, nend = value.Length; n < nend; ++n)
             {
                 writer.Write(value[n].isValueType);
-                writer.Write(value[n].isArray);
-                writer.Write(value[n].arrayRank);
+                writer.Write(value[n].arrayRank.isSome);
+                writer.Write(value[n].arrayRank.fold(0, _ => _.asInt));
                 writer.Write(value[n].name);
                 writer.Write(value[n].assembly);
 
@@ -412,8 +411,7 @@ namespace HeapExplorer
 
                     value[n] = new PackedManagedType(
                         isValueType: isValueType,
-                        isArray: isArray,
-                        arrayRank: PInt.createOrThrow(arrayRank),
+                        arrayRank: isArray ? Some(PInt.createOrThrow(arrayRank)) : None._,
                         name: name,
                         assembly: assembly,
                         staticFieldBytes: staticFieldBytes,
@@ -497,7 +495,7 @@ namespace HeapExplorer
             // A cache for the temporary fields as we don't know how many of them are valid.
             var fieldsList = new List<PackedManagedField>();
             for (int n = 0, nend = managedTypes.Length; n < nend; ++n) {
-                var baseOrElementTypeIndex = sourceBaseOrElementTypeIndex[n];
+                var rawBaseOrElementTypeIndex = sourceBaseOrElementTypeIndex[n];
                 var sourceFieldIndicesForValue = sourceFieldIndices[n];
 
                 // Assign fields.
@@ -521,19 +519,27 @@ namespace HeapExplorer
                 var name = sourceName[n];
                 // namespace-less types have a preceding dot, which we remove here
                 if (name != null && name.Length > 0 && name[0] == '.') name = name.Substring(1);
+
+                var isValueType = (sourceFlags[n] & TypeFlags.kValueType) != 0;
+                var isArray =
+                    (sourceFlags[n] & TypeFlags.kArray) != 0
+                        ? Some(PInt.createOrThrow((int) (sourceFlags[n] & TypeFlags.kArrayRankMask) >> 16))
+                        : None._;
+                var baseOrElementTypeIndex =
+                    rawBaseOrElementTypeIndex == -1 ? None._ : Some(PInt.createOrThrow(rawBaseOrElementTypeIndex));
+                var size = PInt.createOrThrow(sourceSize[n]);
+                var managedTypesArrayIndex = PInt.createOrThrow(sourceTypeIndex[n]);
                 
                 managedTypes[n] = new PackedManagedType(
-                    isValueType: (sourceFlags[n] & TypeFlags.kValueType) != 0,
-                    isArray: (sourceFlags[n] & TypeFlags.kArray) != 0,
-                    arrayRank: PInt.createOrThrow((int)(sourceFlags[n] & TypeFlags.kArrayRankMask)>>16),
+                    isValueType: isValueType,
+                    arrayRank: isArray,
                     name: name,
                     assembly: sourceAssembly[n],
                     staticFieldBytes: sourceStaticFieldBytes[n],
-                    baseOrElementTypeIndex: 
-                        baseOrElementTypeIndex == -1 ? None._ : Some(PInt.createOrThrow(baseOrElementTypeIndex)),
-                    size: PInt.createOrThrow(sourceSize[n]),
+                    baseOrElementTypeIndex: baseOrElementTypeIndex,
+                    size: size,
                     typeInfoAddress: sourceTypeInfoAddress[n],
-                    managedTypesArrayIndex: PInt.createOrThrow(sourceTypeIndex[n]),
+                    managedTypesArrayIndex: managedTypesArrayIndex,
                     fields: fields
                 );
             }
@@ -588,7 +594,7 @@ namespace HeapExplorer
 
         public override string ToString()
         {
-            var text = $"name: {name}, isValueType: {isValueType}, isArray: {isArray}, size: {size}";
+            var text = $"name: {name}, isValueType: {isValueType}, isArray: {arrayRank}, size: {size}";
             return text;
         }
     }

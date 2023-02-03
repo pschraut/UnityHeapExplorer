@@ -371,15 +371,14 @@ namespace HeapExplorer
         {
             // System.Array
             // Do not display its pointer-size, but the actual size of its content.
-            if (typeDescription.isArray)
-            {
+            {if (typeDescription.arrayRank.valueOut(out var arrayRank)) {
                 if (
                     !typeDescription.baseOrElementTypeIndex.valueOut(out var baseOrElementTypeIndex) 
                     || baseOrElementTypeIndex >= m_Snapshot.managedTypes.Length
                 ) {
                     var details = "";
-                    details = "arrayRank=" + typeDescription.arrayRank + ", " +
-                        "isArray=" + typeDescription.isArray + ", " +
+                    details = 
+                        "arrayRank=" + arrayRank + ", " +
                         "typeInfoAddress=" + typeDescription.typeInfoAddress.ToString("X") + ", " +
                         "address=" + address.ToString("X") + ", " +
                         "memoryreader=" + GetType().Name + ", " +
@@ -389,14 +388,14 @@ namespace HeapExplorer
                     return Some(PInt._1);
                 }
 
-                if (!ReadArrayLength(address, typeDescription).valueOut(out var arrayLength)) return None._;
+                if (!ReadArrayLength(address, arrayRank).valueOut(out var arrayLength)) return None._;
                 var elementType = m_Snapshot.managedTypes[baseOrElementTypeIndex];
                 var elementSize = elementType.isValueType ? elementType.size.asInt : m_Snapshot.virtualMachineInformation.pointerSize.sizeInBytes();
 
                 var size = m_Snapshot.virtualMachineInformation.arrayHeaderSize.asInt;
                 size += elementSize * arrayLength;
                 return Some(PInt.createOrThrow(size));
-            }
+            }}
 
             // System.String
             if (typeDescription.managedTypesArrayIndex == m_Snapshot.coreTypes.systemString)
@@ -413,7 +412,7 @@ namespace HeapExplorer
             return Some(typeDescription.size);
         }
 
-        public Option<int> ReadArrayLength(ulong address, PackedManagedType arrayType)
+        public Option<int> ReadArrayLength(ulong address, PInt arrayRank)
         {
             var vm = m_Snapshot.virtualMachineInformation;
 
@@ -422,7 +421,7 @@ namespace HeapExplorer
                 return ReadPointer(address + vm.arraySizeOffsetInHeader).map(v => (int)v);
 
             int length = 1;
-            for (int i = 0; i != arrayType.arrayRank; i++)
+            for (int i = 0; i != arrayRank; i++)
             {
                 var ptr = bounds + (ulong)(i * vm.pointerSize.sizeInBytes());
                 if (!ReadPointer(ptr).valueOut(out var value)) return None._;
@@ -431,11 +430,11 @@ namespace HeapExplorer
             return Some(length);
         }
 
-        public Option<int> ReadArrayLength(ulong address, PackedManagedType arrayType, int dimension)
+        public Option<int> ReadArrayLength(ulong address, PackedManagedType arrayType, PInt arrayRank, int dimension)
         {
-            if (dimension >= arrayType.arrayRank) {
+            if (dimension >= arrayRank) {
                 Debug.LogError(
-                    $"Trying to read dimension {dimension} while the array rank is {arrayType.arrayRank} for array at "
+                    $"Trying to read dimension {dimension} while the array rank is {arrayRank} for array at "
                     + $"address {address:X} of type '{arrayType.name}'. Returning `None`."
                 );
                 return None._;

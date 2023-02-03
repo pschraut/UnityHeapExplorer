@@ -4,6 +4,7 @@
 //
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
@@ -13,6 +14,8 @@ namespace HeapExplorer
     public class ArrayPropertyGridItem : PropertyGridItem
     {
         const int k_MaxItemsPerChunk = 1024*32;
+        
+        PInt arrayRank => type.arrayRank.getOrThrow("this should be only invoked for arrays!");
 
         public ArrayPropertyGridItem(PropertyGridControl owner, PackedMemorySnapshot snapshot, System.UInt64 address, AbstractMemoryReader memoryReader)
             : base(owner, snapshot, address, memoryReader)
@@ -23,7 +26,8 @@ namespace HeapExplorer
         {
             var pointer = m_MemoryReader.ReadPointer(address).getOrThrow();
             var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex.getOrThrow()];
-            var dim0Length = address > 0 ? m_MemoryReader.ReadArrayLength(address, type, 0).getOrThrow() : 0;
+            var arrayRank = this.arrayRank;
+            var dim0Length = address > 0 ? m_MemoryReader.ReadArrayLength(address, type, arrayRank, 0).getOrThrow() : 0;
 
             displayType = type.name;
             displayValue = "null";
@@ -38,21 +42,21 @@ namespace HeapExplorer
                 var isJagged = type.name.IndexOf("[][]") != -1;
                 if (isJagged)
                 {
-                    for (var n = 0; n < type.arrayRank; ++n)
+                    for (var n = 0; n < arrayRank; ++n)
                     {
-                        var length = m_MemoryReader.ReadArrayLength(address, type, n);
+                        var length = m_MemoryReader.ReadArrayLength(address, type, arrayRank, n);
                         displayValue += $"[{length}]";
                     }
                 }
                 else
                 {
                     displayValue += "[";
-                    for (var n = 0; n < type.arrayRank; ++n)
+                    for (var n = 0; n < arrayRank; ++n)
                     {
-                        var length = m_MemoryReader.ReadArrayLength(address, type, n);
+                        var length = m_MemoryReader.ReadArrayLength(address, type, arrayRank, n);
 
                         displayValue += $"{length}";
-                        if (n + 1 < type.arrayRank)
+                        if (n + 1 < arrayRank)
                             displayValue += ",";
                     }
                     displayValue += "]";
@@ -62,16 +66,16 @@ namespace HeapExplorer
 
         protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)
         {
-            if (type.arrayRank == 1)
+            if (arrayRank == 1)
                 BuildOneDimArray(add);
 
-            if (type.arrayRank > 1)
+            if (arrayRank > 1)
                 BuildMultiDimArray(add);
         }
 
         void BuildOneDimArray(System.Action<BuildChildrenArgs> add)
         {
-            var arrayLength = m_MemoryReader.ReadArrayLength(address, type).getOrThrow();
+            var arrayLength = m_MemoryReader.ReadArrayLength(address, arrayRank).getOrThrow();
             var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex.getOrThrow()];
 
             for (var n = 0; n < Mathf.Min(arrayLength, k_MaxItemsPerChunk); ++n)
@@ -87,9 +91,9 @@ namespace HeapExplorer
             }
         }
 
-        void BuildMultiDimArray(System.Action<BuildChildrenArgs> add)
-        {
-            var arrayLength = m_MemoryReader.ReadArrayLength(address, type).getOrThrow();
+        void BuildMultiDimArray(System.Action<BuildChildrenArgs> add) {
+            var arrayRank = this.arrayRank;
+            var arrayLength = m_MemoryReader.ReadArrayLength(address, arrayRank).getOrThrow();
             var elementType = m_Snapshot.managedTypes[type.baseOrElementTypeIndex.getOrThrow()];
 
             for (var n = 0; n < Mathf.Min(arrayLength, k_MaxItemsPerChunk); ++n)
@@ -98,9 +102,9 @@ namespace HeapExplorer
             }
 
             // an understandable way to name elements of an two dimensional array
-            if (type.arrayRank == 2)
+            if (arrayRank == 2)
             {
-                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, 1).getOrThrow();
+                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, arrayRank, 1).getOrThrow();
 
                 var x = 0;
                 var y = 0;
@@ -121,10 +125,10 @@ namespace HeapExplorer
             }
 
             // complicated way of naming elements of three and more dimensional arrays
-            if (type.arrayRank == 3)
+            if (arrayRank == 3)
             {
-                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, 1).getOrThrow();
-                var arrayLength3 = m_MemoryReader.ReadArrayLength(address, type, 2).getOrThrow();
+                var arrayLength2 = m_MemoryReader.ReadArrayLength(address, type, arrayRank, 1).getOrThrow();
+                var arrayLength3 = m_MemoryReader.ReadArrayLength(address, type, arrayRank, 2).getOrThrow();
 
                 var x = 0;
                 var y = 0;

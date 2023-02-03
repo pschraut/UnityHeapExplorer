@@ -171,15 +171,14 @@ namespace HeapExplorer
                     {if (obj.obj.staticBytes.valueOut(out var staticBytes))
                         memoryReader = new StaticMemoryReader(m_Snapshot, staticBytes);}
 
-                    if (type.isArray) {
-                        handleArrayType(obj, type, memoryReader);
+                    {if (type.arrayRank.valueOut(out var arrayRank)) {
+                        handleArrayType(obj, type, arrayRank, memoryReader);
                         break;
-                    }
-                    else {
+                    } else {
                         var shouldBreak = handleNonArrayType(obj.obj, type, memoryReader, typeIndex: typeIndex);
                         if (shouldBreak) break;
                         else maybeTypeIndex = type.baseOrElementTypeIndex;
-                    }
+                    }}
                 }}
             }
 
@@ -188,7 +187,7 @@ namespace HeapExplorer
             );
             
             void handleArrayType(
-                PendingObject pendingObject, PackedManagedType type, AbstractMemoryReader memoryReader
+                PendingObject pendingObject, PackedManagedType type, PInt arrayRank, AbstractMemoryReader memoryReader
             ) {
                 var mo = pendingObject.obj;
                 if (
@@ -213,7 +212,7 @@ namespace HeapExplorer
 
                 int dim0Length;
                 if (mo.address > 0) {
-                    if (!memoryReader.ReadArrayLength(mo.address, type).valueOut(out dim0Length)) {
+                    if (!memoryReader.ReadArrayLength(mo.address, arrayRank).valueOut(out dim0Length)) {
                         m_Snapshot.Error($"Can't determine array length for array at {mo.address:X}");
                         return;
                     }
@@ -224,7 +223,7 @@ namespace HeapExplorer
                 //if (dim0Length > 1024 * 1024)
                 if (dim0Length > (32*1024) * (32*1024)) {
                     m_Snapshot.Error(
-                        $"HeapExplorer: Array (rank={type.arrayRank}) found at address '{mo.address:X} with "
+                        $"HeapExplorer: Array (rank={arrayRank}) found at address '{mo.address:X} with "
                         + $"'{dim0Length}' elements, that doesn't seem right."
                     );
                     return;
