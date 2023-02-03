@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using HeapExplorer.Utilities;
@@ -55,6 +56,11 @@ namespace HeapExplorer
         
         /// <inheritdoc cref="_coreTypes"/>
         public PackedCoreTypes coreTypes => _coreTypes.getOrThrow("core types not initialized");
+
+        /// <summary>
+        /// Used to prevent from constantly spamming the Unit log with errors about same things. 
+        /// </summary>
+        public ConcurrentDictionary<string, Unit> reportedErrors = new ConcurrentDictionary<string, Unit>();
 
         /// <summary>
         /// Write to busyString while processing, such as loading a memory snapshot, causes heap explorer

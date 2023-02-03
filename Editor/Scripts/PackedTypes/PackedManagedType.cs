@@ -71,12 +71,17 @@ namespace HeapExplorer
             baseOrElementTypeIndex.valueOut(out var idx)
             ? idx == managedTypesArrayIndex ? None._ : Some(idx)
             : None._;
-
+        
         /// <summary>
         /// Size in bytes of an instance of this type. If this type is an array type, this describes the amount of
         /// bytes a single element in the array will take up.
         /// </summary>
-        public readonly PInt size;
+        /// <note>
+        /// This is an <see cref="Either{A,B}"/> because sometimes Unity returns a negative number for size, which
+        /// obviously makes no sense. We have `Left` here with the raw value on failure and `Right` value on success
+        /// and then we try to fall-back gracefully as much as we can when this happens.
+        /// </note>
+        public readonly Either<int, PInt> size;
 
         /// <summary>
         /// The address in memory that contains the description of this type inside the virtual machine.
@@ -130,7 +135,7 @@ namespace HeapExplorer
 
         public PackedManagedType(
             bool isValueType, Option<PInt> arrayRank, string name, string assembly, PackedManagedField[] fields, 
-            byte[] staticFieldBytes, Option<PInt> baseOrElementTypeIndex, PInt size, ulong typeInfoAddress, 
+            byte[] staticFieldBytes, Option<PInt> baseOrElementTypeIndex, Either<int, PInt> size, ulong typeInfoAddress, 
             PInt managedTypesArrayIndex
         ) {
             this.isValueType = isValueType;
@@ -364,7 +369,7 @@ namespace HeapExplorer
                 writer.Write(value[n].staticFieldBytes.Length);
                 writer.Write(value[n].staticFieldBytes);
                 writer.Write(value[n].baseOrElementTypeIndex.fold(-1, _ => _));
-                writer.Write(value[n].size);
+                writer.Write(value[n].size.fold(v => v, v => v));
                 writer.Write(value[n].typeInfoAddress);
                 writer.Write(value[n].managedTypesArrayIndex);
 
@@ -416,7 +421,7 @@ namespace HeapExplorer
                         assembly: assembly,
                         staticFieldBytes: staticFieldBytes,
                         baseOrElementTypeIndex: baseOrElementTypeIndex,
-                        size: PInt.createOrThrow(size),
+                        size: PInt.createEither(size),
                         typeInfoAddress: typeInfoAddress,
                         managedTypesArrayIndex: PInt.createOrThrow(managedTypesArrayIndex),
                         fields: fields
@@ -527,8 +532,9 @@ namespace HeapExplorer
                         : None._;
                 var baseOrElementTypeIndex =
                     rawBaseOrElementTypeIndex == -1 ? None._ : Some(PInt.createOrThrow(rawBaseOrElementTypeIndex));
-                var size = PInt.createOrThrow(sourceSize[n]);
-                var managedTypesArrayIndex = PInt.createOrThrow(sourceTypeIndex[n]);
+                var rawManagedTypesArrayIndex = sourceTypeIndex[n];
+                var size = PInt.createEither(sourceSize[n]);
+                var managedTypesArrayIndex = PInt.createOrThrow(rawManagedTypesArrayIndex);
                 
                 managedTypes[n] = new PackedManagedType(
                     isValueType: isValueType,

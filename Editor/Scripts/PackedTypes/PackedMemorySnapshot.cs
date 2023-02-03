@@ -47,6 +47,12 @@ namespace HeapExplorer
         /// </summary>
         public PackedVirtualMachineInformation virtualMachineInformation;
 
+        /// <summary>Type of <see cref="System.Single"/>.</summary>
+        public PackedManagedType typeOfSingle => managedTypes[coreTypes.systemSingle];
+
+        /// <summary>Type of <see cref="System.Byte"/>.</summary>
+        public PackedManagedType typeOfByte => managedTypes[coreTypes.systemByte];
+
         /// <summary>
         /// Allows you to update the Unity progress bar with given <see cref="stepName"/>.
         /// </summary>

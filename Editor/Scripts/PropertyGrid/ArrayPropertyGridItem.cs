@@ -2,12 +2,8 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
 using HeapExplorer.Utilities;
 using UnityEngine;
-using UnityEditor.IMGUI.Controls;
-using UnityEditor;
 
 namespace HeapExplorer
 {
@@ -64,8 +60,8 @@ namespace HeapExplorer
             }
         }
 
-        protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)
-        {
+        protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add) {
+            
             if (arrayRank == 1)
                 BuildOneDimArray(add);
 
@@ -155,8 +151,9 @@ namespace HeapExplorer
             }
         }
 
-        void AddArrayElement(PackedManagedType elementType, int elementIndex, System.Action<BuildChildrenArgs> add)
-        {
+        void AddArrayElement(
+            PackedManagedType elementType, int elementIndex, System.Action<BuildChildrenArgs> add
+        ) {
             if (elementType.isArray)
             {
                 var pointer = m_MemoryReader.ReadPointer(
@@ -174,48 +171,51 @@ namespace HeapExplorer
             }
             else if (elementType.isValueType)
             {
-                if (elementType.isPrimitive)
-                {
-                    var args = new BuildChildrenArgs {
-                        parent = this,
-                        type = elementType,
-                        address = address 
-                                  + (ulong)(elementIndex * elementType.size) 
-                                  + m_Snapshot.virtualMachineInformation.arrayHeaderSize 
-                                  - m_Snapshot.virtualMachineInformation.objectHeaderSize,
-                        memoryReader = new MemoryReader(m_Snapshot)
-                    };
-                    add(args);
+                if (elementType.size.valueOut(out var elementTypeSize)) {
+                    if (elementType.isPrimitive) {
+                        var args = new BuildChildrenArgs {
+                            parent = this,
+                            type = elementType,
+                            address = address
+                                      + (ulong) (elementIndex * elementTypeSize)
+                                      + m_Snapshot.virtualMachineInformation.arrayHeaderSize
+                                      - m_Snapshot.virtualMachineInformation.objectHeaderSize,
+                            memoryReader = new MemoryReader(m_Snapshot)
+                        };
+                        add(args);
+                    }
+                    else {
+                        // this is the container node for the array elements.
+                        // if we don't add the container, all fields are simply added to the array node itself.
+                        // however, we want each array element being groupped
+                        var pointer = address
+                                      + (ulong) (elementIndex * elementTypeSize)
+                                      + m_Snapshot.virtualMachineInformation.arrayHeaderSize;
+
+                        var item = new ArrayElementPropertyGridItem(m_Owner, m_Snapshot, pointer,
+                            new MemoryReader(m_Snapshot)) {
+                            depth = this.depth + 1,
+                            type = elementType
+                        };
+                        item.Initialize();
+                        this.AddChild(item);
+
+                        pointer =
+                            address
+                            + (ulong) (elementIndex * elementTypeSize)
+                            + m_Snapshot.virtualMachineInformation.arrayHeaderSize
+                            - m_Snapshot.virtualMachineInformation.objectHeaderSize;
+
+                        var args = new BuildChildrenArgs();
+                        args.parent = item;
+                        args.type = elementType;
+                        args.address = pointer;
+                        args.memoryReader = new MemoryReader(m_Snapshot);
+                        add(args);
+                    }
                 }
-                else
-                {
-                    // this is the container node for the array elements.
-                    // if we don't add the container, all fields are simply added to the array node itself.
-                    // however, we want each array element being groupped
-                    var pointer = address 
-                                  + (ulong)(elementIndex * elementType.size) 
-                                  + m_Snapshot.virtualMachineInformation.arrayHeaderSize;
-
-                    var item = new ArrayElementPropertyGridItem(m_Owner, m_Snapshot, pointer, new MemoryReader(m_Snapshot))
-                    {
-                        depth = this.depth + 1,
-                        type = elementType
-                    };
-                    item.Initialize();
-                    this.AddChild(item);
-
-                    pointer = 
-                        address 
-                        + (ulong)(elementIndex * elementType.size) 
-                        + m_Snapshot.virtualMachineInformation.arrayHeaderSize 
-                        - m_Snapshot.virtualMachineInformation.objectHeaderSize;
-
-                    var args = new BuildChildrenArgs();
-                    args.parent = item;
-                    args.type = elementType;
-                    args.address = pointer;
-                    args.memoryReader = new MemoryReader(m_Snapshot);
-                    add(args);
+                else {
+                    Utils.reportInvalidSizeError(elementType, m_Snapshot.reportedErrors);
                 }
             }
             else

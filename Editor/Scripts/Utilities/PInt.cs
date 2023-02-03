@@ -55,6 +55,10 @@ namespace HeapExplorer.Utilities {
     /// <summary>Creates a value, returning `None` if the supplied <see cref="int"/> is negative.</summary>
     public static Option<PInt> create(int value) => 
       value < 0 ? new Option<PInt>() : Some(new PInt(value));
+  
+    /// <summary>Creates a value, returning `Left(value)` if the supplied <see cref="int"/> is negative.</summary>
+    public static Either<int, PInt> createEither(int value) => 
+      value < 0 ? new Either<int, PInt>(value) : new Either<int, PInt>(new PInt(value));
 
     #region Equality
   

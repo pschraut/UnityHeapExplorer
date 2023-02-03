@@ -207,13 +207,7 @@ namespace HeapExplorer
                 }
             }
 
-            public override long size
-            {
-                get
-                {
-                    return m_Type.packed.size;
-                }
-            }
+            public override long size => m_Type.packed.size.fold(v => v, v => v);
 
             public override string assemblyName
             {

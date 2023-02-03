@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using static HeapExplorer.Utilities.Option;
@@ -9,8 +9,20 @@ namespace HeapExplorer.Utilities {
   public static class Utils {
     public static Option<A> zeroAddressAccessError<A>(string paramName) {
       // throw new ArgumentOutOfRangeException(paramName, 0, "address 0 should not be accessed!");
-      Debug.LogError("address 0 should not be accessed!");
+      Debug.LogError("HeapExplorer: address 0 should not be accessed!");
       return new Option<A>();
+    }
+
+    public static void reportInvalidSizeError(
+      PackedManagedType type, ConcurrentDictionary<string, Unit> reported
+    ) {
+      if (reported.TryAdd(type.name, Unit._)) {
+        var size = type.size.fold(v => v, v => v);
+        Debug.LogError(
+          $"HeapExplorer: Unity reported invalid size {size} for type '{type.name}', this is a Unity bug! "
+          + $"We can't continue the current operation because of that, data will most likely be incomplete!"
+        );
+      }
     }
 
     /// <summary>

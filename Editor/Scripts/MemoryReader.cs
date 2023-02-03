@@ -3,6 +3,7 @@
 // https://github.com/pschraut/UnityHeapExplorer/
 //
 
+using System.Collections.Concurrent;
 using System.Globalization;
 using HeapExplorer.Utilities;
 using UnityEngine;
@@ -55,9 +56,9 @@ namespace HeapExplorer
 
     public class StaticMemoryReader : AbstractMemoryReader
     {
-        public StaticMemoryReader(PackedMemorySnapshot snapshot, byte[] staticBytes)
-            : base(snapshot)
-        {
+        public StaticMemoryReader(
+            PackedMemorySnapshot snapshot, byte[] staticBytes
+        ) : base(snapshot) {
             m_Bytes = staticBytes;
         }
 
@@ -94,6 +95,7 @@ namespace HeapExplorer
         protected int m_RecursionGuard;
         protected System.Text.StringBuilder m_StringBuilder = new System.Text.StringBuilder(128);
         protected System.Security.Cryptography.MD5 m_Hasher;
+        ConcurrentDictionary<string, Unit> reportedErrors => m_Snapshot.reportedErrors;
 
         protected AbstractMemoryReader(PackedMemorySnapshot snapshot)
         {
@@ -115,7 +117,11 @@ namespace HeapExplorer
             TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToSingle(bytes, offset));
 
         public Option<Quaternion> ReadQuaternion(ulong address) {
-            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
 
             if (!ReadSingle(address + (uint) (sizeOfSingle * 0)).valueOut(out var x)) return None._;
             if (!ReadSingle(address + (uint) (sizeOfSingle * 1)).valueOut(out var y)) return None._;
@@ -127,7 +133,11 @@ namespace HeapExplorer
         }
 
         public Option<Color> ReadColor(ulong address) {
-            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
 
             if (!ReadSingle(address + (uint) (sizeOfSingle * 0)).valueOut(out var r)) return None._;
             if (!ReadSingle(address + (uint) (sizeOfSingle * 1)).valueOut(out var g)) return None._;
@@ -139,7 +149,11 @@ namespace HeapExplorer
         }
 
         public Option<Color32> ReadColor32(ulong address) {
-            var sizeOfByte = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemByte].size;
+            var byteType = m_Snapshot.typeOfSingle;
+            if (!byteType.size.valueOut(out var sizeOfByte)) {
+                Utils.reportInvalidSizeError(byteType, reportedErrors);
+                return None._;
+            }
 
             if (!ReadByte(address + (uint) (sizeOfByte * 0)).valueOut(out var r)) return None._;
             if (!ReadByte(address + (uint) (sizeOfByte * 1)).valueOut(out var g)) return None._;
@@ -150,11 +164,15 @@ namespace HeapExplorer
             return Some(value);
         }
 
-        public Option<Matrix4x4> ReadMatrix4x4(ulong address)
-        {
+        public Option<Matrix4x4> ReadMatrix4x4(ulong address) {
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
+            
             var value = new Matrix4x4();
 
-            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
             var element = 0;
             for (var y = 0; y < 4; ++y)
             {
@@ -367,8 +385,9 @@ namespace HeapExplorer
             return Some(segment);
         }
 
-        public Option<PInt> ReadObjectSize(ulong address, PackedManagedType typeDescription)
-        {
+        public Option<PInt> ReadObjectSize(
+            ulong address, PackedManagedType typeDescription
+        ) {
             // System.Array
             // Do not display its pointer-size, but the actual size of its content.
             {if (typeDescription.arrayRank.valueOut(out var arrayRank)) {
@@ -390,7 +409,18 @@ namespace HeapExplorer
 
                 if (!ReadArrayLength(address, arrayRank).valueOut(out var arrayLength)) return None._;
                 var elementType = m_Snapshot.managedTypes[baseOrElementTypeIndex];
-                var elementSize = elementType.isValueType ? elementType.size.asInt : m_Snapshot.virtualMachineInformation.pointerSize.sizeInBytes();
+                int elementSize;
+                if (elementType.isValueType) {
+                    if (!elementType.size.valueOut(out var pElementSize)) {
+                        Utils.reportInvalidSizeError(elementType, reportedErrors);
+                        return None._;
+                    }
+
+                    elementSize = pElementSize;
+                }
+                else {
+                    elementSize = m_Snapshot.virtualMachineInformation.pointerSize.sizeInBytes();
+                }
 
                 var size = m_Snapshot.virtualMachineInformation.arrayHeaderSize.asInt;
                 size += elementSize * arrayLength;
@@ -409,7 +439,8 @@ namespace HeapExplorer
                 return Some(PInt.createOrThrow(size));
             }
 
-            return Some(typeDescription.size);
+            if (typeDescription.size.isLeft) Utils.reportInvalidSizeError(typeDescription, reportedErrors);
+            return typeDescription.size.rightOption;
         }
 
         public Option<int> ReadArrayLength(ulong address, PInt arrayRank)

@@ -9,6 +9,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Collections.Concurrent;
 using HeapExplorer.Utilities;
 using static HeapExplorer.Utilities.Option;
 
@@ -126,8 +127,9 @@ namespace HeapExplorer
             );
         }
 
-        void CrawlManagedObjects(List<PackedManagedObject> managedObjects)
-        {
+        void CrawlManagedObjects(
+            List<PackedManagedObject> managedObjects
+        ) {
             var virtualMachineInformation = m_Snapshot.virtualMachineInformation;
             var nestedStructsIgnored = 0;
 
@@ -293,12 +295,19 @@ namespace HeapExplorer
                         // Artūras Šlajus: Not sure why these checks are done in this order but I am too scared to
                         // switch the order.
                         if (elementType.isArray) return readPtr();
-                        if (elementType.isValueType) return Some(
-                            mo.address
-                            + (ulong) (k * elementType.size)
-                            + virtualMachineInformation.arrayHeaderSize
-                            - virtualMachineInformation.objectHeaderSize
-                        );
+                        if (elementType.isValueType) {
+                            if (elementType.size.valueOut(out var elementTypeSize))
+                                return Some(
+                                    mo.address
+                                    + (ulong) (k * elementTypeSize)
+                                    + virtualMachineInformation.arrayHeaderSize
+                                    - virtualMachineInformation.objectHeaderSize
+                                );
+                            else {
+                                Utils.reportInvalidSizeError(elementType, m_Snapshot.reportedErrors);
+                                return None._;
+                            }
+                        }
                         else return readPtr();
 
                         Option<ulong> readPtr() {
