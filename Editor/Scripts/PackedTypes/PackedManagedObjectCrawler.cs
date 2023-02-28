@@ -433,9 +433,9 @@ namespace HeapExplorer
             var managedTypes = m_Snapshot.managedTypes;
             var staticFields = new List<PackedManagedStaticField>(10 * 1024);
             var staticManagedTypes = new List<int>(1024);
-            collectStaticFields(staticFields, staticManagedTypes);
+            collectStaticFields();
 
-            void collectStaticFields(List<PackedManagedStaticField> staticFields, List<int> staticManagedTypes) {
+            void collectStaticFields() {
                 // Unity BUG: (Case 984330) PackedMemorySnapshot: Type contains staticFieldBytes, but has no static fields
                 for (int n = 0, nend = managedTypes.Length; n < nend; ++n) {
                     // Some static classes have no staticFieldBytes. As I understand this, the staticFieldBytes

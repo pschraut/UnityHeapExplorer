@@ -122,7 +122,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadDecimal((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadDecimal((uint)field.offset + managedObject.address));
         }
 
         void AssertInt(string fieldName, int value, RichManagedObject managedObject)
@@ -130,7 +130,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadInt32((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadInt32((uint)field.offset + managedObject.address));
         }
 
         void AssertLong(string fieldName, long value, RichManagedObject managedObject)
@@ -138,7 +138,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadInt64((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadInt64((uint)field.offset + managedObject.address));
         }
 
         void AssertULong(string fieldName, ulong value, RichManagedObject managedObject)
@@ -146,7 +146,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadUInt64((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadUInt64((uint)field.offset + managedObject.address));
         }
 
         void AssertVector2(string fieldName, Vector2 value, RichManagedObject managedObject)
@@ -154,8 +154,8 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
         }
 
         void AssertVector3(string fieldName, Vector3 value, RichManagedObject managedObject)
@@ -163,9 +163,9 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.z, memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.z), memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
         }
 
         void AssertQuaternion(string fieldName, Quaternion value, RichManagedObject managedObject)
@@ -173,10 +173,10 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.z, memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.w, memory.ReadSingle(12 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.z), memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.w), memory.ReadSingle(12 + (uint)field.offset + managedObject.address));
         }
 
         void AssertMatrix4x4(string fieldName, Matrix4x4 value, RichManagedObject managedObject)
@@ -186,7 +186,7 @@ namespace HeapExplorer
             var field = GetField(fieldName, managedObject);
 
             Matrix4x4 matrix = new Matrix4x4();
-            int sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size;
+            int sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size.rightOrThrow;
             int element = 0;
             for (var y = 0; y < 4; ++y)
             {

@@ -113,10 +113,10 @@ namespace HeapExplorer
                     break;
 
                 var gcHandle = m_Snapshot.gcHandles[n];
-                var maybeManagedTypeIndex = gcHandle.managedObjectsArrayIndex.map(m_Snapshot, (idx, snapshot) =>
+                var maybeManagedTypeIndex = gcHandle.managedObjectsArrayIndex.map(m_Snapshot, (idx, ss) =>
                     idx.isStatic
-                        ? snapshot.managedStaticFields[idx.index].managedTypesArrayIndex
-                        : snapshot.managedObjects[idx.index].managedTypesArrayIndex
+                        ? ss.managedStaticFields[idx.index].managedTypesArrayIndex
+                        : ss.managedObjects[idx.index].managedTypesArrayIndex
                 );
 
                 var targetItem = root;

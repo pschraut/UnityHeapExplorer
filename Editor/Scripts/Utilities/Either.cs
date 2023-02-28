@@ -31,6 +31,9 @@ namespace HeapExplorer.Utilities {
       o = __unsafeRight;
       return isRight;
     }
+    
+    public B rightOrThrow => 
+      isRight ? __unsafeRight : throw new InvalidOperationException($"Either is Left({__unsafeLeft})");
 
     public Option<A> leftOption => isLeft ? Option.Some(__unsafeLeft) : Option<A>.None;
     public Option<B> rightOption => isRight ? Option.Some(__unsafeRight) : Option<B>.None;

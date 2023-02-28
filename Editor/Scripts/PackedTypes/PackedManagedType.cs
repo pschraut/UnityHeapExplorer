@@ -580,12 +580,12 @@ namespace HeapExplorer
 
                     for (int idx = 0, idxEnd = groupedFailures.Length; idx < idxEnd; idx++) {
                         var group = groupedFailures[idx];
-                        var str = string.Join("\n\n", group.Select(idx => {
-                            var managedTypesArrayIndex = fieldTypeIndex[idx];
+                        var str = string.Join("\n\n", group.Select(_idx => {
+                            var managedTypesArrayIndex = fieldTypeIndex[_idx];
                             var typeName = managedTypes[managedTypesArrayIndex].name;
                             var typeAssembly = managedTypes[managedTypesArrayIndex].assembly;
-                            return $"Field[index={idx}, name={fieldName[idx]}, static={fieldStatic[idx]}, "
-                                   + $"offset={fieldOffset[idx]}, managedTypesArrayIndex={managedTypesArrayIndex}"
+                            return $"Field[index={_idx}, name={fieldName[_idx]}, static={fieldStatic[_idx]}, "
+                                   + $"offset={fieldOffset[_idx]}, managedTypesArrayIndex={managedTypesArrayIndex}"
                                    + "]\n"
                                    + $"@ [assembly '{typeAssembly}'] [type '{typeName}']";
                         }));

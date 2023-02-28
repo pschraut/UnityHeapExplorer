@@ -219,8 +219,8 @@ namespace HeapExplorer
             _containsReferenceTypeCache.getOrUpdate(
                 managedTypeIndex, 
                 this, 
-                (managedTypeIndex, self) => {
-                    var type = self.managedTypes[managedTypeIndex];
+                (_managedTypeIndex, self) => {
+                    var type = self.managedTypes[_managedTypeIndex];
                     if (type.isReferenceType)
                         return true;
                     
@@ -241,7 +241,7 @@ namespace HeapExplorer
                             continue;
                         }
 
-                        if (fieldTypeIndex == managedTypeIndex) {
+                        if (fieldTypeIndex == _managedTypeIndex) {
                             self.Error(
                                 $"HeapExplorer: '{type.name}' field '{instanceFields[n].name}' is a value type that "
                                 + "contains itself, that should be impossible!."
