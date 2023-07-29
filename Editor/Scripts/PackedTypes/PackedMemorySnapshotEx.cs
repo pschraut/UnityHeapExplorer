@@ -709,7 +709,7 @@ namespace HeapExplorer
                 for (int k = 0, kend = type.fields.Length; k < kend; ++k)
                 {
                     var name = type.fields[k].name;
-                    if (name != null && name[0] == '<')
+                    if (!string.IsNullOrEmpty(name) && name[0] == '<')
                     {
                         var index = name.LastIndexOf(">k__BackingField", StringComparison.Ordinal);
                         if (index != -1)
