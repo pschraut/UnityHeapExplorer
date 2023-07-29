@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [4.1.2] - 202?-??-??
 ### Fixed
  - Fixed ```ComputeConnectionKey``` possibly causing an overflow and showing wrong connections. Thanks to Yi Ji for sending me the fix.
-
+ - Fixed ```IndexOutOfRangeException``` when capturing a memory snapshot that contains obfuscated code. Thanks to UlyssesWu for the fix. See [PR#14](https://github.com/pschraut/UnityHeapExplorer/pull/14) for details.
+ 
 ## [4.1.1] - 2022-06-29
 ### Fixed
  - Fixed that ```#C Empty Shell Objects``` detection didn't work with memory snapshots taken from a Player. Thanks to Gotmachine for the fix, see [this post](https://forum.unity.com/threads/heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-6#post-8240496) in the Unity forums for details.
@@ -91,25 +92,25 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 
 ## [3.0.0] - 2019-01-07
 ### Added
- - Added option to hide internal managed managed sections (sections that are not 4096bytes aligned), as explained [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3902371). You can toggle this behavior in the toolbar “File > Settings > Show Internal Memory Sections”.
+ - Added option to hide internal managed managed sections (sections that are not 4096bytes aligned), as explained [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3902371). You can toggle this behavior in the toolbar â€œFile > Settings > Show Internal Memory Sectionsâ€.
  - Added functionality to substitute managed object addresses from a text file to Heap Explorer. This was an attempt to debug why a managed object exists in memory at run-time, but is not included in a memory snapshot. You can follow the problem [here](https://forum.unity.com/threads/is-it-possible-the-snapshots-are-missing-some-objects.607300/).
 
 
 ## [2.9.0] - 2018-11-28
 ### Added
  - Added workaround for Unity bug [Case 1104590](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3934645). Heap Explorer now ignored what appears as nested struct instances, which was causing an endless loop. This issue occurs with .NET4 ScriptingRuntime only. You can find the option to toggle this behavior in HeapExplorer toolbar > File > Settings > Ignore Nested Structs. Based on [this feedback](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3917245).
- - Added functionality to cancel a “finding root paths” operation. A “Cancel” button is now available in the root paths panel.
+ - Added functionality to cancel a â€œfinding root pathsâ€ operation. A â€œCancelâ€ button is now available in the root paths panel.
 ### Changed
  - Increased loop guard limit, when trying to find root paths from 100000 to 300000 iterations. This avoids [this issue](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3934858).
- - When changing the selection in the C#/C++ objects view, any running “finding root paths” job is aborted, rather than waited for completion. This makes the UI feel more responsive.
+ - When changing the selection in the C#/C++ objects view, any running â€œfinding root pathsâ€ job is aborted, rather than waited for completion. This makes the UI feel more responsive.
  - Changed order in which various jobs run in Heap Explorer, which makes the UI slightly more responsive.
 
 
 ## [2.8.0] - 2018-11-25
 ### Added
- - Added functionality to stop/cancel a processing step when Heap Explorer is analyzing a memory snapshot. This is actually a workaround for an issue that sounds like an infinite loop as [reported here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3917245). I’m still interested in the memory snapshot that causes the issue to actually fix it though.
+ - Added functionality to stop/cancel a processing step when Heap Explorer is analyzing a memory snapshot. This is actually a workaround for an issue that sounds like an infinite loop as [reported here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3917245). Iâ€™m still interested in the memory snapshot that causes the issue to actually fix it though.
  - C# Memory Sections View: Added raw memory view to inspect the actual bytes of a memory section.
- - Added functionality to export parts of the memory snapshot to CSV. You find it in the “Views” popupmenu, named “CSV Export”. Based on [this feedback](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3902371).
+ - Added functionality to export parts of the memory snapshot to CSV. You find it in the â€œViewsâ€ popupmenu, named â€œCSV Exportâ€. Based on [this feedback](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3902371).
 ### Changed
  - C# Memory Sections View: Changed phrase "N memory sections fragmented across X.XXGB" to "Nmemory sections within an X.XXGB address space", based on [this feedback](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-3919363).
 ### Removed
@@ -118,7 +119,7 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 
 ## [2.7.0] - 2018-09-09
 ### Added
- - Added warning if project uses .NET 4.x Scripting Runtime, because Unity’s MemoryProfiling API does not work with that at the time of writing. [See here for details](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3655840).
+ - Added warning if project uses .NET 4.x Scripting Runtime, because Unityâ€™s MemoryProfiling API does not work with that at the time of writing. [See here for details](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3655840).
  - Added better error messages for known memory snapshot issues, like empty typeDescriptions array.
  - Added error message dialog and then quit Heap Explorer if an unrecoverable error occurrs.
  - Added error message if Heap Explorer is unable to parse the editor version, to get at the bottom of [this problem](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-2#post-3635089).
@@ -126,7 +127,7 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 
 ## [2.6.0] - 2018-09-02
 ### Added
- - Added “Exclude NativeObject connections when capturing a memory snapshot” option to Heap Explorers “File > Settings” menu. Please read the “Exclude NativeObject connections” documentation when you might want to activate it.
+ - Added â€œExclude NativeObject connections when capturing a memory snapshotâ€ option to Heap Explorers â€œFile > Settingsâ€ menu. Please read the â€œExclude NativeObject connectionsâ€ documentation when you might want to activate it.
 
 
 ## [2.5.0] - 2018-08-28
@@ -148,20 +149,20 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 ### Added
  - C++ Objects View: Added asset preview. Memory snapshots do not contain asset memory, thus the preview is generated from the asset in the project instead rather than the memory snapshot!
  - C++ Objects View: Reworked list filtering. It allows to change filter settings without the list being recreated every time you change a single option. You have to apply those changes now. This helps to save time when filtering big memory snapshots.
- - C++ Objects View: If any list filtering is active, the “Filter” button in the toolbar uses a different color, to make it obvious filtering is in place.
+ - C++ Objects View: If any list filtering is active, the â€œFilterâ€ button in the toolbar uses a different color, to make it obvious filtering is in place.
 ### Changed
  - Brief Overview: Changing wording of the Memory Section description.
 ### Fixed
- - C++ Objects View: Fixed “Type” display of MonoBehaviour, which now displays the actual derived type rather than just MonoBehaviour always.
- - C++ Objects View: Fixed “Type” column sometimes showing the object name rather than type.
+ - C++ Objects View: Fixed â€œTypeâ€ display of MonoBehaviour, which now displays the actual derived type rather than just MonoBehaviour always.
+ - C++ Objects View: Fixed â€œTypeâ€ column sometimes showing the object name rather than type.
 
 
 ## [2.2.0] - 2018-06-23
 ### Added
  - C++ Objects View: Added popup menu to toolbar to exclude native objects from the list, depending on whether the native object is an asset, a scene-object or a run-time-object.
- - C++ Objects View: Added popup menu to toolbar to exclude native objects from the list, depending on whether the native object is marked as “Destroy on load” or “Do NOT destroy on load”.
+ - C++ Objects View: Added popup menu to toolbar to exclude native objects from the list, depending on whether the native object is marked as â€œDestroy on loadâ€ or â€œDo NOT destroy on loadâ€.
 ### Changed
- - C++ Objects View: Replaced generic “C++” icon with icons that indicate whether it’s an asset, scene-object or run-time-object.
+ - C++ Objects View: Replaced generic â€œC++â€ icon with icons that indicate whether itâ€™s an asset, scene-object or run-time-object.
  - C++ Objects View: Display icon in object inspector in the top-right corner.
 ### Fixed
  - C++ Objects View: Fixed count and size display in bottom status bar.
@@ -169,8 +170,8 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 
 ## [2.1.0] - 2018-06-16
 ### Added
- - Added “C++ Asset Duplicates” view
- - Added context menu if you right-click the “Name” column in the C++ objects view. It provides functionality to find assets of the C++ object/asset name in the project.
+ - Added â€œC++ Asset Duplicatesâ€ view
+ - Added context menu if you right-click the â€œNameâ€ column in the C++ objects view. It provides functionality to find assets of the C++ object/asset name in the project.
 
 
 ## [2.0.0] - 2018-05-25
@@ -180,9 +181,9 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 
 ## [1.9.0] - 2018-05-21
 ### Added
- - Overview: Brought back “GCHandles” and “Virtual Machine Information”
+ - Overview: Brought back â€œGCHandlesâ€ and â€œVirtual Machine Informationâ€
 ### Changed
- - When loading a snapshot from the “Start Page”, it opens the “Brief Overview” afterwards, rather thanthe “C# Objects” view.
+ - When loading a snapshot from the â€œStart Pageâ€, it opens the â€œBrief Overviewâ€ afterwards, rather thanthe â€œC# Objectsâ€ view.
  - 
 
 ## [1.8.0] - 2018-05-21
@@ -192,55 +193,55 @@ Thanks to jojo59516 for the implementation. See [PR#7](https://github.com/pschra
 ### Fixed
  - Overview: Fixed some layout issues
 ### Removed
- - Overview: Removed GCHandles and VirtualMachine Information from the overview, as this wasn’t very interesting nor something that is normally using much memory.
+ - Overview: Removed GCHandles and VirtualMachine Information from the overview, as this wasnâ€™t very interesting nor something that is normally using much memory.
 
 
 ## [1.7.0] - 2018-05-19
 ### Added
- - Compare Snapshots: Added “Swap” button to swap snapshot A <> B
+ - Compare Snapshots: Added â€œSwapâ€ button to swap snapshot A <> B
  - Compare Snapshots: Loading Snapshot B now displays the same loading status information as when loading Snapshot A.
  - C# Static Fields: Added toolbar menu with functionality to save the memory of a selected static field as a file
  - C# Memory Sections: Added toolbar menu with functionality to save the all C# memory sections as a file.
- - Debugged why some memory sections do not contain references to managed objects, but contain non-zero bytes. See “Empty C# Memory Sections” in under Known Issues.
+ - Debugged why some memory sections do not contain references to managed objects, but contain non-zero bytes. See â€œEmpty C# Memory Sectionsâ€ in under Known Issues.
 ### Fixed
- - Compare Snapshots: Snapshot B doesn’t get unloaded anymore, when loading or capturing snapshot A, as suggested multiple times.
+ - Compare Snapshots: Snapshot B doesnâ€™t get unloaded anymore, when loading or capturing snapshot A, as suggested multiple times.
 ### Changed
  - Moved statics to bottom status bar.
 
 ## [1.6.0] - 2018-05-08
 ### Changed
- - “Compare Snapshots”, changed diff from “A - B” to “B - A” comparison.
+ - â€œCompare Snapshotsâ€, changed diff from â€œA - Bâ€ to â€œB - Aâ€ comparison.
  - Loading a snapshot restores the previously active view when done.
 ### Fixed
- - Fixed being unable to select a memory section by clicking on its address in the “C# Memory Sections” view.
+ - Fixed being unable to select a memory section by clicking on its address in the â€œC# Memory Sectionsâ€ view.
 
 
 ## [1.5.0] - 2018-05-07
 ### Fixed
- - Added another workaround for “Array out of index” exception.
+ - Added another workaround for â€œArray out of indexâ€ exception.
 
 
 ## [1.4.0] - 2018-05-07
 ### Fixed
- - Added workaround for “Array out of index” exception, if the element-type of an array could not be detected. In this case this object outputs an error during heap reconstruction and from then on it’s ignored. Please send me the memory snapshot if you run into this error.
+ - Added workaround for â€œArray out of indexâ€ exception, if the element-type of an array could not be detected. In this case this object outputs an error during heap reconstruction and from then on itâ€™s ignored. Please send me the memory snapshot if you run into this error.
 
 
 ## [1.3.0] - 2018-05-06
 ### Added
- - In Heap Explorer toolbar, added “Capture > Open Profiler”. This opens the Unity profiler window, which allows you to connect to a different target. It’s simply a convenience feature, if you figure the editor is not connected to the correct player. This saves a few mouse clicks to get to the Unity Profilerto connect to a different player.
- - In Heap Explorer toolbar, added “File > Recent”, which allows to re-open the “most recently used” snapshots.
+ - In Heap Explorer toolbar, added â€œCapture > Open Profilerâ€. This opens the Unity profiler window, which allows you to connect to a different target. Itâ€™s simply a convenience feature, if you figure the editor is not connected to the correct player. This saves a few mouse clicks to get to the Unity Profilerto connect to a different player.
+ - In Heap Explorer toolbar, added â€œFile > Recentâ€, which allows to re-open the â€œmost recently usedâ€ snapshots.
 ### Changed
- - The “Load” button in the “Compare Snapshot” view now features a “most recently used” snapshot list. This allows you to switch between previously saved snapshots with fewer mouse clicks.
+ - The â€œLoadâ€ button in the â€œCompare Snapshotâ€ view now features a â€œmost recently usedâ€ snapshot list. This allows you to switch between previously saved snapshots with fewer mouse clicks.
 
 
 ## [1.2.0] - 2018-05-05
 ### Added
- - In Heap Explorer toolbar, added “Capture and Save”, which just saves the captured snapshot without automatically analyzing it.
+ - In Heap Explorer toolbar, added â€œCapture and Saveâ€, which just saves the captured snapshot without automatically analyzing it.
 ### Changed
- - In Heap Explorer toolbar, renamed “Capture” to “Capture and Analyze”.
+ - In Heap Explorer toolbar, renamed â€œCaptureâ€ to â€œCapture and Analyzeâ€.
  
 
 ## [1.1.0] - 2018-05-02
 ### Added
- - Added "Capture > Open Profiler". This opens the Unity profiler window, which allows you to connect to a different target. It’s simply a convenience feature, if you figure the editor is not connected to the correct player. This saves a few mouse clicks to get to the Unity Profiler to connect to a different player.
+ - Added "Capture > Open Profiler". This opens the Unity profiler window, which allows you to connect to a different target. Itâ€™s simply a convenience feature, if you figure the editor is not connected to the correct player. This saves a few mouse clicks to get to the Unity Profiler to connect to a different player.
  
