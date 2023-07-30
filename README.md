@@ -1,18 +1,18 @@
 # Introduction
 
-Heap Explorer is a Memory Profiler, Debugger and Analyzer for Unity. This repository hosts Heap Explorer for Unity 2019.3 and newer. For older versions, please visit the now obsolete repository on Bitbucket instead ([link](https://bitbucket.org/pschraut/unityheapexplorer/)).
+Heap Explorer is a Memory Profiler, Debugger, and Analyzer for Unity. This repository hosts Heap Explorer for Unity 2019.3 and newer versions. For older versions, please visit the obsolete repository on Bitbucket instead ([link](https://bitbucket.org/pschraut/unityheapexplorer/)).
 
-I spent a significant amount of time identifying and fixing memory leaks, as well as looking for memory optimization opportunities in Unity applications in the past. During this time, I often used Unity's [old Memory Profiler](https://bitbucket.org/Unity-Technologies/memoryprofiler) and while it's a useful tool, I was never entirely happy with it.
+I have spent a significant amount of time in the past identifying and fixing memory leaks, as well as searching for memory optimization opportunities in Unity applications. During this time, I often used Unity's [old Memory Profiler](https://bitbucket.org/Unity-Technologies/memoryprofiler). While it's a useful tool, I was never entirely satisfied with it.
 
-This lead me to write my own memory profiler, where I have the opportunity to make all the things I didn't like about Unity's Memory Profiler better™.
+This led me to develop my own memory profiler, where I had the opportunity to address all the things I disliked about Unity's Memory Profiler and make them better™.
 
-Fast-forward about a year, Unity Technologies announced they're working on a Memory Profiler too. This crushed my plans with what I had in mind for Heap Explorer. It was no longer a legit option for me to put a lot of time in the tool, as Unity Technologies tool is at least as good as what I'm able to come up with.
+Fast-forward about a year, Unity Technologies announced that they are also working on a Memory Profiler. This disrupted my plans for Heap Explorer. It was no longer a viable option for me to invest a lot of time in the tool since Unity Technologies' tool is at least as good as what I can come up with.
 
-After a lot of back-and-forth what to do with Heap Explorer, I came to the conclusion that the best option is to provide the source code and (mentally) move on. You can read more about this [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-4250698). 
+After much consideration about what to do with Heap Explorer, I concluded that the best option is to provide the source code and move on. You can read more about this [here](https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/page-3#post-4250698).
 
-I've provided occasional updates since then, because several people still prefer Heap Explorer over Unity's Memory Profiler, due to its easier to understand UI/UX.
+Since then, I have provided occasional updates because several people still prefer Heap Explorer over Unity's Memory Profiler due to its easier-to-understand UI/UX.
 
-I've also updated Heap Explorer to work with Unity 2019.3 and converted it into a Package, which means you should be able to use Heap Explorer for the entire 2019 LTS cycle, which ends in 2022.
+I have also updated Heap Explorer to work with Unity 2019.3 and converted it into a Package, which means you should be able to use Heap Explorer for the entire 2019 LTS cycle, which ends in 2022.
 
 [![](http://img.youtube.com/vi/tcTl_7y8JBA/0.jpg)](https://www.youtube.com/watch?v=tcTl_7y8JBA "")
 
