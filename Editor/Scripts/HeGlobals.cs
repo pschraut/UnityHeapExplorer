@@ -11,7 +11,7 @@ namespace HeapExplorer
     public static class HeGlobals
     {
         public const string k_Title = "Heap Explorer";
-        public const string k_Version = "4.1";
+        public const string k_Version = "4.2";
         public const string k_DocuUrl = "https://github.com/pschraut/UnityHeapExplorer";
         public const string k_ChangelogUrl = "https://github.com/pschraut/UnityHeapExplorer/blob/master/CHANGELOG.md";
         public const string k_ForumUrl = "https://forum.unity.com/threads/wip-heap-explorer-memory-profiler-debugger-and-analyzer-for-unity.527949/";

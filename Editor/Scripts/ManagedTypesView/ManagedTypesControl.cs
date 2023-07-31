@@ -2,17 +2,19 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
+
+using System;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
     public class ManagedTypesControl : AbstractTreeView
     {
-        public System.Action<PackedManagedType?> onSelectionChange;
+        public Action<Option<PackedManagedType>> onSelectionChange;
 
         PackedMemorySnapshot m_Snapshot;
         int m_UniqueId = 1;
@@ -50,11 +52,11 @@ namespace HeapExplorer
             var item = selectedItem as ManagedTypeItem;
             if (item == null)
             {
-                onSelectionChange.Invoke(null);
+                onSelectionChange.Invoke(None._);
                 return;
             }
 
-            onSelectionChange.Invoke(item.packed);
+            onSelectionChange.Invoke(Some(item.packed));
         }
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
@@ -69,6 +71,7 @@ namespace HeapExplorer
                 return root;
             }
 
+            var cycleTracker = new CycleTracker<int>();
             for (int n = 0, nend = m_Snapshot.managedTypes.Length; n < nend; ++n)
             {
                 if (window.isClosing) // the window is closing
@@ -87,18 +90,19 @@ namespace HeapExplorer
                 root.AddChild(item);
 
                 // Add its base-classes
-                var loopGuard = 0;
                 var baseType = type;
                 var itemDepth = 1;
-                while (baseType.baseOrElementTypeIndex != -1)
-                {
-                    if (++loopGuard > 128)
-                    {
-                        Debug.LogErrorFormat("Loop-guard kicked in for managed type '{0}'.", type.name);
+                cycleTracker.markStartOfSearch();
+                {while (baseType.baseOrElementTypeIndex.valueOut(out var baseOrElementTypeIndex)) {
+                    if (cycleTracker.markIteration(baseOrElementTypeIndex)) {
+                        cycleTracker.reportCycle(
+                            $"{nameof(BuildTree)}()", baseOrElementTypeIndex, 
+                            idx => m_Snapshot.managedTypes[idx].ToString()
+                        );
                         break;
                     }
 
-                    baseType = m_Snapshot.managedTypes[baseType.baseOrElementTypeIndex];
+                    baseType = m_Snapshot.managedTypes[baseOrElementTypeIndex];
 
                     var baseItem = new ManagedTypeItem
                     {
@@ -109,7 +113,7 @@ namespace HeapExplorer
                     };
                     baseItem.Initialize(this, m_Snapshot, baseType.managedTypesArrayIndex);
                     item.AddChild(baseItem);
-                }
+                }}
             }
 
             // remove groups if it contains one item only
@@ -146,11 +150,11 @@ namespace HeapExplorer
             switch ((Column)sortingColumn)
             {
                 case Column.Name:
-                    return string.Compare(itemB.typeName, itemA.typeName, true);
+                    return string.Compare(itemB.typeName, itemA.typeName, StringComparison.OrdinalIgnoreCase);
                 case Column.ValueType:
                     return itemA.isValueType.CompareTo(itemB.isValueType);
                 case Column.AssemblyName:
-                    return string.Compare(itemB.assemblyName, itemA.assemblyName, true);
+                    return string.Compare(itemB.assemblyName, itemA.assemblyName, StringComparison.OrdinalIgnoreCase);
             }
 
             return 0;
@@ -203,13 +207,7 @@ namespace HeapExplorer
                 }
             }
 
-            public override long size
-            {
-                get
-                {
-                    return m_Type.packed.size;
-                }
-            }
+            public override long size => m_Type.packed.size.fold(v => v, v => v);
 
             public override string assemblyName
             {

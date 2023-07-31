@@ -2,11 +2,9 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 using System;
+using HeapExplorer.Utilities;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -21,15 +19,36 @@ namespace HeapExplorer
     /// </remarks>
     [Serializable]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)]
-    public struct PackedGCHandle
+    public readonly struct PackedGCHandle
     {
-        // The address of the managed object that the GC handle is referencing.
-        public System.UInt64 target;
+        /// <summary>
+        /// The address of the managed object that the GC handle is referencing.
+        /// </summary>
+        public readonly ulong target;
 
-        [NonSerialized] public System.Int32 gcHandlesArrayIndex;
-        [NonSerialized] public System.Int32 managedObjectsArrayIndex;
+        /// <summary>
+        /// Index into <see cref="PackedMemorySnapshot.gcHandles"/>.
+        /// </summary>
+        [NonSerialized] public readonly PInt gcHandlesArrayIndex;
+        
+        /// <inheritdoc cref="PackedManagedObject.ArrayIndex"/>
+        [NonSerialized] public readonly Option<PackedManagedObject.ArrayIndex> managedObjectsArrayIndex;
 
-        const System.Int32 k_Version = 1;
+        public PackedGCHandle(
+            ulong target, PInt gcHandlesArrayIndex, 
+            Option<PackedManagedObject.ArrayIndex> managedObjectsArrayIndex = default
+        ) {
+            this.target = target;
+            this.gcHandlesArrayIndex = gcHandlesArrayIndex;
+            this.managedObjectsArrayIndex = managedObjectsArrayIndex;
+        }
+
+        public PackedGCHandle withManagedObjectsArrayIndex(PackedManagedObject.ArrayIndex index) =>
+            new PackedGCHandle(
+                target: target, gcHandlesArrayIndex: gcHandlesArrayIndex, managedObjectsArrayIndex: Some(index)
+            );
+
+        const int k_Version = 1;
 
         public static void Write(System.IO.BinaryWriter writer, PackedGCHandle[] value)
         {
@@ -51,14 +70,13 @@ namespace HeapExplorer
             if (version >= 1)
             {
                 var length = reader.ReadInt32();
-                stateString = string.Format("Loading {0} GC Handles", length);
+                stateString = $"Loading {length} GC Handles";
                 value = new PackedGCHandle[length];
 
-                for (int n = 0, nend = value.Length; n < nend; ++n)
+                for (PInt n = PInt._0, nend = value.LengthP(); n < nend; ++n)
                 {
-                    value[n].target = reader.ReadUInt64();
-                    value[n].gcHandlesArrayIndex = n;
-                    value[n].managedObjectsArrayIndex = -1;
+                    var target = reader.ReadUInt64();
+                    value[n] = new PackedGCHandle(target: target, gcHandlesArrayIndex: n);
                 }
             }
         }
@@ -71,14 +89,8 @@ namespace HeapExplorer
             var sourceTargets = new ulong[source.target.GetNumEntries()];
             source.target.GetEntries(0, source.target.GetNumEntries(), ref sourceTargets);
 
-            for (int n = 0, nend = value.Length; n < nend; ++n)
-            {
-                value[n] = new PackedGCHandle
-                {
-                    target = sourceTargets[n],
-                    gcHandlesArrayIndex = n,
-                    managedObjectsArrayIndex = -1,
-                };
+            for (PInt n = PInt._0, nend = value.LengthP(); n < nend; ++n) {
+                value[n] = new PackedGCHandle(target: sourceTargets[n], gcHandlesArrayIndex: n);
             }
             return value;
         }

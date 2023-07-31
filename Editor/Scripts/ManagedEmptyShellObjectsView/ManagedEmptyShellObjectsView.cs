@@ -44,7 +44,7 @@ namespace HeapExplorer
 
         protected override void OnDrawHeader()
         {
-            var text = string.Format("{0} empty shell object(s)", m_ObjectsControl.managedObjectsCount);
+            var text = $"{m_ObjectsControl.managedObjectsCount} empty shell object(s)";
             window.SetStatusbarString(text);
             EditorGUILayout.LabelField(titleContent, EditorStyles.boldLabel);
         }
@@ -56,7 +56,7 @@ namespace HeapExplorer
             var control = (ManagedEmptyShellObjectsControl)m_ObjectsControl;
             if (control.progress.value < 1)
             {
-                window.SetBusy(string.Format("Analyzing Managed Objects, {0:F0}% done", control.progress.value * 100));
+                window.SetBusy($"Analyzing Managed Objects, {control.progress.value * 100:F0}% done");
             }
         }
 

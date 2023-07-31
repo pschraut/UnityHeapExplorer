@@ -2,14 +2,17 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2022 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor;
 
 namespace HeapExplorer
 {
-    abstract public class AbstractDataVisualizer
+    public abstract class AbstractDataVisualizer
     {
         public bool isFallback
         {
@@ -34,21 +37,21 @@ namespace HeapExplorer
         }
 
         protected PackedMemorySnapshot m_Snapshot;
-        protected System.UInt64 m_Address;
+        protected UInt64 m_Address;
         protected PackedManagedType m_Type;
         protected AbstractMemoryReader m_MemoryReader;
         protected string m_Title = "Visualizer";
         protected GenericMenu m_Menu;
 
-        static Dictionary<string, System.Type> s_Visualizers = new Dictionary<string, System.Type>();
+        static readonly Dictionary<string, Type> s_Visualizers = new Dictionary<string, Type>();
 
-        public void Initialize(PackedMemorySnapshot snapshot, AbstractMemoryReader memoryReader, System.UInt64 address, PackedManagedType type)
+        public void Initialize(PackedMemorySnapshot snapshot, AbstractMemoryReader memoryReader, UInt64 address, PackedManagedType type)
         {
             m_Snapshot = snapshot;
             m_Address = address;
             m_Type = type;
             m_MemoryReader = memoryReader;
-            m_Title = string.Format("{0} Visualizer", type.name);
+            m_Title = $"{type.name} Visualizer";
 
             OnInitialize();
         }
@@ -63,10 +66,10 @@ namespace HeapExplorer
             m_Menu.ShowAsContext();
         }
 
-        abstract protected void OnInitialize();
-        abstract protected void OnGUI();
+        protected abstract void OnInitialize();
+        protected abstract void OnGUI();
 
-        public static void RegisterVisualizer(string typeName, System.Type visualizerType)
+        public static void RegisterVisualizer(string typeName, Type visualizerType)
         {
             s_Visualizers[typeName] = visualizerType;
         }
@@ -79,11 +82,10 @@ namespace HeapExplorer
 
         public static AbstractDataVisualizer CreateVisualizer(string typeName)
         {
-            System.Type type;
-            if (!s_Visualizers.TryGetValue(typeName, out type))
+            if (!s_Visualizers.TryGetValue(typeName, out var type))
                 type = typeof(FallbackDataVisualizer);
 
-            var value = System.Activator.CreateInstance(type) as AbstractDataVisualizer;
+            var value = Activator.CreateInstance(type) as AbstractDataVisualizer;
             return value;
         }
 
@@ -102,7 +104,7 @@ namespace HeapExplorer
 
     class ColorDataVisualizer : AbstractDataVisualizer
     {
-        Color m_Color;
+        Option<Color> m_Color;
 
         [InitializeOnLoadMethod]
         static void RegisterVisualizer()
@@ -110,25 +112,20 @@ namespace HeapExplorer
             RegisterVisualizer("UnityEngine.Color", typeof(ColorDataVisualizer));
         }
 
-        protected override void OnInitialize()
-        {
-            int sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
-
-            m_Color.r = m_MemoryReader.ReadSingle(m_Address + (uint)(sizeOfSingle * 0));
-            m_Color.g = m_MemoryReader.ReadSingle(m_Address + (uint)(sizeOfSingle * 1));
-            m_Color.b = m_MemoryReader.ReadSingle(m_Address + (uint)(sizeOfSingle * 2));
-            m_Color.a = m_MemoryReader.ReadSingle(m_Address + (uint)(sizeOfSingle * 3));
+        protected override void OnInitialize() {
+            m_Color = m_MemoryReader.ReadColor(m_Address);
         }
 
         protected override void OnGUI()
         {
-            EditorGUILayout.ColorField(m_Color);
+            if (m_Color.valueOut(out var color)) EditorGUILayout.ColorField(color);
+            else EditorGUILayout.LabelField($"Couldn't read `Color` at {m_Address:X}");
         }
     }
 
     class Color32DataVisualizer : AbstractDataVisualizer
     {
-        Color32 m_Color;
+        Option<Color32> m_Color;
 
         [InitializeOnLoadMethod]
         static void RegisterVisualizer()
@@ -138,23 +135,19 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            int sizeOfByte = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemByte].size;
-
-            m_Color.r = m_MemoryReader.ReadByte(m_Address + (uint)(sizeOfByte * 0));
-            m_Color.g = m_MemoryReader.ReadByte(m_Address + (uint)(sizeOfByte * 1));
-            m_Color.b = m_MemoryReader.ReadByte(m_Address + (uint)(sizeOfByte * 2));
-            m_Color.a = m_MemoryReader.ReadByte(m_Address + (uint)(sizeOfByte * 3));
+            m_Color = m_MemoryReader.ReadColor32(m_Address);
         }
 
         protected override void OnGUI()
         {
-            EditorGUILayout.ColorField(m_Color);
+            if (m_Color.valueOut(out var color)) EditorGUILayout.ColorField(color);
+            else EditorGUILayout.LabelField($"Couldn't read `Color32` at {m_Address:X}");
         }
     }
 
     class Matrix4x4DataVisualizer : AbstractDataVisualizer
     {
-        Matrix4x4 m_Matrix;
+        Option<Matrix4x4> m_Matrix;
 
         [InitializeOnLoadMethod]
         static void RegisterVisualizer()
@@ -169,25 +162,28 @@ namespace HeapExplorer
 
         protected override void OnGUI()
         {
-            using (new EditorGUILayout.VerticalScope())
-            {
-                for (var y = 0; y < 4; ++y)
+            if (m_Matrix.valueOut(out var matrix)) {
+                using (new EditorGUILayout.VerticalScope())
                 {
-                    using (new EditorGUILayout.HorizontalScope())
+                    for (var y = 0; y < 4; ++y)
                     {
-                        for (var x = 0; x < 4; ++x)
+                        using (new EditorGUILayout.HorizontalScope())
                         {
-                            EditorGUILayout.TextField(m_Matrix[y, x].ToString());
+                            for (var x = 0; x < 4; ++x)
+                            {
+                                EditorGUILayout.TextField(matrix[y, x].ToString(CultureInfo.InvariantCulture));
+                            }
                         }
                     }
                 }
             }
+            else EditorGUILayout.LabelField($"Couldn't read `Matrix4x4` at {m_Address:X}");
         }
     }
 
     class QuaternionDataVisualizer : AbstractDataVisualizer
     {
-        Quaternion m_Quaternion;
+        Option<Quaternion> m_Quaternion;
 
         [InitializeOnLoadMethod]
         static void RegisterVisualizer()
@@ -202,9 +198,12 @@ namespace HeapExplorer
 
         protected override void OnGUI()
         {
-            var eulerAngles = m_Quaternion.eulerAngles;
-            EditorGUILayout.Vector3Field("Euler Angles", eulerAngles);
-            //EditorGUILayout.Vector4Field("Quaternion", new Vector4(m_quaternion.x, m_quaternion.y, m_quaternion.z, m_quaternion.w));
+            if (m_Quaternion.valueOut(out var quaternion)) {
+                var eulerAngles = quaternion.eulerAngles;
+                EditorGUILayout.Vector3Field("Euler Angles", eulerAngles);
+                //EditorGUILayout.Vector4Field("Quaternion", new Vector4(m_quaternion.x, m_quaternion.y, m_quaternion.z, m_quaternion.w));
+            }
+            else EditorGUILayout.LabelField($"Couldn't read `Quaternion` at {m_Address:X}");
         }
     }
 
@@ -225,8 +224,12 @@ namespace HeapExplorer
             var pointer = m_Address;
             if (pointer == 0)
                 m_String = "null";
-            else
-                m_String = m_MemoryReader.ReadString(pointer + (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize);
+            else {
+                m_String = 
+                    m_MemoryReader
+                        .ReadString(pointer + m_Snapshot.virtualMachineInformation.objectHeaderSize)
+                        .getOrElse("<Error while reading>");
+            }
 
             if (m_String == null)
                 m_String = "<null>";
@@ -245,7 +248,7 @@ namespace HeapExplorer
             if (m_ShortString != null)
             {
                 text = m_ShortString;
-                EditorGUILayout.HelpBox(string.Format("Displaying {0} chars only!", k_MaxStringLength), MessageType.Info);
+                EditorGUILayout.HelpBox($"Displaying {k_MaxStringLength} chars only!", MessageType.Info);
             }
 
             EditorGUILayout.TextArea(text, EditorStyles.wordWrappedLabel);
@@ -261,7 +264,7 @@ namespace HeapExplorer
 
     class DateTimeDataVisualizer : AbstractDataVisualizer
     {
-        System.DateTime m_DateTime;
+        Option<DateTime> m_DateTime;
 
         [InitializeOnLoadMethod]
         static void RegisterVisualizer()
@@ -271,22 +274,23 @@ namespace HeapExplorer
 
         protected override void OnInitialize()
         {
-            var ticks = m_MemoryReader.ReadInt64(m_Address);
-            m_DateTime = new System.DateTime(ticks);
+            m_DateTime = m_MemoryReader.ReadInt64(m_Address).map(ticks => new DateTime(ticks));
         }
 
         protected override void OnGUI()
         {
-            EditorGUILayout.LabelField(m_DateTime.ToString());
+            EditorGUILayout.LabelField(m_DateTime.fold(
+                "<error while reading>", _ => _.ToString(DateTimeFormatInfo.InvariantInfo)
+            ));
         }
     }
 
-    sealed public class DataVisualizerWindow : EditorWindow
+    public sealed class DataVisualizerWindow : EditorWindow
     {
         AbstractDataVisualizer m_Visualizer;
         Vector2 m_ScrollPosition;
 
-        public static EditorWindow CreateWindow(PackedMemorySnapshot snapshot, AbstractMemoryReader memoryReader, System.UInt64 address, PackedManagedType type)
+        public static EditorWindow CreateWindow(PackedMemorySnapshot snapshot, AbstractMemoryReader memoryReader, UInt64 address, PackedManagedType type)
         {
             var visualizer = AbstractDataVisualizer.CreateVisualizer(type.name);
             if (visualizer == null)
@@ -296,7 +300,7 @@ namespace HeapExplorer
             }
             visualizer.Initialize(snapshot, memoryReader, address, type);
 
-            var window = DataVisualizerWindow.CreateInstance<DataVisualizerWindow>();
+            var window = CreateInstance<DataVisualizerWindow>();
             window.SetVisualizer(visualizer);
             window.ShowUtility();
             return window;
@@ -309,10 +313,6 @@ namespace HeapExplorer
                 return;
 
             titleContent = new GUIContent(m_Visualizer.title);
-        }
-
-        void OnEnable()
-        {
         }
 
         void OnGUI()

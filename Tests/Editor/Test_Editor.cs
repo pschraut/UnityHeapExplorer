@@ -11,6 +11,8 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -60,27 +62,29 @@ namespace HeapExplorer
         void RunTest()
         {
             // Find the test type
-            RichManagedType classType = RichManagedType.invalid;
+            var maybeClassType = Option<RichManagedType>.None;
             foreach (var type in m_snapshot.managedTypes)
             {
                 if (type.name != "HeapExplorer.Test_Editor")
                     continue;
 
-                classType = new RichManagedType(m_snapshot, type.managedTypesArrayIndex);
+                maybeClassType = Some(new RichManagedType(m_snapshot, type.managedTypesArrayIndex));
                 break;
             }
-            Assert.IsTrue(classType.isValid);
+            Assert.IsTrue(maybeClassType.isSome);
+            var classType = maybeClassType.getOrThrow();
 
             // Find the test object instance
-            RichManagedObject managedObject = RichManagedObject.invalid;
+            var maybeManagedObject = Option<RichManagedObject>.None;
             foreach (var obj in m_snapshot.managedObjects)
             {
                 if (obj.managedTypesArrayIndex != classType.packed.managedTypesArrayIndex)
                     continue;
 
-                managedObject = new RichManagedObject(m_snapshot, obj.managedObjectsArrayIndex);
+                maybeManagedObject = Some(new RichManagedObject(m_snapshot, obj.managedObjectsArrayIndex));
             }
-            Assert.IsTrue(managedObject.isValid);
+            Assert.IsTrue(maybeManagedObject.isSome);
+            var managedObject = maybeManagedObject.getOrThrow();
 
             AssertInt("m_intOne", 1, managedObject);
             AssertInt("m_intTwo", 2, managedObject);
@@ -118,7 +122,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadDecimal((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadDecimal((uint)field.offset + managedObject.address));
         }
 
         void AssertInt(string fieldName, int value, RichManagedObject managedObject)
@@ -126,7 +130,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadInt32((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadInt32((uint)field.offset + managedObject.address));
         }
 
         void AssertLong(string fieldName, long value, RichManagedObject managedObject)
@@ -134,7 +138,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadInt64((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadInt64((uint)field.offset + managedObject.address));
         }
 
         void AssertULong(string fieldName, ulong value, RichManagedObject managedObject)
@@ -142,7 +146,7 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value, memory.ReadUInt64((uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value), memory.ReadUInt64((uint)field.offset + managedObject.address));
         }
 
         void AssertVector2(string fieldName, Vector2 value, RichManagedObject managedObject)
@@ -150,8 +154,8 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
         }
 
         void AssertVector3(string fieldName, Vector3 value, RichManagedObject managedObject)
@@ -159,9 +163,9 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.z, memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.z), memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
         }
 
         void AssertQuaternion(string fieldName, Quaternion value, RichManagedObject managedObject)
@@ -169,10 +173,10 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            Assert.AreEqual(value.x, memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.y, memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.z, memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
-            Assert.AreEqual(value.w, memory.ReadSingle(12 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.x), memory.ReadSingle(0 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.y), memory.ReadSingle(4 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.z), memory.ReadSingle(8 + (uint)field.offset + managedObject.address));
+            Assert.AreEqual(Some(value.w), memory.ReadSingle(12 + (uint)field.offset + managedObject.address));
         }
 
         void AssertMatrix4x4(string fieldName, Matrix4x4 value, RichManagedObject managedObject)
@@ -182,13 +186,15 @@ namespace HeapExplorer
             var field = GetField(fieldName, managedObject);
 
             Matrix4x4 matrix = new Matrix4x4();
-            int sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size;
+            int sizeOfSingle = m_snapshot.managedTypes[m_snapshot.coreTypes.systemSingle].size.rightOrThrow;
             int element = 0;
             for (var y = 0; y < 4; ++y)
             {
                 for (var x = 0; x < 4; ++x)
                 {
-                    matrix[y, x] = memory.ReadSingle((uint)field.offset + (uint)(sizeOfSingle * element) + managedObject.address);
+                    matrix[y, x] = 
+                        memory.ReadSingle((uint)field.offset + (uint)(sizeOfSingle * element) + managedObject.address)
+                            .getOrThrow();
                     element++;
                 }
             }
@@ -201,14 +207,15 @@ namespace HeapExplorer
             var memory = new MemoryReader(m_snapshot);
 
             var field = GetField(fieldName, managedObject);
-            var ticks = memory.ReadInt64(0 + (uint)field.offset + managedObject.address);
+            var ticks = memory.ReadInt64(0 + (uint)field.offset + managedObject.address).getOrThrow();
             Assert.AreEqual(value, new DateTime(ticks));
         }
 
         void OnSnapshotReceived(string path, bool captureResult)
         {
-            var args = new MemorySnapshotProcessingArgs();
-            args.source = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path);
+            var args = new MemorySnapshotProcessingArgs(
+                UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path)
+            );
 
             m_snapshot = PackedMemorySnapshot.FromMemoryProfiler(args);
         }

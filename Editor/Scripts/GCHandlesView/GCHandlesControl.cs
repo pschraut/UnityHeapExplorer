@@ -2,17 +2,21 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
     public class GCHandlesControl : AbstractTreeView
     {
-        public System.Action<PackedGCHandle?> onSelectionChange;
+        public System.Action<Option<PackedGCHandle>> onSelectionChange;
 
         PackedMemorySnapshot m_Snapshot;
         int m_UniqueId = 1;
@@ -42,7 +46,7 @@ namespace HeapExplorer
 
         public void Select(PackedGCHandle obj)
         {
-            var item = FindItemByAddressRecursive(rootItem, (ulong)(obj.target));
+            var item = FindItemByAddressRecursive(rootItem, obj.target);
             if (item != null)
                 SetSelection(new[] { item.id }, TreeViewSelectionOptions.RevealAndFrame | TreeViewSelectionOptions.FireSelectionChanged);
         }
@@ -81,11 +85,11 @@ namespace HeapExplorer
             var item = selectedItem as GCHandleItem;
             if (item == null)
             {
-                onSelectionChange.Invoke(null);
+                onSelectionChange.Invoke(None._);
                 return;
             }
 
-            onSelectionChange.Invoke(item.packed);
+            onSelectionChange.Invoke(Some(item.packed));
         }
 
         public TreeViewItem BuildTree(PackedMemorySnapshot snapshot)
@@ -109,16 +113,15 @@ namespace HeapExplorer
                     break;
 
                 var gcHandle = m_Snapshot.gcHandles[n];
-                var managedTypeIndex = -1;
-                if (gcHandle.managedObjectsArrayIndex >= 0)
-                    managedTypeIndex = m_Snapshot.managedObjects[gcHandle.managedObjectsArrayIndex].managedTypesArrayIndex;
+                var maybeManagedTypeIndex = gcHandle.managedObjectsArrayIndex.map(m_Snapshot, (idx, ss) =>
+                    idx.isStatic
+                        ? ss.managedStaticFields[idx.index].managedTypesArrayIndex
+                        : ss.managedObjects[idx.index].managedTypesArrayIndex
+                );
 
                 var targetItem = root;
-                if (managedTypeIndex >= 0)
-                {
-                    GroupItem group;
-                    if (!groupLookup.TryGetValue(managedTypeIndex, out group))
-                    {
+                {if (maybeManagedTypeIndex.valueOut(out var managedTypeIndex)) {
+                    if (!groupLookup.TryGetValue(managedTypeIndex, out var group)) {
                         group = new GroupItem
                         {
                             id = m_UniqueId++,
@@ -132,7 +135,7 @@ namespace HeapExplorer
                     }
 
                     targetItem = group;
-                }
+                }}
 
                 var item = new GCHandleItem
                 {
@@ -171,7 +174,7 @@ namespace HeapExplorer
             switch ((Column)sortingColumn)
             {
                 case Column.GCHandle:
-                    return string.Compare(itemB.typeName, itemA.typeName, true);
+                    return string.Compare(itemB.typeName, itemA.typeName, StringComparison.OrdinalIgnoreCase);
 
                 case Column.Size:
                     return itemA.size.CompareTo(itemB.size);
@@ -225,7 +228,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return m_GCHandle.managedObject.type.name;
+                    return m_GCHandle.managedObject.fold("broken handle", _ => _.type.name);
                 }
             }
 
@@ -277,21 +280,19 @@ namespace HeapExplorer
                 {
                     GUI.Box(HeEditorGUI.SpaceL(ref position, position.height), HeEditorStyles.gcHandleImage, HeEditorStyles.iconStyle);
 
-                    if (m_GCHandle.nativeObject.isValid)
-                    {
+                    {if (m_GCHandle.nativeObject.valueOut(out var nativeObject)) {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(nativeObject));
                         }
-                    }
+                    }}
 
-                    if (m_GCHandle.managedObject.isValid)
-                    {
+                    {if (m_GCHandle.managedObject.valueOut(out var managedObject)) {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(managedObject));
                         }
-                    }
+                    }}
                 }
 
                 switch ((Column)column)

@@ -4,6 +4,7 @@
 //
 using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -14,7 +15,7 @@ namespace HeapExplorer
     {
         ManagedTypesControl m_TypesControl;
         HeSearchField m_TypesSearchField;
-        PackedManagedType? m_Selected;
+        Option<PackedManagedType> m_Selected;
         float m_SplitterHorz = 0.33333f;
         float m_SplitterVert = 0.32f;
 
@@ -65,7 +66,7 @@ namespace HeapExplorer
 
         //public override int CanProcessCommand(GotoCommand command)
         //{
-        //    if (command.toGCHandle.isValid)
+        //    if (command.toGCHandle.HasValue)
         //        return 10;
 
         //    return base.CanProcessCommand(command);
@@ -80,14 +81,9 @@ namespace HeapExplorer
         //}
 
         // Called if the selection changed in the list that contains the managed objects overview.
-        void OnListViewSelectionChange(PackedManagedType? type)
+        void OnListViewSelectionChange(Option<PackedManagedType> type)
         {
             m_Selected = type;
-
-            if (!type.HasValue)
-            {
-                return;
-            }
         }
 
         public override void OnGUI()
@@ -102,7 +98,7 @@ namespace HeapExplorer
                     {
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            EditorGUILayout.LabelField(string.Format("{0} C# Type(s)", snapshot.managedTypes.Length), EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField($"{snapshot.managedTypes.Length} C# Type(s)", EditorStyles.boldLabel);
 
                             if (m_TypesSearchField.OnToolbarGUI())
                                 m_TypesControl.Search(m_TypesSearchField.text);

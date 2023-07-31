@@ -29,12 +29,12 @@ namespace HeapExplorer
                 displayType = "static " + displayType;
 
             displayName = field.name;
-            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type);
+            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type).getOrElse("<reading error>");
             isExpandable = false;
             icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);
 
             if (type.isPointer)
-                enabled = m_MemoryReader.ReadPointer(address) > 0;
+                enabled = m_MemoryReader.ReadPointer(address).contains(_ => _ > 0);
         }
 
         protected override void OnBuildChildren(System.Action<BuildChildrenArgs> add)

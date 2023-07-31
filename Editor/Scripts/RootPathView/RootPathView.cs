@@ -2,8 +2,8 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
+
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
@@ -41,7 +41,7 @@ namespace HeapExplorer
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        EditorGUILayout.LabelField(string.Format("{0} Path(s) to Root", m_RootPaths.count), EditorStyles.boldLabel);
+                        EditorGUILayout.LabelField($"{m_RootPaths.count} Path(s) to Root", EditorStyles.boldLabel);
                     }
 
                     GUILayout.Space(2);
@@ -62,7 +62,7 @@ namespace HeapExplorer
                 r.width = 200;
                 r.y = r.center.y - 70;
                 r.height = 50;
-                GUI.Label(r, string.Format("Finding root paths, please wait.\n{0} objects scanned", m_RootPaths.scanned), HeEditorStyles.centeredWordWrapLabel);
+                GUI.Label(r, $"Finding root paths, please wait.\n{m_RootPaths.scanned} objects scanned", HeEditorStyles.centeredWordWrapLabel);
 
                 r = GUILayoutUtility.GetLastRect();
                 r.x = r.center.x - 60;
@@ -80,25 +80,29 @@ namespace HeapExplorer
         public void Inspect(PackedNativeUnityEngineObject item)
         {
             m_Selected = null;
-            ScheduleJob(new ObjectProxy(snapshot, item));
+            // TODO: add `sourceField` data
+            ScheduleJob(new ObjectProxy(snapshot, item, sourceField: None._));
         }
 
         public void Inspect(PackedManagedObject item)
         {
             m_Selected = null;
-            ScheduleJob(new ObjectProxy(snapshot, item));
+            // TODO: add `sourceField` data
+            ScheduleJob(new ObjectProxy(snapshot, item, sourceField: None._));
         }
 
         public void Inspect(PackedManagedStaticField item)
         {
             m_Selected = null;
-            ScheduleJob(new ObjectProxy(snapshot, item));
+            // TODO: add `sourceField` data
+            ScheduleJob(new ObjectProxy(snapshot, item, sourceField: None._));
         }
 
         public void Inspect(PackedGCHandle item)
         {
             m_Selected = null;
-            ScheduleJob(new ObjectProxy(snapshot, item));
+            // TODO: add `sourceField` data
+            ScheduleJob(new ObjectProxy(snapshot, item, sourceField: None._));
         }
 
         public void Clear()

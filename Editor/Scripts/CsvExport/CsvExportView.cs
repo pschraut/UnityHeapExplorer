@@ -2,8 +2,6 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
@@ -106,8 +104,8 @@ namespace HeapExplorer
 
             System.IO.Directory.CreateDirectory(folder);
 
-            ExportNativeObjects(string.Format("{0}/{1}_native_objects.csv", folder, m_ExportName));
-            ExportManagedObjects(string.Format("{0}/{1}_managed_objects.csv", folder, m_ExportName));
+            ExportNativeObjects($"{folder}/{m_ExportName}_native_objects.csv");
+            ExportManagedObjects($"{folder}/{m_ExportName}_managed_objects.csv");
             //ExportManagedStaticFields(string.Format("{0}/{1}_managed_static_fields.csv", folder, m_ExportName));
         }
 
@@ -143,7 +141,8 @@ namespace HeapExplorer
                     obj.instanceId,
                     obj.isManager,
                     obj.hideFlags,
-                    obj.managedObject.type.name);
+                    obj.managedObject.fold("<unresolved>", _ => _.type.name)
+                );
             }
 
             System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
@@ -166,14 +165,16 @@ namespace HeapExplorer
             for (var n = 0; n < objs.Length; ++n)
             {
                 var obj = new RichManagedObject(snapshot, objs[n].managedObjectsArrayIndex);
+                var maybeNativeObject = obj.nativeObject;
                 sb.AppendFormat("\"{1}\"{0}\"{2}\"{0}\"{3}\"{0}\"{4}\"{0}\"{5}\"{0}\"{6}\"\n",
                     m_Delimiter,
                     obj.type.name,
                     obj.address,
                     obj.size,
                     obj.type.assemblyName,
-                    obj.nativeObject.address,
-                    obj.nativeObject.type.name);
+                    maybeNativeObject.fold("<unresolved>", _ => _.address.ToString()),
+                    maybeNativeObject.fold("<unresolved>", _ => _.type.name)
+                );
             }
 
             System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
@@ -193,11 +194,12 @@ namespace HeapExplorer
             for (var n = 0; n < objs.Length; ++n)
             {
                 var obj = new RichStaticField(snapshot, objs[n].staticFieldsArrayIndex);
+                var fieldType = obj.fieldType;
                 sb.AppendFormat("\"{1}\"{0}\"{2}\"{0}\"{3}\"\n",
                     m_Delimiter,
                     obj.classType.name,
-                    obj.fieldType.name,
-                    obj.fieldType.assemblyName);
+                    fieldType.name,
+                    fieldType.assemblyName);
             }
 
             System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);

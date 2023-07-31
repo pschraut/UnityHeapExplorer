@@ -2,10 +2,12 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
-using System.Collections.Generic;
+
+using System.Collections.Concurrent;
+using System.Globalization;
+using HeapExplorer.Utilities;
 using UnityEngine;
-using UnityEditor;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
@@ -16,26 +18,29 @@ namespace HeapExplorer
         {
         }
 
-        // returns the offset in the m_memorySection.bytes[] array of the specified address,
-        // or -1 if the address cannot be read.
-        protected override int TryBeginRead(System.UInt64 address)
+        /// <summary>
+        /// Returns the offset in the >m_memorySection.bytes[] array of the specified address,
+        /// or `None` if the address cannot be read.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        protected override Option<int> TryBeginRead(ulong address)
         {
             // trying to access null?
-            if (address == 0)
-                return -1;
+            if (address == 0) return Utils.zeroAddressAccessError<int>(nameof(address));
 
             // check if address still in the memory section we have already
-            if (address >= m_StartAddress && address < m_EndAddress)
-            {
-                return (int)(address - m_StartAddress);
+            if (address >= m_StartAddress && address < m_EndAddress) {
+                return Some((int)(address - m_StartAddress));
             }
 
             // it is a new section, try to find it
-            var heapIndex = m_Snapshot.FindHeapOfAddress(address);
-            if (heapIndex == -1)
-            {
-                Debug.LogWarningFormat("HeapExplorer: Heap at {0:X} not found. Haven't figured out why this happens yet. Perhaps related to .NET4 ScriptingRuntime?", address);
-                return -1;
+            if (!m_Snapshot.FindHeapOfAddress(address).valueOut(out var heapIndex)) {
+                Debug.LogWarning(
+                    $"HeapExplorer: Heap at address='{address:X}' not found. Haven't figured out why this happens yet. "
+                    + "Perhaps related to .NET4 ScriptingRuntime?"
+                );
+                return None._;
             }
 
             // setup new section
@@ -45,163 +50,149 @@ namespace HeapExplorer
             m_Bytes = memorySection.bytes;
 
             //Debug.LogFormat("accessing heap {0:X}", address);
-            return (int)(address - m_StartAddress);
+            return Some((int)(address - m_StartAddress));
         }
     }
 
-
     public class StaticMemoryReader : AbstractMemoryReader
     {
-        public StaticMemoryReader(PackedMemorySnapshot snapshot, System.Byte[] staticBytes)
-            : base(snapshot)
-        {
+        public StaticMemoryReader(
+            PackedMemorySnapshot snapshot, byte[] staticBytes
+        ) : base(snapshot) {
             m_Bytes = staticBytes;
         }
 
-        // returns the offset in the m_memorySection.bytes[] array of the specified address,
-        // or -1 if the address cannot be read.
-        protected override int TryBeginRead(System.UInt64 address)
+        /// <summary>
+        /// returns the offset in the m_memorySection.bytes[] array of the specified address,
+        /// or `None` if the address cannot be read.
+        /// </summary>
+        protected override Option<int> TryBeginRead(ulong address)
         {
             // trying to access null?
             if (m_Bytes == null || m_Bytes.LongLength == 0 || address >= (ulong)m_Bytes.LongLength)
-                return -1;
+                return None._;
 
             // check if address still in the memory section we have already
             if (address >= m_StartAddress && address < m_EndAddress)
             {
-                return (int)(address);
+                return Some((int)address);
             }
 
             // setup new section
             m_StartAddress = 0;
             m_EndAddress = m_StartAddress + (ulong)m_Bytes.LongLength;
 
-            return (int)(address);
+            return Some((int)address);
         }
     }
 
     abstract public class AbstractMemoryReader
     {
         protected PackedMemorySnapshot m_Snapshot;
-        protected System.Byte[] m_Bytes;
-        protected System.UInt64 m_StartAddress = System.UInt64.MaxValue;
-        protected System.UInt64 m_EndAddress = System.UInt64.MaxValue;
-        protected System.Int32 m_RecursionGuard;
+        protected byte[] m_Bytes;
+        protected ulong m_StartAddress = ulong.MaxValue;
+        protected ulong m_EndAddress = ulong.MaxValue;
+        protected int m_RecursionGuard;
         protected System.Text.StringBuilder m_StringBuilder = new System.Text.StringBuilder(128);
         protected System.Security.Cryptography.MD5 m_Hasher;
+        ConcurrentDictionary<string, Unit> reportedErrors => m_Snapshot.reportedErrors;
 
         protected AbstractMemoryReader(PackedMemorySnapshot snapshot)
         {
             m_Snapshot = snapshot;
         }
 
-        protected abstract int TryBeginRead(System.UInt64 address);
+        protected abstract Option<int> TryBeginRead(ulong address);
 
-        public System.SByte ReadSByte(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.SByte);
+        public Option<byte> ReadByte(ulong address) => 
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => bytes[offset]);
 
-            var value = (System.SByte)m_Bytes[offset];
-            return value;
+        public Option<char> ReadChar(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToChar(bytes, offset));
+
+        public Option<bool> ReadBoolean(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToBoolean(bytes, offset));
+
+        public Option<float> ReadSingle(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToSingle(bytes, offset));
+
+        public Option<Quaternion> ReadQuaternion(ulong address) {
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
+
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 0)).valueOut(out var x)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 1)).valueOut(out var y)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 2)).valueOut(out var z)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 3)).valueOut(out var w)) return None._;
+            
+            var value = new Quaternion { x = x, y = y, z = z, w = w };
+            return Some(value);
         }
 
-        public System.Byte ReadByte(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Byte);
+        public Option<Color> ReadColor(ulong address) {
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
 
-            var value = m_Bytes[offset];
-            return value;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 0)).valueOut(out var r)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 1)).valueOut(out var g)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 2)).valueOut(out var b)) return None._;
+            if (!ReadSingle(address + (uint) (sizeOfSingle * 3)).valueOut(out var a)) return None._;
+            
+            var value = new Color(r, g, b, a);
+            return Some(value);
         }
 
-        public System.Char ReadChar(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Char);
+        public Option<Color32> ReadColor32(ulong address) {
+            var byteType = m_Snapshot.typeOfSingle;
+            if (!byteType.size.valueOut(out var sizeOfByte)) {
+                Utils.reportInvalidSizeError(byteType, reportedErrors);
+                return None._;
+            }
 
-            var value = System.BitConverter.ToChar(m_Bytes, offset);
-            return value;
+            if (!ReadByte(address + (uint) (sizeOfByte * 0)).valueOut(out var r)) return None._;
+            if (!ReadByte(address + (uint) (sizeOfByte * 1)).valueOut(out var g)) return None._;
+            if (!ReadByte(address + (uint) (sizeOfByte * 2)).valueOut(out var b)) return None._;
+            if (!ReadByte(address + (uint) (sizeOfByte * 3)).valueOut(out var a)) return None._;
+            
+            var value = new Color32(r, g, b, a);
+            return Some(value);
         }
 
-        public System.Boolean ReadBoolean(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Boolean);
-
-            var value = System.BitConverter.ToBoolean(m_Bytes, offset);
-            return value;
-        }
-
-        public System.Single ReadSingle(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Single);
-
-            var value = System.BitConverter.ToSingle(m_Bytes, offset);
-            return value;
-        }
-
-        public UnityEngine.Quaternion ReadQuaternion(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(Quaternion);
-
-            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
-            var value = new Quaternion()
-            {
-                x = ReadSingle(address + (uint)(sizeOfSingle * 0)),
-                y = ReadSingle(address + (uint)(sizeOfSingle * 1)),
-                z = ReadSingle(address + (uint)(sizeOfSingle * 2)),
-                w = ReadSingle(address + (uint)(sizeOfSingle * 3))
-            };
-
-            return value;
-        }
-
-        public UnityEngine.Matrix4x4 ReadMatrix4x4(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(Matrix4x4);
-
+        public Option<Matrix4x4> ReadMatrix4x4(ulong address) {
+            var singleType = m_Snapshot.typeOfSingle;
+            if (!singleType.size.valueOut(out var sizeOfSingle)) {
+                Utils.reportInvalidSizeError(singleType, reportedErrors);
+                return None._;
+            }
+            
             var value = new Matrix4x4();
 
-            var sizeOfSingle = m_Snapshot.managedTypes[m_Snapshot.coreTypes.systemSingle].size;
             var element = 0;
             for (var y = 0; y < 4; ++y)
             {
                 for (var x = 0; x < 4; ++x)
                 {
-                    value[y, x] = ReadSingle(address + (uint)(sizeOfSingle * element));
+                    if (!ReadSingle(address + (uint)(sizeOfSingle * element)).valueOut(out var single))
+                        return None._;
+                    value[y, x] = single;
                     element++;
                 }
             }
 
-            return value;
+            return Some(value);
         }
 
-        public System.Double ReadDouble(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Double);
+        public Option<double> ReadDouble(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToDouble(bytes, offset));
 
-            var value = System.BitConverter.ToDouble(m_Bytes, offset);
-            return value;
-        }
-
-        public System.Decimal ReadDecimal(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Decimal);
+        public Option<decimal> ReadDecimal(ulong address) {
+            if (!TryBeginRead(address).valueOut(out var offset)) return None._;
 
             // The lo, mid, hi, and flags fields contain the representation of the
             // Decimal value. The lo, mid, and hi fields contain the 96-bit integer
@@ -234,76 +225,31 @@ namespace HeapExplorer
             var isNegative = (flags & SignMask) != 0;
             var scale = (flags & ScaleMask) >> ScaleShift;
 
-            return new System.Decimal(lo, mid, hi, isNegative, (byte)scale);
+            return Some(new decimal(lo, mid, hi, isNegative, (byte)scale));
         }
 
-        public System.Int16 ReadInt16(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Int16);
+        public Option<short> ReadInt16(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToInt16(bytes, offset));
 
-            var value = System.BitConverter.ToInt16(m_Bytes, offset);
-            return value;
-        }
+        public Option<ushort> ReadUInt16(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToUInt16(bytes, offset));
 
-        public System.UInt16 ReadUInt16(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.UInt16);
+        public Option<int> ReadInt32(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToInt32(bytes, offset));
 
-            var value = System.BitConverter.ToUInt16(m_Bytes, offset);
-            return value;
-        }
+        public Option<uint> ReadUInt32(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToUInt32(bytes, offset));
 
-        public System.Int32 ReadInt32(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Int32);
+        public Option<long> ReadInt64(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToInt64(bytes, offset));
 
-            var value = System.BitConverter.ToInt32(m_Bytes, offset);
-            return value;
-        }
+        public Option<ulong> ReadUInt64(ulong address) =>
+            TryBeginRead(address).map(m_Bytes, (offset, bytes) => System.BitConverter.ToUInt64(bytes, offset));
 
-        public System.UInt32 ReadUInt32(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.UInt32);
-
-            var value = System.BitConverter.ToUInt32(m_Bytes, offset);
-            return value;
-        }
-
-        public System.Int64 ReadInt64(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.Int64);
-
-            var value = System.BitConverter.ToInt64(m_Bytes, offset);
-            return value;
-        }
-
-        public System.UInt64 ReadUInt64(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.UInt64);
-
-            var value = System.BitConverter.ToUInt64(m_Bytes, offset);
-            return value;
-        }
-
-        public System.UInt64 ReadPointer(System.UInt64 address)
-        {
-            if (m_Snapshot.virtualMachineInformation.pointerSize == 8)
-                return ReadUInt64(address);
-
-            return ReadUInt32(address);
-        }
+        public Option<ulong> ReadPointer(ulong address) => 
+            m_Snapshot.virtualMachineInformation.pointerSize == PointerSize._64Bit 
+                ? ReadUInt64(address) 
+                : ReadUInt32(address).map(value => (ulong) value);
 
         //public Vector2 ReadVector2(System.UInt64 address)
         //{
@@ -320,32 +266,40 @@ namespace HeapExplorer
         //    return value;
         //}
 
-        public System.String ReadString(System.UInt64 address)
+        public Option<string> ReadString(ulong address)
         {
-            // strings differ from any other data type in the CLR (other than arrays) in that their size isn’t fixed.
-            // Normally the .NET GC knows the size of an object when it’s being allocated, because it’s based on the
-            // size of the fields/properties within the object and they don’t change. However in .NET a string object
-            // doesn’t contain a pointer to the actual string data, which is then stored elsewhere on the heap.
+            // strings differ from any other data type in the CLR (other than arrays) in that their size isnï¿½t fixed.
+            // Normally the .NET GC knows the size of an object when itï¿½s being allocated, because itï¿½s based on the
+            // size of the fields/properties within the object and they donï¿½t change. However in .NET a string object
+            // doesnï¿½t contain a pointer to the actual string data, which is then stored elsewhere on the heap.
             // That raw data, the actual bytes that make up the text are contained within the string object itself.
             // http://mattwarren.org/2016/05/31/Strings-and-the-CLR-a-Special-Relationship/
 
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return default(System.String);
+            if (!TryBeginRead(address).valueOut(out var offset)) return None._;
 
             // http://referencesource.microsoft.com/#mscorlib/system/string.cs
-            var length = ReadInt32(address);
-            if (length == 0)
-                return "";
+            if (!ReadInt32(address).valueOut(out var length)) {
+                Debug.LogError($"Can't determine length of a string at address {address:X}, offset={offset}");
+                return None._;
+            }
+            
+            if (length == 0) return Some("");
 
-            if (length < 0)
-                return "<error:length lesser 0>";
+            if (length < 0) {
+                Debug.LogError($"Length of a string at address {address:X}, offset={offset} is less than 0! length={length}");
+                return None._;
+            }
 
             const int kMaxStringLength = 1024 * 1024 * 10;
-            if (length > kMaxStringLength)
-                return string.Format("<error: length greater {0} bytes>", kMaxStringLength);
+            if (length > kMaxStringLength) {
+                Debug.LogError(
+                    $"Length of a string at address {address:X}, offset={offset} is greater than {kMaxStringLength}! "
+                    + $"length={length}"
+                );
+                return None._;
+            }
 
-            offset += sizeof(System.Int32); // the length data aka sizeof(int)
+            offset += sizeof(int); // the length data aka sizeof(int)
             length *= sizeof(char); // length is specified in characters, but each char is 2 bytes wide
 
             // In one memory snapshot, it occured that a 1mb StringBuffer wasn't entirely available in m_bytes.
@@ -354,156 +308,180 @@ namespace HeapExplorer
             {
                 var wantedLength = length;
                 length = m_Bytes.Length - offset;
-                Debug.LogErrorFormat("Cannot read entire string 0x{0:X}. The wanted length in bytes is {1}, but the memory segment holds {2} bytes only.\n{3}...", address, wantedLength, length, System.Text.Encoding.Unicode.GetString(m_Bytes, offset, Mathf.Min(length, 32)));
+                Debug.LogErrorFormat(
+                    "Cannot read entire string 0x{0:X}. The wanted length in bytes is {1}, but the memory segment "
+                    + "holds {2} bytes only.\n{3}...", 
+                    address, wantedLength, length, System.Text.Encoding.Unicode.GetString(m_Bytes, offset, Mathf.Min(length, 32))
+                );
             }
 
 
             var value = System.Text.Encoding.Unicode.GetString(m_Bytes, offset, length);
-            return value;
+            return Some(value);
         }
 
-        // Gets the number of characters in the string at the specified address.
-        public int ReadStringLength(System.UInt64 address)
-        {
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return 0;
-
-            var length = ReadInt32(address);
-            if (length <= 0)
-                return 0;
-
-            return length;
-        }
+        /// <summary>
+        /// Gets the number of characters in the string at the specified address.
+        /// </summary>
+        public Option<int> ReadStringLength(ulong address) => ReadInt32(address);
 
         /// <summary>
         /// Computes a checksum of the managed object specified at 'address'.
         /// This is used to find object duplicates.
         /// </summary>
-        public UnityEngine.Hash128 ComputeObjectHash(System.UInt64 address, PackedManagedType type)
+        public Option<Hash128> ComputeObjectHash(ulong address, PackedManagedType type)
         {
             if (m_Hasher == null)
                 m_Hasher = System.Security.Cryptography.MD5.Create();
 
-            var content = ReadObjectBytes(address, type);
+            if (!ReadObjectBytes(address, type).valueOut(out var content)) return None._;
             if (content.Count == 0)
-                return new Hash128();
+                return Some(new Hash128());
 
             var bytes = m_Hasher.ComputeHash(content.Array, content.Offset, content.Count);
-            if (bytes.Length != 16)
-                return new Hash128();
+            if (bytes.Length != 16) {
+                Debug.LogError($"Expected hash for address {address:X} to be 16 bytes, but it was {bytes.Length} bytes!");
+                return None._;
+            }
 
             var v0 = (uint)(bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24);
             var v1 = (uint)(bytes[4] << 32 | bytes[5] << 40 | bytes[6] << 48 | bytes[7] << 56);
             var v2 = (uint)(bytes[8] | bytes[9] << 8 | bytes[10] << 16 | bytes[11] << 24);
             var v3 = (uint)(bytes[12] << 32 | bytes[13] << 40 | bytes[14] << 48 | bytes[15] << 56);
 
-            return new Hash128(v0, v1, v2, v3);
+            return Some(new Hash128(v0, v1, v2, v3));
         }
 
         // address = object address (start of header)
-        System.ArraySegment<byte> ReadObjectBytes(System.UInt64 address, PackedManagedType typeDescription)
-        {
-            var size = ReadObjectSize(address, typeDescription);
-            if (size <= 0)
-                return new System.ArraySegment<byte>();
+        Option<System.ArraySegment<byte>> ReadObjectBytes(ulong address, PackedManagedType typeDescription) {
+            if (!ReadObjectSize(address, typeDescription).valueOut(out var sizeP)) return None._;
+            var size = sizeP.asInt;
+            if (size <= 0) {
+                Debug.LogError($"Object size for object at address {address:X} is 0 or less! (size={size})");
+                return None._;
+            }
 
-            var offset = TryBeginRead(address);
-            if (offset < 0)
-                return new System.ArraySegment<byte>();
+            if (!TryBeginRead(address).valueOut(out var offset)) return None._;
+            if (offset < 0) {
+                Debug.LogError($"Object offset for object at address {address:X} is negative! (offset={offset})");
+                return None._;
+            }
 
             // Unity bug? For a reason that I do not understand, sometimes a memory segment is smaller
             // than the actual size of an object. In order to workaround this issue, we make sure to never
             // try to read more data from the segment than is available.
-            if ((m_Bytes.Length - offset) < size)
+            if (m_Bytes.Length - offset < size)
             {
                 //var wantedLength = size;
                 size = m_Bytes.Length - offset;
                 //Debug.LogErrorFormat("Cannot read entire string 0x{0:X}. The requested length in bytes is {1}, but the memory segment holds {2} bytes only.\n{3}...", address, wantedLength, size, System.Text.Encoding.Unicode.GetString(m_bytes, offset, Mathf.Min(size, 32)));
-                if (size <= 0)
-                    return new System.ArraySegment<byte>();
+                if (size <= 0) {
+                    Debug.LogError($"Object size for object at address {address:X} is 0 or less! (size={size})");
+                    return None._;
+                }
             }
 
             var segment = new System.ArraySegment<byte>(m_Bytes, offset, size);
-            return segment;
+            return Some(segment);
         }
 
-        public int ReadObjectSize(System.UInt64 address, PackedManagedType typeDescription)
-        {
+        public Option<PInt> ReadObjectSize(
+            ulong address, PackedManagedType typeDescription
+        ) {
             // System.Array
             // Do not display its pointer-size, but the actual size of its content.
-            if (typeDescription.isArray)
-            {
-                if (typeDescription.baseOrElementTypeIndex < 0 || typeDescription.baseOrElementTypeIndex >= m_Snapshot.managedTypes.Length)
-                {
+            {if (typeDescription.arrayRank.valueOut(out var arrayRank)) {
+                if (
+                    !typeDescription.baseOrElementTypeIndex.valueOut(out var baseOrElementTypeIndex) 
+                    || baseOrElementTypeIndex >= m_Snapshot.managedTypes.Length
+                ) {
                     var details = "";
-                    details = "arrayRank=" + typeDescription.arrayRank + ", " +
-                        "isArray=" + typeDescription.isArray + ", " +
+                    details = 
+                        "arrayRank=" + arrayRank + ", " +
                         "typeInfoAddress=" + typeDescription.typeInfoAddress.ToString("X") + ", " +
                         "address=" + address.ToString("X") + ", " +
                         "memoryreader=" + GetType().Name + ", " +
                         "isValueType=" + typeDescription.isValueType;
 
                     Debug.LogErrorFormat("ERROR: '{0}.baseOrElementTypeIndex' = {1} is out of range, ignoring. Details in second line\n{2}", typeDescription.name, typeDescription.baseOrElementTypeIndex, details);
-                    return 1;
+                    return Some(PInt._1);
                 }
 
-                var arrayLength = ReadArrayLength(address, typeDescription);
-                var elementType = m_Snapshot.managedTypes[typeDescription.baseOrElementTypeIndex];
-                var elementSize = elementType.isValueType ? elementType.size : m_Snapshot.virtualMachineInformation.pointerSize;
+                if (!ReadArrayLength(address, arrayRank).valueOut(out var arrayLength)) return None._;
+                var elementType = m_Snapshot.managedTypes[baseOrElementTypeIndex];
+                int elementSize;
+                if (elementType.isValueType) {
+                    if (!elementType.size.valueOut(out var pElementSize)) {
+                        Utils.reportInvalidSizeError(elementType, reportedErrors);
+                        return None._;
+                    }
 
-                var size = m_Snapshot.virtualMachineInformation.arrayHeaderSize;
+                    elementSize = pElementSize;
+                }
+                else {
+                    elementSize = m_Snapshot.virtualMachineInformation.pointerSize.sizeInBytes();
+                }
+
+                var size = m_Snapshot.virtualMachineInformation.arrayHeaderSize.asInt;
                 size += elementSize * arrayLength;
-                return size;
-            }
+                return Some(PInt.createOrThrow(size));
+            }}
 
             // System.String
             if (typeDescription.managedTypesArrayIndex == m_Snapshot.coreTypes.systemString)
             {
-                var size = m_Snapshot.virtualMachineInformation.objectHeaderSize;
-                size += sizeof(System.Int32); // string length
-                size += ReadStringLength(address + (uint)m_Snapshot.virtualMachineInformation.objectHeaderSize) * sizeof(char);
+                var size = m_Snapshot.virtualMachineInformation.objectHeaderSize.asInt;
+                size += sizeof(int); // string length
+                var maybeStringLength = ReadStringLength(address + m_Snapshot.virtualMachineInformation.objectHeaderSize);
+                if (!maybeStringLength.valueOut(out var stringLength)) return None._;
+                size += stringLength * sizeof(char);
                 size += 2; // two null terminators aka \0\0
-                return size;
+                return Some(PInt.createOrThrow(size));
             }
 
-            return typeDescription.size;
+            if (typeDescription.size.isLeft) Utils.reportInvalidSizeError(typeDescription, reportedErrors);
+            return typeDescription.size.rightOption;
         }
 
-        public int ReadArrayLength(System.UInt64 address, PackedManagedType arrayType)
+        public Option<int> ReadArrayLength(ulong address, PInt arrayRank)
         {
             var vm = m_Snapshot.virtualMachineInformation;
 
-            var bounds = ReadPointer(address + (ulong)vm.arrayBoundsOffsetInHeader);
+            if (!ReadPointer(address + vm.arrayBoundsOffsetInHeader).valueOut(out var bounds)) return None._;
             if (bounds == 0)
-                return (int)ReadPointer(address + (ulong)vm.arraySizeOffsetInHeader);
+                return ReadPointer(address + vm.arraySizeOffsetInHeader).map(v => (int)v);
 
             int length = 1;
-            for (int i = 0; i != arrayType.arrayRank; i++)
+            for (int i = 0; i != arrayRank; i++)
             {
-                var ptr = bounds + (ulong)(i * vm.pointerSize);
-                length *= (int)ReadPointer(ptr);
+                var ptr = bounds + (ulong)(i * vm.pointerSize.sizeInBytes());
+                if (!ReadPointer(ptr).valueOut(out var value)) return None._;
+                length *= (int)value;
             }
-            return length;
+            return Some(length);
         }
 
-        public int ReadArrayLength(System.UInt64 address, PackedManagedType arrayType, int dimension)
+        public Option<int> ReadArrayLength(ulong address, PackedManagedType arrayType, PInt arrayRank, int dimension)
         {
-            if (dimension >= arrayType.arrayRank)
-                return 0;
+            if (dimension >= arrayRank) {
+                Debug.LogError(
+                    $"Trying to read dimension {dimension} while the array rank is {arrayRank} for array at "
+                    + $"address {address:X} of type '{arrayType.name}'. Returning `None`."
+                );
+                return None._;
+            }
 
             var vm = m_Snapshot.virtualMachineInformation;
 
-            var bounds = ReadPointer(address + (ulong)vm.arrayBoundsOffsetInHeader);
+            if (!ReadPointer(address + vm.arrayBoundsOffsetInHeader).valueOut(out var bounds)) return None._;
             if (bounds == 0)
-                return (int)ReadPointer(address + (ulong)vm.arraySizeOffsetInHeader);
+                return ReadPointer(address + vm.arraySizeOffsetInHeader).map(v => (int)v);
 
-            var pointer = bounds + (ulong)(dimension * vm.pointerSize);
-            var length = (int)ReadPointer(pointer);
-            return length;
+            var pointer = bounds + (ulong)(dimension * vm.pointerSize.sizeInBytes());
+            return ReadPointer(pointer).map(v => (int)v);
         }
 
-        public string ReadFieldValueAsString(System.UInt64 address, PackedManagedType type)
+        public Option<string> ReadFieldValueAsString(ulong address, PackedManagedType type)
         {
             ///////////////////////////////////////////////////////////////////
             // PRIMITIVE TYPES
@@ -512,85 +490,82 @@ namespace HeapExplorer
             ///////////////////////////////////////////////////////////////////
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemByte)
-                return string.Format(StringFormat.Unsigned, ReadByte(address));
+                return Some(string.Format(StringFormat.Unsigned, ReadByte(address)));
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemSByte)
-                return ReadByte(address).ToString();
+                return ReadByte(address).map(v => v.ToString());
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemChar)
-                return string.Format("'{0}'", ReadChar(address));
+                return ReadChar(address).map(c => $"'{c}'");
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemBoolean)
-                return ReadBoolean(address).ToString();
+                return ReadBoolean(address).map(v => v.ToString());
 
-            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemSingle)
-            {
-                var v = ReadSingle(address);
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemSingle) {
+                if (!ReadSingle(address).valueOut(out var v)) return None._;
 
-                if (float.IsNaN(v)) return "float.NaN";
-                if (v == float.MinValue) return string.Format("float.MinValue ({0:E})", v);
-                if (v == float.MaxValue) return string.Format("float.MaxValue ({0:E})", v);
-                if (float.IsPositiveInfinity(v)) return string.Format("float.PositiveInfinity ({0:E})", v);
-                if (float.IsNegativeInfinity(v)) return string.Format("float.NegativeInfinity ({0:E})", v);
-                if (v > 10000000 || v < -10000000) return v.ToString("E"); // If it's a big number, use scientified notation
+                if (float.IsNaN(v)) return Some("float.NaN");
+                if (v == float.MinValue) return Some($"float.MinValue ({v:E})");
+                if (v == float.MaxValue) return Some($"float.MaxValue ({v:E})");
+                if (float.IsPositiveInfinity(v)) return Some($"float.PositiveInfinity ({v:E})");
+                if (float.IsNegativeInfinity(v)) return Some($"float.NegativeInfinity ({v:E})");
+                if (v > 10000000 || v < -10000000) return Some(v.ToString("E")); // If it's a big number, use scientified notation
 
-                return v.ToString("F");
+                return Some(v.ToString("F"));
             }
 
-            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemDouble)
-            {
-                var v = ReadDouble(address);
+            if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemDouble) {
+                if (!ReadDouble(address).valueOut(out var v)) return None._;
 
-                if (double.IsNaN(v)) return "double.NaN";
-                if (v == double.MinValue) return string.Format("double.MinValue ({0:E})", v);
-                if (v == double.MaxValue) return string.Format("double.MaxValue ({0:E})", v);
-                if (double.IsPositiveInfinity(v)) return string.Format("double.PositiveInfinity ({0:E})", v);
-                if (double.IsNegativeInfinity(v)) return string.Format("double.NegativeInfinity ({0:E})", v);
-                if (v > 10000000 || v < -10000000) return v.ToString("E"); // If it's a big number, use scientified notation
+                if (double.IsNaN(v)) return Some("double.NaN");
+                if (v == double.MinValue) return Some($"double.MinValue ({v:E})");
+                if (v == double.MaxValue) return Some($"double.MaxValue ({v:E})");
+                if (double.IsPositiveInfinity(v)) return Some($"double.PositiveInfinity ({v:E})");
+                if (double.IsNegativeInfinity(v)) return Some($"double.NegativeInfinity ({v:E})");
+                if (v > 10000000 || v < -10000000) return Some(v.ToString("E")); // If it's a big number, use scientified notation
 
-                return v.ToString("G");
+                return Some(v.ToString("G"));
             }
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt16)
-                return ReadInt16(address).ToString();
+                return ReadInt16(address).map(v => v.ToString());
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt16)
-                return string.Format(StringFormat.Unsigned, ReadUInt16(address));
+                return ReadUInt16(address).map(v => string.Format(StringFormat.Unsigned, v));
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt32)
-                return ReadInt32(address).ToString();
+                return ReadInt32(address).map(v => v.ToString());
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt32)
-                return string.Format(StringFormat.Unsigned, ReadUInt32(address));
+                return ReadUInt32(address).map(v => string.Format(StringFormat.Unsigned, v));
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemInt64)
-                return ReadInt64(address).ToString();
+                return ReadInt64(address).map(v => v.ToString());
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemUInt64)
-                return string.Format(StringFormat.Unsigned, ReadUInt64(address));
+                return ReadUInt64(address).map(v => string.Format(StringFormat.Unsigned, v));
 
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemDecimal)
-                return ReadDecimal(address).ToString();
+                return ReadDecimal(address).map(v => v.ToString(CultureInfo.InvariantCulture));
 
             // String
             if (type.managedTypesArrayIndex == m_Snapshot.coreTypes.systemString)
             {
                 // While string is actually a reference type, we handle it here, because it's so common.
                 // Rather than showing the address, we show the value, which is the text.
-                var pointer = ReadPointer(address);
-                if (pointer == 0)
-                    return "null";
+                if (!ReadPointer(address).valueOut(out var pointer)) return None._;
+                if (pointer == 0) return Some("null");
 
                 // TODO: HACK: Reading a static pointer, points actually into the HEAP. However,
                 // since it's a StaticMemory reader in that case, we can't read the heap.
                 // Therefore we create a new MemoryReader here.
-                var heapreader = this;
-                if (!(heapreader is MemoryReader))
-                    heapreader = new MemoryReader(m_Snapshot);
+                var heapReader = this;
+                if (!(heapReader is MemoryReader))
+                    heapReader = new MemoryReader(m_Snapshot);
 
                 // https://stackoverflow.com/questions/3815227/understanding-clr-object-size-between-32-bit-vs-64-bit
-                var value = '\"' + heapreader.ReadString(pointer + (ulong)m_Snapshot.virtualMachineInformation.objectHeaderSize) + '\"';
-                return value;
+                return heapReader.ReadString(pointer + m_Snapshot.virtualMachineInformation.objectHeaderSize)
+                    .map(v => '\"' + v + '\"');
             }
 
             ///////////////////////////////////////////////////////////////////
@@ -599,14 +574,12 @@ namespace HeapExplorer
             // Simply display the address of it. A pointer type is either
             // a ReferenceType, or an IntPtr and UIntPtr.
             ///////////////////////////////////////////////////////////////////
-            if (type.isPointer)
-            {
-                var pointer = ReadPointer(address);
-                if (pointer == 0)
-                    return "null";
+            if (type.isPointer) {
+                if (!ReadPointer(address).valueOut(out var pointer)) return None._;
+                if (pointer == 0) return Some("null");
 
                 var value = string.Format(StringFormat.Address, pointer);
-                return value;
+                return Some(value);
             }
 
             ///////////////////////////////////////////////////////////////////
@@ -618,7 +591,7 @@ namespace HeapExplorer
             if (type.isValueType)
             {
                 if (m_RecursionGuard >= 1)
-                    return "{...}";
+                    return Some("{...}");
 
                 // For the actual value, or value preview, we are interested in instance fields only.
                 var instanceFields = type.instanceFields;
@@ -640,7 +613,12 @@ namespace HeapExplorer
                         if (n > 0)
                             offset += instanceFields[n].offset - m_Snapshot.virtualMachineInformation.objectHeaderSize; // TODO: this is trial&error. make sure to understand it!
 
-                        m_StringBuilder.Append(ReadFieldValueAsString(address + (ulong)offset, m_Snapshot.managedTypes[instanceFields[n].managedTypesArrayIndex]));
+                        m_StringBuilder.Append(
+                            ReadFieldValueAsString(
+                                address + (ulong)offset, 
+                                m_Snapshot.managedTypes[instanceFields[n].managedTypesArrayIndex]
+                            ).getOrElse("<read error>")
+                        );
                         if (n < count - 1)
                             m_StringBuilder.Append(", ");
                     }
@@ -654,10 +632,10 @@ namespace HeapExplorer
                 }
 
                 m_StringBuilder.Append(')');
-                return m_StringBuilder.ToString();
+                return Some(m_StringBuilder.ToString());
             }
 
-            return "<???>";
+            return Some("<???>");
         }
     }
 

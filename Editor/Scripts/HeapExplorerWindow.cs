@@ -9,6 +9,11 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Threading;
+#if UNITY_2022_2_OR_NEWER
+using Unity.Profiling.Memory;
+#else
+using UnityEngine.Profiling.Memory.Experimental;
+#endif
 
 namespace HeapExplorer
 {
@@ -139,7 +144,8 @@ namespace HeapExplorer
         {
             if (!HeEditorUtility.IsVersionOrNewer(2019, 3))
             {
-                if (EditorUtility.DisplayDialog(HeGlobals.k_Title, string.Format("{0} requires Unity 2019.3 or newer.", HeGlobals.k_Title), "Forum", "Close"))
+                if (EditorUtility.DisplayDialog(HeGlobals.k_Title,
+                        $"{HeGlobals.k_Title} requires Unity 2019.3 or newer.", "Forum", "Close"))
                     Application.OpenURL(HeGlobals.k_ForumUrl);
                 return;
             }
@@ -505,7 +511,7 @@ namespace HeapExplorer
                         if (!System.IO.File.Exists(path))
                             continue;
 
-                        menu.AddItem(new GUIContent(string.Format("Recent/{0}     {1}", (n + 1), path.Replace('/', '\\'))), false, delegate (System.Object obj)
+                        menu.AddItem(new GUIContent($"Recent/{(n + 1)}     {path.Replace('/', '\\')}"), false, delegate (System.Object obj)
                         {
                             var p = obj as string;
                             LoadFromFile(p);
@@ -611,8 +617,8 @@ namespace HeapExplorer
                 if (GUILayout.Button(new GUIContent("Capture", HeEditorStyles.magnifyingGlassImage), EditorStyles.toolbarDropDown, GUILayout.Width(80)))
                 {
                     var menu = new GenericMenu();
-                    menu.AddItem(new GUIContent(string.Format("Capture and Save '{0}'...", connectedProfiler)), false, CaptureAndSaveHeap);
-                    menu.AddItem(new GUIContent(string.Format("Capture and Analyze '{0}'", connectedProfiler)), false, CaptureAndAnalyzeHeap);
+                    menu.AddItem(new GUIContent($"Capture and Save '{connectedProfiler}'..."), false, CaptureAndSaveHeap);
+                    menu.AddItem(new GUIContent($"Capture and Analyze '{connectedProfiler}'"), false, CaptureAndAnalyzeHeap);
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent(string.Format("Open Profiler")), false, delegate () { HeEditorUtility.OpenProfiler(); });
                     menu.DropDown(m_CaptureToolbarButtonRect);
@@ -784,6 +790,16 @@ namespace HeapExplorer
             ActivateView(null);
         }
 
+        /// <summary>
+        /// Same flags as Unity memory profiler.
+        /// </summary>
+        const CaptureFlags CAPTURE_FLAGS =
+            CaptureFlags.ManagedObjects
+            | CaptureFlags.NativeObjects
+            | CaptureFlags.NativeAllocations
+            | CaptureFlags.NativeAllocationSites
+            | CaptureFlags.NativeStackTraces;
+
         void CaptureAndSaveHeap()
         {
             if (string.IsNullOrEmpty(autoSavePath))
@@ -801,7 +817,7 @@ namespace HeapExplorer
                 m_IsCapturing = true;
 
                 string snapshotPath = System.IO.Path.ChangeExtension(path, "snapshot");
-                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(snapshotPath, OnHeapReceivedSaveOnly);
+                MemoryProfiler.TakeSnapshot(snapshotPath, OnHeapReceivedSaveOnly, CAPTURE_FLAGS);
             }
             finally
             {
@@ -810,18 +826,26 @@ namespace HeapExplorer
             }
         }
 
-        void OnHeapReceivedSaveOnly(string path, bool captureResult)
-        {
-            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Saving memory...", 0.5f);
+        void OnHeapReceivedSaveOnly(string path, bool captureResult) {
+            const float BASE_PROGRESS = 0.5f;
+            const float PROGRESS_LEFT = 0.4f;
+            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Saving memory...", BASE_PROGRESS);
             try
             {
-                var args = new MemorySnapshotProcessingArgs();
-                args.source = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path);
+                var args = new MemorySnapshotProcessingArgs(
+                    UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path),
+                    maybeUpdateUI: (stepName, index, steps) => {
+                        var percentage = (float) index / (steps - 1);
+                        var totalPercentage = BASE_PROGRESS + percentage * PROGRESS_LEFT;
+                        EditorUtility.DisplayProgressBar(HeGlobals.k_Title, stepName, totalPercentage);
+                    }
+                );
 
                 var heap = PackedMemorySnapshot.FromMemoryProfiler(args);
+                EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Saving memory to file...", 0.95f);
                 heap.SaveToFile(autoSavePath);
                 HeMruFiles.AddPath(autoSavePath);
-                ShowNotification(new GUIContent(string.Format("Memory snapshot saved as\n'{0}'", autoSavePath)));
+                ShowNotification(new GUIContent($"Memory snapshot saved as\n'{autoSavePath}'"));
             }
             catch
             {
@@ -847,7 +871,7 @@ namespace HeapExplorer
                 m_IsCapturing = true;
 
                 var path = FileUtil.GetUniqueTempPathInProject();
-                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(path, OnHeapReceived);
+                MemoryProfiler.TakeSnapshot(path, OnHeapReceived, CAPTURE_FLAGS);
             }
             finally
             {
@@ -865,41 +889,44 @@ namespace HeapExplorer
 
                 if (useThreads)
                 {
-                    var job = new ReceiveThreadJob
-                    {
-                        threadFunc = ReceiveHeapThreaded,
-                        snapshot = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path)
-                };
+                    var job = new ReceiveThreadJob {
+                        threadFunc = () => ReceiveHeapThreaded(new MemorySnapshotProcessingArgs(
+                            UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path)
+                        ))
+                    };
                     ScheduleJob(job);
                 }
                 else
                 {
-                    EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Analyzing memory...", 0.75f);
+                    const float BASE_PROGRESS = 0.75f;
+                    const float PROGRESS_LEFT = 0.25f;
+                    EditorUtility.DisplayProgressBar(HeGlobals.k_Title, "Analyzing memory...", BASE_PROGRESS);
                     var sshot = UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot.Load(path);
-                    ReceiveHeapThreaded(sshot);
+                    ReceiveHeapThreaded(new MemorySnapshotProcessingArgs(
+                        sshot,
+                        maybeUpdateUI: (stepName, index, steps) => {
+                            var percentage = (float) index / (steps - 1);
+                            var totalPercentage = BASE_PROGRESS + percentage * PROGRESS_LEFT;
+                            EditorUtility.DisplayProgressBar(HeGlobals.k_Title, stepName, totalPercentage);
+                        }
+                    ));
                 }
             }
             finally
             {
-                snapshotPath = string.Format("Captured Snapshot at {0}", DateTime.Now.ToShortTimeString());
+                snapshotPath = $"Captured Snapshot at {DateTime.Now.ToShortTimeString()}";
                 m_IsCapturing = false;
                 m_Repaint = true;
                 EditorUtility.ClearProgressBar();
             }
         }
 
-        void ReceiveHeapThreaded(object userData)
-        {
-            var args = new MemorySnapshotProcessingArgs();
-            args.source = userData as UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot;
-
-            try
-            {
+        void ReceiveHeapThreaded(MemorySnapshotProcessingArgs args) {
+            try {
                 m_Heap = PackedMemorySnapshot.FromMemoryProfiler(args);
                 m_Heap.Initialize();
             }
-            catch
-            {
+            catch {
                 m_CloseDueToError = true;
                 throw;
             }
@@ -943,12 +970,10 @@ namespace HeapExplorer
 
     class ReceiveThreadJob : AbstractThreadJob
     {
-        public UnityEditor.Profiling.Memory.Experimental.PackedMemorySnapshot snapshot;
-        public Action<object> threadFunc;
+        public Action threadFunc;
 
-        public override void ThreadFunc()
-        {
-            threadFunc.Invoke(snapshot);
+        public override void ThreadFunc() {
+            threadFunc.Invoke();
         }
     }
 

@@ -33,7 +33,9 @@ namespace HeapExplorer
             if (address == 0)
                 return;
 
-            var heapIndex = memory.FindHeapOfAddress(address);
+            if (!memory.FindHeapOfAddress(address).valueOut(out var heapIndex)) {
+                Debug.LogError($"Can't find heap of address {address:X} in memory.");
+            }
             if (heapIndex < 0)
                 return;
 
@@ -123,7 +125,9 @@ namespace HeapExplorer
             if (address == 0)
                 return;
 
-            var heapIndex = memory.FindHeapOfAddress(address);
+            if (!memory.FindHeapOfAddress(address).valueOut(out var heapIndex)) {
+                Debug.LogError($"Can't find heap of address {address:X} in memory.");
+            }
             var heap = memory.managedHeapSections[heapIndex];
 
             m_segment = new ArraySegment64<byte>(heap.bytes, address - heap.startAddress, size);

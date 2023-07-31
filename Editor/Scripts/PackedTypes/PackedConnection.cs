@@ -4,32 +4,92 @@
 //
 using System;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 
 namespace HeapExplorer
 {
-    // A pair of from and to indices describing what object keeps what other object alive.
+    /// <summary>
+    /// A pair of from and to indices describing what object keeps what other object alive.
+    /// </summary>
     [Serializable]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)]
-    public struct PackedConnection
+    public readonly struct PackedConnection
     {
+        /// <note>
+        /// The value must not get greater than 11, otherwise <see cref="Pair.ComputeConnectionKey"/> fails!
+        /// </note>
         public enum Kind : byte //System.Byte
         {
-            None = 0,
+            /// <summary><see cref="PackedMemorySnapshot.gcHandles"/></summary>
             GCHandle = 1,
+            
+            /// <summary><see cref="PackedMemorySnapshot.nativeObjects"/></summary>
             Native = 2,
-            Managed = 3, // managed connections are NOT in the snapshot, we add them ourselfs.
-            StaticField = 4, // static connections are NOT in the snapshot, we add them ourself.
-
-            // Must not get greater than 11, otherwise ComputeConnectionKey() fails!
+            
+            /// <summary><see cref="PackedMemorySnapshot.managedObjects"/></summary>
+            /// <note>Managed connections are NOT in the snapshot, we add them ourselves.</note>
+            Managed = 3, 
+            
+            /// <summary><see cref="PackedMemorySnapshot.managedStaticFields"/></summary>
+            /// <note>Static connections are NOT in the snapshot, we add them ourselves.</note>
+            StaticField = 4,
         }
 
-        public System.Int32 from; // Index into a gcHandles, nativeObjects.
-        public System.Int32 to; // Index into a gcHandles, nativeObjects.
-        public Kind fromKind;
-        public Kind toKind;
+        /// <summary>From part of the connection.</summary>
+        public readonly struct From {
+            public readonly Pair pair;
+            
+            /// <summary>
+            /// The field data for the reference, if the <see cref="Kind"/> is <see cref="Kind.Managed"/> or
+            /// <see cref="Kind.StaticField"/> (except for array types, for now). `None` otherwise.
+            /// </summary>
+            public readonly Option<PackedManagedField> field;
 
-        const System.Int32 k_Version = 2;
+            public From(Pair pair, Option<PackedManagedField> field) {
+                this.pair = pair;
+                this.field = field;
+            }
+        }
+        
+        /// <summary>Named tuple.</summary>
+        public readonly struct Pair {
+            /// <summary>The connection kind, that is pointing to another object.</summary>
+            public readonly Kind kind;
+            
+            /// <summary>
+            /// An index into a snapshot array, depending on specified <see cref="kind"/>. If the kind would be
+            /// '<see cref="PackedConnection.Kind.Native"/>', then it must be an index into the
+            /// <see cref="PackedMemorySnapshot.nativeObjects"/> array.</summary>
+            public readonly int index;
+
+            public Pair(Kind kind, int index) {
+                if (index < 0) throw new ArgumentOutOfRangeException(nameof(index), index, "negative index");
+                
+                this.kind = kind;
+                this.index = index;
+            }
+
+            public override string ToString() => $"{nameof(Pair)}[{kind} @ {index}]";
+            
+            public ulong ComputeConnectionKey() {
+                var value = ((ulong)kind << 50) + (ulong)index;
+                return value;
+            }
+        }
+
+        /// <inheritdoc cref="From"/>
+        public readonly From from;
+        
+        /// <inheritdoc cref="Pair"/>
+        public readonly Pair to;
+
+        public PackedConnection(From from, Pair to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        const int k_Version = 3;
 
         public static void Write(System.IO.BinaryWriter writer, PackedConnection[] value)
         {
@@ -38,10 +98,14 @@ namespace HeapExplorer
 
             for (int n = 0, nend = value.Length; n < nend; ++n)
             {
-                writer.Write((byte)value[n].fromKind);
-                writer.Write((byte)value[n].toKind);
-                writer.Write(value[n].from);
-                writer.Write(value[n].to);
+                writer.Write((byte)value[n].from.pair.kind);
+                writer.Write((byte)value[n].to.kind);
+                writer.Write(value[n].from.pair.index);
+                writer.Write(value[n].to.index);
+                writer.Write(value[n].from.field.isSome);
+                {if (value[n].from.field.valueOut(out var field)) {
+                    PackedManagedField.Write(writer, field);        
+                }}
             }
         }
 
@@ -62,32 +126,33 @@ namespace HeapExplorer
                 for (int n = 0, nend = value.Length; n < nend; ++n)
                 {
                     if ((n % onePercent) == 0)
-                        stateString = string.Format("Loading Object Connections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
+                        stateString =
+                            $"Loading Object Connections\n{n + 1}/{length}, {((n + 1) / (float) length) * 100:F0}% done";
 
-                    value[n].fromKind = (Kind)reader.ReadByte();
-                    value[n].toKind = (Kind)reader.ReadByte();
-                    value[n].from = reader.ReadInt32();
-                    value[n].to = reader.ReadInt32();
+                    var fromKind = (Kind)reader.ReadByte();
+                    var toKind = (Kind)reader.ReadByte();
+                    var fromIndex = reader.ReadInt32();
+                    var toIndex = reader.ReadInt32();
+
+                    Option<PackedManagedField> field;
+                    if (version >= 3) {
+                        var hasField = reader.ReadBoolean();
+                        field = hasField
+                            ? Option.Some(PackedManagedField.Read(reader).getOrThrow("this should never fail")) 
+                            : None._;
+                    }
+                    else {
+                        field = None._;
+                    }
+                    
+                    value[n] = new PackedConnection(
+                        from: new From(new Pair(fromKind, fromIndex), field),
+                        to: new Pair(toKind, toIndex)
+                    );
                 }
             }
-            else if (version >= 1)
-            {
-                var length = reader.ReadInt32();
-                //stateString = string.Format("Loading {0} Object Connections", length);
-                value = new PackedConnection[length];
-                if (length == 0)
-                    return;
-
-                var onePercent = Math.Max(1, value.Length / 100);
-                for (int n = 0, nend = value.Length; n < nend; ++n)
-                {
-                    if ((n % onePercent) == 0)
-                        stateString = string.Format("Loading Object Connections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
-
-                    // v1 didn't include fromKind and toKind which was a bug
-                    value[n].from = reader.ReadInt32();
-                    value[n].to = reader.ReadInt32();
-                }
+            else if (version >= 1) {
+                throw new Exception("Old file versions are not supported as they do not contain enough data.");
             }
         }
 
@@ -102,7 +167,7 @@ namespace HeapExplorer
             var nativeObjectsInstanceIds = new int[nativeObjects.instanceId.GetNumEntries()];
             nativeObjects.instanceId.GetEntries(0, nativeObjects.instanceId.GetNumEntries(), ref nativeObjectsInstanceIds);
 
-            // Create lookup table from instanceId to NativeObject arrayindex
+            // Create lookup table from instanceId to NativeObject array index
             var instanceIdToNativeObjectIndex = new Dictionary<int, int>(nativeObjectsInstanceIds.Length);
             for (var n=0; n< nativeObjectsInstanceIds.Length; ++n)
                 instanceIdToNativeObjectIndex.Add(nativeObjectsInstanceIds[n], n);
@@ -126,12 +191,10 @@ namespace HeapExplorer
                     continue;
                 }
 
-                var packed = new PackedConnection();
-                packed.from = n; // nativeObject index
-                packed.fromKind = Kind.Native;
-                packed.to = nativeObjectsGCHandleIndices[n]; // gcHandle index
-                packed.toKind = Kind.GCHandle;
-
+                var packed = new PackedConnection(
+                    from: new From(new Pair(Kind.Native, n /* nativeObject index */), field: None._),
+                    to: new Pair(Kind.GCHandle, nativeObjectsGCHandleIndices[n] /* gcHandle index */)
+                );
                 result.Add(packed);
             }
 
@@ -153,36 +216,34 @@ namespace HeapExplorer
 
             for (int n = 0, nend = sourceFrom.Length; n < nend; ++n)
             {
-                var packed = new PackedConnection();
-
-                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceFrom[n], out packed.from))
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceFrom[n], out var fromIndex))
                 {
                     invalidInstanceIDs++;
                     continue; // NativeObject InstanceID not found
                 }
 
-                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceTo[n], out packed.to))
+                if (!instanceIdToNativeObjectIndex.TryGetValue(sourceTo[n], out var toIndex))
                 {
                     invalidInstanceIDs++;
                     continue; // NativeObject InstanceID not found
                 }
 
-                if (packed.from < 0 || packed.from >= nativeObjectsCount)
+                if (fromIndex < 0 || fromIndex >= nativeObjectsCount)
                 {
                     invalidIndices++;
                     continue; // invalid index into array
                 }
 
-                if (packed.to < 0 || packed.to >= nativeObjectsCount)
+                if (toIndex < 0 || toIndex >= nativeObjectsCount)
                 {
                     invalidIndices++;
                     continue; // invalid index into array
                 }
 
-                packed.fromKind = Kind.Native;
-                packed.toKind = Kind.Native;
-
-                result.Add(packed);
+                result.Add(new PackedConnection(
+                    from: new From(new Pair(Kind.Native, fromIndex), field: None._),
+                    to: new Pair(Kind.Native, toIndex)
+                ));
             }
 
             if (invalidIndices > 0)

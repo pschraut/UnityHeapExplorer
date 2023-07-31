@@ -10,18 +10,35 @@ using System;
 
 namespace HeapExplorer
 {
-    // A dump of a piece of memory from the player that's being profiled.
+    /// <summary>
+    /// A dump of a piece of memory from the player that's being profiled.
+    /// </summary>
     [Serializable]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)]
     public struct PackedMemorySection
     {
-        // The actual bytes of the memory dump.
-        public System.Byte[] bytes;
+        /// <summary>
+        /// The actual bytes of the memory dump.
+        /// </summary>
+        public byte[] bytes;
 
-        // The start address of this piece of memory.
+        /// <summary>
+        /// The start address of this piece of memory. Inclusive.
+        /// </summary>
         public System.UInt64 startAddress;
 
-        // The index into the snapshot.managedHeapSections array
+        /// <summary>
+        /// The end address of this piece of memory. Exclusive.
+        /// </summary>
+        public ulong endAddress {
+            get {
+                return startAddress + size;
+            }
+        }
+
+        /// <summary>
+        /// The index into the <see cref="PackedMemorySnapshot.managedHeapSections"/> array
+        /// </summary>
         [System.NonSerialized]
         public int arrayIndex;
 
@@ -37,6 +54,13 @@ namespace HeapExplorer
 
         const System.Int32 k_Version = 1;
 
+        /// <summary>
+        /// Does this memory section contain the provided memory address?
+        /// </summary>
+        public bool containsAddress(ulong address) {
+            return address >= startAddress && address < endAddress;
+        }
+        
         public static void Write(System.IO.BinaryWriter writer, PackedMemorySection[] value)
         {
             writer.Write(k_Version);
@@ -65,7 +89,8 @@ namespace HeapExplorer
                 for (int n = 0, nend = value.Length; n < nend; ++n)
                 {
                     if ((n % onePercent) == 0)
-                        stateString = string.Format("Loading Managed Heap Sections\n{0}/{1}, {2:F0}% done", n + 1, length, ((n + 1) / (float)length) * 100);
+                        stateString =
+                            $"Loading Managed Heap Sections\n{n + 1}/{length}, {((n + 1) / (float) length) * 100:F0}% done";
 
                     var count = reader.ReadInt32();
                     value[n].bytes = reader.ReadBytes(count);

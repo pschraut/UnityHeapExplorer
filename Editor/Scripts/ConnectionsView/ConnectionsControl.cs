@@ -2,11 +2,15 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
+using static HeapExplorer.Utilities.Option;
+using static HeapExplorer.ViewConsts;
 
 namespace HeapExplorer
 {
@@ -14,11 +18,12 @@ namespace HeapExplorer
     {
         public HeapExplorerView fromView;
         public HeapExplorerView toView;
-        public RichGCHandle toGCHandle;
-        public RichManagedObject toManagedObject;
-        public RichNativeObject toNativeObject;
-        public RichStaticField toStaticField;
-        public RichManagedType toManagedType;
+        
+        public Option<RichGCHandle> toGCHandle;
+        public Option<RichManagedObject> toManagedObject;
+        public Option<RichNativeObject> toNativeObject;
+        public Option<RichStaticField> toStaticField;
+        public Option<RichManagedType> toManagedType;
 
         public GotoCommand()
         {
@@ -27,31 +32,31 @@ namespace HeapExplorer
         public GotoCommand(RichGCHandle value)
             : this()
         {
-            toGCHandle = value;
+            toGCHandle = Some(value);
         }
 
         public GotoCommand(RichManagedObject value)
             : this()
         {
-            toManagedObject = value;
+            toManagedObject = Some(value);
         }
 
         public GotoCommand(RichNativeObject value)
             : this()
         {
-            toNativeObject = value;
+            toNativeObject = Some(value);
         }
 
         public GotoCommand(RichStaticField value)
             : this()
         {
-            toStaticField = value;
+            toStaticField = Some(value);
         }
 
         public GotoCommand(RichManagedType value)
             : this()
         {
-            toManagedType = value;
+            toManagedType = Some(value);
         }
     }
 
@@ -133,25 +138,24 @@ namespace HeapExplorer
         }
 
         PackedMemorySnapshot m_Snapshot;
-        PackedConnection[] m_Connections;
-        bool m_AddFrom;
-        bool m_AddTo;
+        
         int m_UniqueId = 1;
 
         enum Column
         {
             Type,
             Name,
+            SourceField,
             Address,
         }
 
         public ConnectionsControl(HeapExplorerWindow window, string editorPrefsKey, TreeViewState state)
             : base(window, editorPrefsKey, state, new MultiColumnHeader(
-                new MultiColumnHeaderState(new[]
-                {
-                new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 200, autoResize = true },
-                new MultiColumnHeaderState.Column() { headerContent = new GUIContent("C++ Name"), width = 200, autoResize = true },
-                new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Address"), width = 200, autoResize = true },
+                new MultiColumnHeaderState(new[] {
+                    new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Type"), width = 200, autoResize = true },
+                    new MultiColumnHeaderState.Column() { headerContent = new GUIContent(COLUMN_CPP_NAME, COLUMN_CPP_NAME_DESCRIPTION), width = 200, autoResize = true },
+                    new MultiColumnHeaderState.Column() { headerContent = new GUIContent(COLUMN_SOURCE_FIELD, COLUMN_SOURCE_FIELD_DESCRIPTION), width = 200, autoResize = true },
+                    new MultiColumnHeaderState.Column() { headerContent = new GUIContent("Address"), width = 200, autoResize = true },
                 })))
         {
             extraSpaceBeforeIconAndLabel = 4;
@@ -161,71 +165,49 @@ namespace HeapExplorer
             Reload();
         }
 
-        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, PackedConnection[] connections, bool addFrom, bool addTo)
-        {
+        /// <summary>
+        /// The <see cref="connections"/> here are stored as <see cref="PackedConnection.From"/> because this component
+        /// is reused for both `from` and `to` connections and `from` connections contain more data.
+        /// <para/>
+        /// The `to` connections will be converted to <see cref="PackedConnection.From"/> with
+        /// <see cref="<see cref="PackedConnection.From.field"/> missing.
+        /// </summary>
+        public TreeViewItem BuildTree(PackedMemorySnapshot snapshot, PackedConnection.From[] connections) {
             m_Snapshot = snapshot;
-            m_Connections = connections;
-            m_AddFrom = addFrom;
-            m_AddTo = addTo;
-
             m_UniqueId = 1;
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            if (m_Snapshot == null || m_Connections == null || m_Connections.Length < 1)
-            {
+            if (m_Snapshot == null || connections == null || connections.Length < 1) {
                 root.AddChild(new TreeViewItem { id = 1, depth = -1, displayName = "" });
                 return root;
             }
 
-            for (int n = 0, nend = m_Connections.Length; n < nend; ++n)
+            for (int n = 0, nend = connections.Length; n < nend; ++n)
             {
                 if (window.isClosing) // the window is closing
                     break;
 
-                var connection = m_Connections[n];
+                var connection = connections[n];
 
-                if (m_AddTo)
-                {
-                    switch (connection.toKind)
-                    {
-                        case PackedConnection.Kind.GCHandle:
-                            AddGCHandle(root, m_Snapshot.gcHandles[connection.to]);
-                            break;
+                switch (connection.pair.kind) {
+                    case PackedConnection.Kind.GCHandle:
+                        AddGCHandle(root, m_Snapshot.gcHandles[connection.pair.index], connection.field);
+                        break;
 
-                        case PackedConnection.Kind.Managed:
-                            AddManagedObject(root, m_Snapshot.managedObjects[connection.to]);
-                            break;
+                    case PackedConnection.Kind.Managed:
+                        AddManagedObject(root, m_Snapshot.managedObjects[connection.pair.index], connection.field);
+                        break;
 
-                        case PackedConnection.Kind.Native:
-                            AddNativeUnityObject(root, m_Snapshot.nativeObjects[connection.to]);
-                            break;
+                    case PackedConnection.Kind.Native:
+                        AddNativeUnityObject(root, m_Snapshot.nativeObjects[connection.pair.index], connection.field);
+                        break;
 
-                        case PackedConnection.Kind.StaticField:
-                            AddStaticField(root, m_Snapshot.managedStaticFields[connection.to]);
-                            break;
-                    }
-                }
-
-                if (m_AddFrom)
-                {
-                    switch (connection.fromKind)
-                    {
-                        case PackedConnection.Kind.GCHandle:
-                            AddGCHandle(root, m_Snapshot.gcHandles[connection.from]);
-                            break;
-
-                        case PackedConnection.Kind.Managed:
-                            AddManagedObject(root, m_Snapshot.managedObjects[connection.from]);
-                            break;
-
-                        case PackedConnection.Kind.Native:
-                            AddNativeUnityObject(root, m_Snapshot.nativeObjects[connection.from]);
-                            break;
-
-                        case PackedConnection.Kind.StaticField:
-                            AddStaticField(root, m_Snapshot.managedStaticFields[connection.from]);
-                            break;
-                    }
+                    case PackedConnection.Kind.StaticField:
+                        AddStaticField(root, m_Snapshot.managedStaticFields[connection.pair.index], connection.field);
+                        break;
+                    
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(connection.pair.kind), connection.pair.kind, "unknown kind");
                 }
             }
 
@@ -243,48 +225,55 @@ namespace HeapExplorer
             return root;
         }
 
-        void AddGCHandle(TreeViewItem parent, PackedGCHandle gcHandle)
+        void AddGCHandle(TreeViewItem parent, PackedGCHandle gcHandle, Option<PackedManagedField> field)
         {
             var item = new GCHandleItem
             {
                 id = m_UniqueId++,
-                depth = parent.depth + 1
+                depth = parent.depth + 1,
+                fieldName = field.fold("", _ => _.name) 
             };
 
             item.Initialize(this, m_Snapshot, gcHandle.gcHandlesArrayIndex);
             parent.AddChild(item);
         }
 
-        void AddManagedObject(TreeViewItem parent, PackedManagedObject managedObject)
-        {
+        void AddManagedObject(
+            TreeViewItem parent, PackedManagedObject managedObject, Option<PackedManagedField> field
+        ) {
             var item = new ManagedObjectItem
             {
                 id = m_UniqueId++,
-                depth = parent.depth + 1
+                depth = parent.depth + 1,
+                fieldName = field.fold("", _ => _.name) 
             };
 
             item.Initialize(this, m_Snapshot, managedObject.managedObjectsArrayIndex);
             parent.AddChild(item);
         }
 
-        void AddNativeUnityObject(TreeViewItem parent, PackedNativeUnityEngineObject nativeObject)
-        {
+        void AddNativeUnityObject(
+            TreeViewItem parent, PackedNativeUnityEngineObject nativeObject, Option<PackedManagedField> field
+        ) {
             var item = new NativeObjectItem
             {
                 id = m_UniqueId++,
                 depth = parent.depth + 1,
+                fieldName = field.fold("", _ => _.name) 
             };
 
             item.Initialize(this, m_Snapshot, nativeObject);
             parent.AddChild(item);
         }
 
-        void AddStaticField(TreeViewItem parent, PackedManagedStaticField staticField)
-        {
+        void AddStaticField(
+            TreeViewItem parent, PackedManagedStaticField staticField, Option<PackedManagedField> field
+        ) {
             var item = new ManagedStaticFieldItem
             {
                 id = m_UniqueId++,
                 depth = parent.depth + 1,
+                fieldName = field.fold("", _ => _.name) 
             };
 
             item.Initialize(this, m_Snapshot, staticField.staticFieldsArrayIndex);
@@ -306,6 +295,10 @@ namespace HeapExplorer
 
             protected ConnectionsControl m_Owner;
             protected string m_Value = "";
+            
+            /// <summary>Name of the field if it makes sense.</summary>
+            public string fieldName = "";
+            
             protected string m_Tooltip = "";
 
             public override void GetItemSearchString(string[] target, out int count, out string type, out string label)
@@ -330,6 +323,10 @@ namespace HeapExplorer
                         EditorGUI.LabelField(position, m_Value);
                         break;
 
+                    case Column.SourceField:
+                        EditorGUI.LabelField(position, fieldName);
+                        break;
+
                     case Column.Address:
                         if (address != 0) // statics dont have an address in PackedMemorySnapshot and I don't want to display a misleading 0
                             HeEditorGUI.Address(position, address);
@@ -352,7 +349,7 @@ namespace HeapExplorer
                 m_GCHandle = new RichGCHandle(m_Snapshot, gcHandleArrayIndex);
 
                 displayName = "GCHandle";
-                m_Value = m_GCHandle.managedObject.isValid ? m_GCHandle.managedObject.type.name : "";
+                m_Value = m_GCHandle.managedObject.fold("", _ => _.type.name);
                 address = m_GCHandle.managedObjectAddress;
             }
 
@@ -365,21 +362,19 @@ namespace HeapExplorer
                         m_Owner.window.OnGoto(new GotoCommand(m_GCHandle));
                     }
 
-                    if (m_GCHandle.nativeObject.isValid)
-                    {
+                    {if (m_GCHandle.nativeObject.valueOut(out var nativeObject)) {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(nativeObject));
                         }
-                    }
+                    }}
 
-                    if (m_GCHandle.managedObject.isValid)
-                    {
+                    {if (m_GCHandle.managedObject.valueOut(out var managedObject)) {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_GCHandle.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(managedObject));
                         }
-                    }
+                    }}
                 }
 
                 base.OnGUI(position, column);
@@ -392,14 +387,15 @@ namespace HeapExplorer
         {
             RichManagedObject m_ManagedObject;
 
-            public void Initialize(ConnectionsControl owner, PackedMemorySnapshot snapshot, int arrayIndex)
-            {
+            public void Initialize(
+                ConnectionsControl owner, PackedMemorySnapshot snapshot, PackedManagedObject.ArrayIndex arrayIndex
+            ) {
                 m_Owner = owner;
                 m_ManagedObject = new RichManagedObject(snapshot, arrayIndex);
 
                 displayName = m_ManagedObject.type.name;
                 address = m_ManagedObject.address;
-                m_Value = m_ManagedObject.nativeObject.isValid ? m_ManagedObject.nativeObject.name : "";
+                m_Value = m_ManagedObject.nativeObject.fold("", _ => _.name);
                 m_Tooltip = PackedManagedTypeUtility.GetInheritanceAsString(snapshot, m_ManagedObject.type.packed.managedTypesArrayIndex);
             }
 
@@ -407,26 +403,24 @@ namespace HeapExplorer
             {
                 if (column == 0)
                 {
-                    if (m_ManagedObject.gcHandle.isValid)
-                    {
+                    {if (m_ManagedObject.gcHandle.valueOut(out var gcHandle)) {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject.gcHandle));
+                            m_Owner.window.OnGoto(new GotoCommand(gcHandle));
                         }
-                    }
+                    }}
 
                     if (HeEditorGUI.CsButton(HeEditorGUI.SpaceL(ref position, position.height)))
                     {
                         m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject));
                     }
 
-                    if (m_ManagedObject.nativeObject.isValid)
-                    {
+                    {if (m_ManagedObject.nativeObject.valueOut(out var nativeObject)) {
                         if (HeEditorGUI.CppButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_ManagedObject.nativeObject));
+                            m_Owner.window.OnGoto(new GotoCommand(nativeObject));
                         }
-                    }
+                    }}
                 }
 
                 base.OnGUI(position, column);
@@ -486,11 +480,10 @@ namespace HeapExplorer
                 // It makes it easier to understand what it is, otherwise everything displays 'MonoBehaviour' only.
                 if (m_NativeObject.type.IsSubclassOf(m_Snapshot.coreTypes.nativeMonoBehaviour) || m_NativeObject.type.IsSubclassOf(m_Snapshot.coreTypes.nativeScriptableObject))
                 {
-                    string monoScriptName;
-                    if (m_Snapshot.FindNativeMonoScriptType(m_NativeObject.packed.nativeObjectsArrayIndex, out monoScriptName) != -1)
+                    if (m_Snapshot.FindNativeMonoScriptType(m_NativeObject.packed.nativeObjectsArrayIndex).valueOut(out var tpl))
                     {
-                        if (!string.IsNullOrEmpty(monoScriptName))
-                            displayName = monoScriptName;
+                        if (!string.IsNullOrEmpty(tpl.monoScriptName))
+                            displayName = tpl.monoScriptName;
                     }
                 }
             }
@@ -504,21 +497,19 @@ namespace HeapExplorer
                         m_Owner.window.OnGoto(new GotoCommand(m_NativeObject));
                     }
 
-                    if (m_NativeObject.gcHandle.isValid)
-                    {
+                    {if (m_NativeObject.gcHandle.valueOut(out var gcHandle)) {
                         if (HeEditorGUI.GCHandleButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_NativeObject.gcHandle));
+                            m_Owner.window.OnGoto(new GotoCommand(gcHandle));
                         }
-                    }
+                    }}
 
-                    if (m_NativeObject.managedObject.isValid)
-                    {
+                    {if (m_NativeObject.managedObject.valueOut(out var managedObject)) {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_NativeObject.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(managedObject));
                         }
-                    }
+                    }}
                 }
 
                 base.OnGUI(position, column);

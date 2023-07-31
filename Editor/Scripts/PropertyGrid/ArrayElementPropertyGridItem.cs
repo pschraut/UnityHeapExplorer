@@ -21,15 +21,15 @@ namespace HeapExplorer
         {
             displayType = type.name;
             displayName = "element";
-            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type);
+            displayValue = m_MemoryReader.ReadFieldValueAsString(address, type).getOrElse("<cannot read>");
             isExpandable = address > 0;
             icon = HeEditorStyles.GetTypeImage(m_Snapshot, type);
 
             if (type.isPointer)
             {
                 var pointer = m_MemoryReader.ReadPointer(address);
-                isExpandable = pointer > 0;
-                enabled = pointer > 0;
+                isExpandable = pointer.contains(_ => _ > 0);
+                enabled = pointer.contains(_ => _ > 0);
             }
         }
 

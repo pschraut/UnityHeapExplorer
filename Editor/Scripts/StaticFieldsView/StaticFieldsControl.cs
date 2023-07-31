@@ -2,17 +2,17 @@
 // Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
-using System.Collections;
 using System.Collections.Generic;
+using HeapExplorer.Utilities;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
-using UnityEditor;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
     public class StaticFieldsControl : AbstractTreeView
     {
-        public System.Action<PackedManagedType?> onTypeSelected;
+        public System.Action<Option<PackedManagedType>> onTypeSelected;
 
         public int count
         {
@@ -89,7 +89,7 @@ namespace HeapExplorer
             {
                 var item = selectedItem as StaticTypeItem;
                 if (onTypeSelected != null)
-                    onTypeSelected.Invoke(item.type);
+                    onTypeSelected.Invoke(Some(item.type));
                 return;
             }
         }
@@ -196,7 +196,10 @@ namespace HeapExplorer
                         for (int n=0, nend = list.Count; n < nend; ++n)
                         {
                             int refCount, refByCount;
-                            m_Owner.m_Snapshot.GetConnectionsCount(PackedConnection.Kind.StaticField, list[n], out refCount, out refByCount);
+                            m_Owner.m_Snapshot.GetConnectionsCount(
+                                new PackedConnection.Pair(PackedConnection.Kind.StaticField, list[n]), 
+                                out refCount, out refByCount
+                            );
 
                             m_ReferencesCount += refCount;
                         }

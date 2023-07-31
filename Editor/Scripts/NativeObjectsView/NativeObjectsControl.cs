@@ -3,19 +3,20 @@
 // https://github.com/pschraut/UnityHeapExplorer/
 //
 //#define HEAPEXPLORER_DISPLAY_REFS
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor;
-using System.Reflection;
-using System.Threading;
+using HeapExplorer.Utilities;
+using static HeapExplorer.Utilities.Option;
 
 namespace HeapExplorer
 {
     public class NativeObjectsControl : AbstractTreeView
     {
-        public System.Action<PackedNativeUnityEngineObject?> onSelectionChange;
+        public System.Action<Option<PackedNativeUnityEngineObject>> onSelectionChange;
 
         public long nativeObjectsCount
         {
@@ -25,7 +26,7 @@ namespace HeapExplorer
             }
         }
 
-        public long nativeObjectsSize
+        public ulong nativeObjectsSize
         {
             get
             {
@@ -34,7 +35,7 @@ namespace HeapExplorer
         }
 
         protected long m_NativeObjectsCount;
-        protected long m_NativeObjectsSize;
+        protected ulong m_NativeObjectsSize;
 
         PackedMemorySnapshot m_Snapshot;
         int m_UniqueId = 1;
@@ -81,7 +82,7 @@ namespace HeapExplorer
 
         public void Select(PackedNativeUnityEngineObject obj)
         {
-            var item = FindItemByAddressRecursive(rootItem, (ulong)obj.nativeObjectAddress);
+            var item = FindItemByAddressRecursive(rootItem, obj.nativeObjectAddress);
             SelectItem(item);
         }
 
@@ -119,11 +120,11 @@ namespace HeapExplorer
             var item = selectedItem as NativeObjectItem;
             if (item == null)
             {
-                onSelectionChange.Invoke(null);
+                onSelectionChange.Invoke(None._);
                 return;
             }
 
-            onSelectionChange.Invoke(item.packed);
+            onSelectionChange.Invoke(Some(item.packed));
         }
 
         public struct BuildArgs
@@ -200,12 +201,11 @@ namespace HeapExplorer
                 if (no.nativeTypesArrayIndex == m_Snapshot.coreTypes.nativeMonoBehaviour ||
                     no.nativeTypesArrayIndex == m_Snapshot.coreTypes.nativeScriptableObject)
                 {
-                    string monoScriptName;
-                    var monoScriptIndex = m_Snapshot.FindNativeMonoScriptType(no.nativeObjectsArrayIndex, out monoScriptName);
-                    if (monoScriptIndex != -1 && monoScriptIndex < m_Snapshot.nativeTypes.Length)
+                    var maybeMonoScript = m_Snapshot.FindNativeMonoScriptType(no.nativeObjectsArrayIndex);
+                    if (maybeMonoScript.valueOut(out var monoScript) && monoScript.index < m_Snapshot.nativeTypes.Length)
                     {
-                        typeNameOverride = monoScriptName;
-                        long key = (monoScriptName.GetHashCode() << 32) | monoScriptIndex;
+                        typeNameOverride = monoScript.monoScriptName;
+                        long key = (monoScript.monoScriptName.GetHashCode() << 32) | monoScript.index;
 
                         GroupItem group2;
                         if (!groupLookup.TryGetValue(key, out group2))
@@ -215,7 +215,7 @@ namespace HeapExplorer
                                 id = m_UniqueId++,
                                 depth = group.depth + 1,
                                 //displayName = monoScriptName,
-                                typeNameOverride = monoScriptName,
+                                typeNameOverride = monoScript.monoScriptName,
                             };
                             group2.Initialize(m_Snapshot, no.nativeTypesArrayIndex);
 
@@ -295,13 +295,13 @@ namespace HeapExplorer
                     continue;
 
                 var nativeType = m_Snapshot.nativeTypes[no.nativeTypesArrayIndex];
-                if (nativeType.managedTypeArrayIndex == -1)
+                if (!nativeType.managedTypeArrayIndex.valueOut(out var managedTypeArrayIndex))
                     continue;
 
-                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineComponent))
+                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineComponent))
                     continue;
 
-                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[nativeType.managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineGameObject))
+                if (m_Snapshot.IsSubclassOf(m_Snapshot.managedTypes[managedTypeArrayIndex], m_Snapshot.coreTypes.unityEngineGameObject))
                     continue;
 
                 var hash = new Hash128((uint)no.nativeTypesArrayIndex, (uint)no.size, (uint)no.name.GetHashCode(), 0);
@@ -374,10 +374,10 @@ namespace HeapExplorer
             switch ((Column)sortingColumn)
             {
                 case Column.Name:
-                    return string.Compare(itemB.name ?? "", itemA.name ?? "", true);
+                    return string.Compare(itemB.name ?? "", itemA.name ?? "", StringComparison.OrdinalIgnoreCase);
 
                 case Column.Type:
-                    return string.Compare(itemB.typeName, itemA.typeName, true);
+                    return string.Compare(itemB.typeName, itemA.typeName, StringComparison.OrdinalIgnoreCase);
 
                 case Column.Size:
                     return itemA.size.CompareTo(itemB.size);
@@ -419,7 +419,7 @@ namespace HeapExplorer
 
             public abstract string typeName { get; }
             public abstract string name { get; }
-            public abstract long size { get; }
+            public abstract ulong size { get; }
             public abstract int count { get; }
             public abstract System.UInt64 address { get; }
             public abstract bool isDontDestroyOnLoad { get; }
@@ -489,7 +489,7 @@ namespace HeapExplorer
                 }
             }
 
-            public override long size
+            public override ulong size
             {
                 get
                 {
@@ -509,7 +509,7 @@ namespace HeapExplorer
             {
                 get
                 {
-                    return (ulong)m_Object.packed.nativeObjectAddress;
+                    return m_Object.packed.nativeObjectAddress;
                 }
             }
 
@@ -563,11 +563,11 @@ namespace HeapExplorer
                 {
                     HeEditorGUI.NativeObjectIcon(HeEditorGUI.SpaceL(ref position, position.height), m_Object.packed);
 
-                    if (m_Object.managedObject.isValid)
+                    if (m_Object.managedObject.valueOut(out var managedObject))
                     {
                         if (HeEditorGUI.CsButton(HeEditorGUI.SpaceR(ref position, position.height)))
                         {
-                            m_Owner.window.OnGoto(new GotoCommand(m_Object.managedObject));
+                            m_Owner.window.OnGoto(new GotoCommand(managedObject));
                         }
                     }
                 }
@@ -597,7 +597,7 @@ namespace HeapExplorer
                         break;
 
                     case Column.Size:
-                        HeEditorGUI.Size(position, size);
+                        HeEditorGUI.Size(position, size.ToLongClamped());
                         break;
 
                     case Column.Address:
@@ -635,7 +635,7 @@ namespace HeapExplorer
                     menu.AddItem(new GUIContent("Find in Project"), false, (GenericMenu.MenuFunction2)delegate (object userData)
                     {
                         var o = (RichNativeObject)userData;
-                        HeEditorUtility.SearchProjectBrowser(string.Format("t:{0} {1}", o.type.name, o.name));
+                        HeEditorUtility.SearchProjectBrowser($"t:{o.type.name} {o.name}");
                     }, m_Object);
                 }
             }
@@ -725,7 +725,7 @@ namespace HeapExplorer
             }
 
             long m_Size = -1;
-            public override long size
+            public override ulong size
             {
                 get
                 {
@@ -738,12 +738,12 @@ namespace HeapExplorer
                             {
                                 var child = children[n] as AbstractItem;
                                 if (child != null)
-                                    m_Size += child.size;
+                                    m_Size += child.size.ToLongClamped();
                             }
                         }
                     }
 
-                    return m_Size;
+                    return m_Size.ToULongClamped();
                 }
             }
 
@@ -803,7 +803,7 @@ namespace HeapExplorer
                 }
             }
 
-            public void Initialize(PackedMemorySnapshot snapshot, int managedTypeArrayIndex)
+            public void Initialize(PackedMemorySnapshot snapshot, PInt managedTypeArrayIndex)
             {
                 m_Type = new RichNativeType(snapshot, managedTypeArrayIndex);
             }
@@ -821,7 +821,7 @@ namespace HeapExplorer
                         break;
 
                     case Column.Size:
-                        HeEditorGUI.Size(position, size);
+                        HeEditorGUI.Size(position, size.ToLongClamped());
                         break;
 
                     case Column.Count:
