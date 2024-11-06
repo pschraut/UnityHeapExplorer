@@ -1,6 +1,6 @@
 # Introduction
 
-Heap Explorer is a Memory Profiler, Debugger, and Analyzer for Unity. This repository hosts Heap Explorer for Unity 2019.3 and newer versions. For older versions, please visit the obsolete repository on Bitbucket instead ([link](https://bitbucket.org/pschraut/unityheapexplorer/)).
+Heap Explorer is a Memory Profiler, Debugger, and Analyzer for Unity 2019 up to Unity 6. 
 
 I have spent a significant amount of time in the past identifying and fixing memory leaks, as well as searching for memory optimization opportunities in Unity applications. During this time, I often used Unity's [old Memory Profiler](https://bitbucket.org/Unity-Technologies/memoryprofiler). While it's a useful tool, I was never entirely satisfied with it.
 
@@ -12,14 +12,12 @@ After much consideration about what to do with Heap Explorer, I concluded that t
 
 Since then, I have provided occasional updates because several people still prefer Heap Explorer over Unity's Memory Profiler due to its easier-to-understand UI/UX.
 
-I have also updated Heap Explorer to work with Unity 2019.3 and converted it into a Package, which means you should be able to use Heap Explorer for the entire 2019 LTS cycle, which ends in 2022.
+I do however recommend to install Unity's own Memory Profiler, because I believe it's superior in various ways to Heap Explorer now in the year 2024.
 
 [![](http://img.youtube.com/vi/tcTl_7y8JBA/0.jpg)](https://www.youtube.com/watch?v=tcTl_7y8JBA "")
 
 
 # Installation
-
-In order to use the Heap Explorer, you have to add the package to your project. As of Unity 2019.3, Unity supports to add packages from git through the Package Manager window.
 
 In Unity's Package Manager, choose "Add package from git URL" and insert one of the Package URL's you can find below. Once Heap Explorer is installed, you can open it from Unity's main menu under "Window > Analysis > Heap Explorer".
 
@@ -32,6 +30,7 @@ Please see the ```CHANGELOG.md``` file to see what's changed in each version.
 
 | Version  |     Link      |
 |----------|---------------|
+| 4.2.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.2.0 |
 | 4.1.1 | https://github.com/pschraut/UnityHeapExplorer.git#4.1.1 |
 | 4.1.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.1.0 |
 | 4.0.0 | https://github.com/pschraut/UnityHeapExplorer.git#4.0.0 |

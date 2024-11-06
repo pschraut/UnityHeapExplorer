@@ -4,7 +4,7 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [4.1.2] - 2024-??-??
+## [4.2.0] - 2024-11-06
 ### Fixed
  - Fixed compile errors starting with Unity 2022.2. This also addresses PR #16 (Thanks Chris)
  - Fixed ```ComputeConnectionKey``` possibly causing an overflow and showing wrong connections. Thanks to Yi Ji for sending me the fix.
