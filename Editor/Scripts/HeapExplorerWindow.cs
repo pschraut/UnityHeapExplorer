@@ -1,5 +1,5 @@
 ﻿//
-// Heap Explorer for Unity. Copyright (c) 2019-2020 Peter Schraut (www.console-dev.de). See LICENSE.md
+// Heap Explorer for Unity. Copyright (c) 2019-2024 Peter Schraut (www.console-dev.de). See LICENSE.md
 // https://github.com/pschraut/UnityHeapExplorer/
 //
 #pragma warning disable 0414
@@ -9,6 +9,12 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Threading;
+
+#if UNITY_2022_2_OR_NEWER
+using UnityMemoryProfiler = Unity.Profiling.Memory.MemoryProfiler;
+#else
+using UnityMemoryProfiler = UnityEngine.Profiling.Memory.Experimental.MemoryProfiler;
+#endif
 
 namespace HeapExplorer
 {
@@ -801,7 +807,7 @@ namespace HeapExplorer
                 m_IsCapturing = true;
 
                 string snapshotPath = System.IO.Path.ChangeExtension(path, "snapshot");
-                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(snapshotPath, OnHeapReceivedSaveOnly);
+                UnityMemoryProfiler.TakeSnapshot(snapshotPath, OnHeapReceivedSaveOnly);
             }
             finally
             {
@@ -847,7 +853,7 @@ namespace HeapExplorer
                 m_IsCapturing = true;
 
                 var path = FileUtil.GetUniqueTempPathInProject();
-                UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot(path, OnHeapReceived);
+                UnityMemoryProfiler.TakeSnapshot(path, OnHeapReceived);
             }
             finally
             {
