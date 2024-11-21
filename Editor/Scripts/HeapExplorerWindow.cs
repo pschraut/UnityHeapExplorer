@@ -187,6 +187,7 @@ namespace HeapExplorer
 
             EditorApplication.update -= OnEditorApplicationUpdate;
 
+            CloseFile();
             DestroyViews();
         }
 
